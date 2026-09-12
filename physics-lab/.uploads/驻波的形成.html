@@ -159,8 +159,8 @@ function draw(xa,ya,color,w){
 
 function render(dt){
   var v=parseFloat(sp.value),l=parseFloat(wl.value);
-  wlv.textContent=v.toFixed(2)+" m/s";
-  spv.textContent=l.toFixed(1)+" m";
+  wlv.textContent=l.toFixed(1)+" m";
+  spv.textContent=v.toFixed(2)+" m/s";
   var k=2*Math.PI/l,om=2*Math.PI*v/l,t2=t*om,amp=42,N=400;
   var inc=new Array(N+1),ref=new Array(N+1),sum=new Array(N+1);
   var px=new Array(N+1);
