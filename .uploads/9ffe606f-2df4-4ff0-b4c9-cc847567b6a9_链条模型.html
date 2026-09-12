@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>链条从桌上滑落 · 完整动力学</title>
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$','$']],
+    displayMath: [['$$','$$']]
+  },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+
+:root{
+  --bg:#f5f7fc;
+  --card:#ffffff;
+  --ink:#1a2238;
+  --ink2:#4a5568;
+  --muted:#8892a8;
+  --accent:#4f46e5;
+  --accent2:#7c6cf5;
+  --line:#e6eaf3;
+  --green:#10b981;
+  --red:#ef4444;
+  --amber:#f59e0b;
+  --blue:#3b82f6;
+  --purple:#8b5cf6;
+}
+
+html,body{height:100%;}
+
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--bg);
+  background-image:
+    radial-gradient(900px 500px at 10% -10%,#e7ebff 0%,transparent 60%),
+    radial-gradient(700px 500px at 95% 0%,#f1e9ff 0%,transparent 55%);
+  background-attachment:fixed;
+  color:var(--ink);
+  line-height:1.65;
+  min-height:100vh;
+  padding:28px 16px 56px;
+}
+
+.wrap{max-width:1180px;margin:0 auto;}
+
+header{text-align:center;margin-bottom:26px;}
+
+header h1{
+  font-size:clamp(1.5rem,3.4vw,2.1rem);
+  font-weight:750;
+  letter-spacing:-.02em;
+  color:#2b2e70;
+  margin-bottom:6px;
+}
+
+header p{color:var(--muted);font-size:.95rem;}
+
+header .tag{
+  display:inline-block;
+  font-size:.75rem;
+  letter-spacing:.14em;
+  color:var(--accent);
+  background:#eef1ff;
+  border:1px solid #dde3ff;
+  padding:.25rem .85rem;
+  border-radius:999px;
+  font-weight:600;
+  margin-bottom:12px;
+}
+
+.panel{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:18px 20px;
+  box-shadow:0 1px 2px rgba(22,33,58,.03),
+             0 10px 28px -20px rgba(22,33,58,.28);
+  margin-bottom:16px;
+}
+
+.controls{
+  display:flex;
+  flex-wrap:wrap;
+  gap:18px 26px;
+  align-items:flex-end;
+}
+
+.slider-group{
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  min-width:150px;
+  flex:1;
+  max-width:220px;
+}
+
+.slider-group label{
+  font-size:.78rem;
+  color:var(--muted);
+  font-weight:600;
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+}
+
+.slider-group label span{
+  color:var(--accent);
+  font-weight:700;
+  font-variant-numeric:tabular-nums;
+}
+
+input[type=range]{
+  -webkit-appearance:none;
+  appearance:none;
+  width:100%;
+  height:5px;
+  border-radius:3px;
+  background:#e4e8f3;
+  outline:none;
+  cursor:pointer;
+}
+
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  appearance:none;
+  width:16px;height:16px;
+  border-radius:50%;
+  background:linear-gradient(140deg,var(--accent),var(--accent2));
+  box-shadow:0 2px 6px -1px rgba(79,70,229,.6);
+  cursor:pointer;
+  transition:transform .15s;
+}
+
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15);}
+
+input[type=range]::-moz-range-thumb{
+  width:16px;height:16px;
+  border:none;
+  border-radius:50%;
+  background:linear-gradient(140deg,var(--accent),var(--accent2));
+  box-shadow:0 2px 6px -1px rgba(79,70,229,.6);
+  cursor:pointer;
+}
+
+.btn-group{display:flex;gap:10px;}
+
+.btn{
+  border:none;
+  padding:10px 22px;
+  font-family:inherit;
+  font-size:.9rem;
+  font-weight:650;
+  border-radius:10px;
+  cursor:pointer;
+  transition:all .18s ease;
+  white-space:nowrap;
+}
+
+.btn-primary{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;
+  box-shadow:0 6px 16px -6px rgba(79,70,229,.8);
+}
+
+.btn-primary:hover{
+  transform:translateY(-1px);
+  box-shadow:0 10px 22px -8px rgba(79,70,229,.9);
+}
+
+.btn-primary:active{transform:translateY(0);}
+
+.btn-ghost{
+  background:#f1f3fa;
+  color:var(--ink2);
+}
+
+.btn-ghost:hover{background:#e8ebf5;color:var(--accent);}
+
+.grid-main{
+  display:grid;
+  grid-template-columns:1.55fr 1fr;
+  gap:16px;
+  margin-bottom:16px;
+}
+
+@media(max-width:900px){
+  .grid-main{grid-template-columns:1fr;}
+}
+
+.scene-panel{
+  padding:14px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:linear-gradient(180deg,#fbfcff,#f6f8ff);
+}
+
+#scene{
+  display:block;
+  width:100%;
+  max-width:620px;
+  height:auto;
+  aspect-ratio:620/470;
+  border-radius:10px;
+}
+
+/* ---------- Readout ---------- */
+.readout{display:flex;flex-direction:column;}
+
+.readout h3{
+  font-size:.85rem;
+  font-weight:700;
+  color:var(--muted);
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  margin-bottom:14px;
+}
+
+.readout-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+  flex:1;
+  align-content:start;
+}
+
+.readout-item{
+  background:#f8f9fe;
+  border:1px solid #eef1f9;
+  border-radius:11px;
+  padding:10px 12px;
+}
+
+.readout-item .k{
+  font-size:.7rem;
+  color:var(--muted);
+  font-weight:600;
+  letter-spacing:.03em;
+  margin-bottom:3px;
+  display:block;
+}
+
+.readout-item .v{
+  font-size:1.05rem;
+  font-weight:700;
+  color:var(--ink);
+  font-variant-numeric:tabular-nums;
+  font-family:"SF Mono","Consolas","Menlo",monospace;
+  letter-spacing:-.01em;
+}
+
+.readout-item .v small{
+  font-size:.68rem;
+  font-weight:600;
+  color:var(--muted);
+  margin-left:2px;
+}
+
+.readout-item.accent .v{color:var(--accent);}
+.readout-item.green .v{color:var(--green);}
+.readout-item.amber .v{color:var(--amber);}
+.readout-item.red .v{color:var(--red);}
+.readout-item.blue .v{color:var(--blue);}
+.readout-item.purple .v{color:var(--purple);}
+
+/* ---------- Charts ---------- */
+.charts-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:16px;
+  margin-bottom:16px;
+}
+
+@media(max-width:960px){
+  .charts-grid{grid-template-columns:repeat(2,1fr);}
+}
+
+@media(max-width:620px){
+  .charts-grid{grid-template-columns:1fr;}
+}
+
+.chart-panel{padding:14px 16px 8px;}
+
+.chart-panel canvas{
+  display:block;
+  width:100%;
+  height:180px;
+}
+
+.chart-panel.wide{
+  grid-column:span 3;
+}
+
+@media(max-width:960px){
+  .chart-panel.wide{grid-column:span 2;}
+}
+
+@media(max-width:620px){
+  .chart-panel.wide{grid-column:span 1;}
+}
+
+.chart-panel.wide canvas{height:220px;}
+
+/* ---------- Derivation ---------- */
+.derivation h3{
+  font-size:1rem;
+  font-weight:700;
+  color:var(--ink);
+  margin:0 0 14px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.derivation h3::before{
+  content:"";
+  width:4px;height:17px;
+  border-radius:2px;
+  background:linear-gradient(180deg,var(--accent),var(--accent2));
+}
+
+.derivation h4{
+  font-size:.92rem;
+  font-weight:700;
+  color:var(--accent);
+  margin:20px 0 8px;
+}
+
+.derivation p{
+  color:var(--ink2);
+  font-size:.95rem;
+  margin:8px 0;
+}
+
+.formula-row{
+  background:linear-gradient(180deg,#fbfcff,#f5f7ff);
+  border:1px solid #e8ecfb;
+  border-radius:12px;
+  padding:14px 18px;
+  margin:12px 0;
+  text-align:center;
+  overflow-x:auto;
+}
+
+.formula-row.hl{
+  border-left:4px solid var(--accent);
+  background:linear-gradient(180deg,#f8f9ff,#eef1ff);
+}
+
+.formula-row.final{
+  border:1px solid #d9d3ff;
+  background:linear-gradient(140deg,#f6f4ff,#eef2ff 60%,#f4f7ff);
+  box-shadow:0 10px 30px -20px rgba(79,70,229,.9);
+  padding:18px;
+}
+
+.note{
+  border-left:3px solid var(--amber);
+  background:linear-gradient(90deg,#fffbf2,#fffdfa);
+  padding:12px 16px;
+  border-radius:0 12px 12px 0;
+  color:var(--ink2);
+  margin:14px 0;
+  font-size:.92rem;
+}
+
+.note strong{color:#b3761a;}
+
+ul.clean{
+  margin:10px 0;
+  padding-left:1.4rem;
+  color:var(--ink2);
+}
+
+ul.clean li{
+  margin:.5rem 0;
+  font-size:.94rem;
+}
+
+/* 能量守恒核对表 */
+.energy-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:.9rem;
+  margin:12px 0;
+}
+
+.energy-table th{
+  text-align:left;
+  font-weight:650;
+  color:var(--muted);
+  font-size:.74rem;
+  letter-spacing:.06em;
+  padding:.5rem .7rem;
+  border-bottom:2px solid var(--line);
+  white-space:nowrap;
+}
+
+.energy-table td{
+  padding:.6rem .7rem;
+  border-bottom:1px solid var(--line);
+  color:var(--ink2);
+  font-family:"SF Mono","Consolas","Menlo",monospace;
+  font-size:.87rem;
+  font-variant-numeric:tabular-nums;
+}
+
+.energy-table td:first-child{
+  font-family:inherit;
+  font-weight:600;
+  color:var(--accent);
+}
+
+.energy-table tr:last-child td{border-bottom:none;}
+
+footer{
+  text-align:center;
+  color:var(--muted);
+  font-size:.82rem;
+  margin-top:26px;
+}
+
+footer .dot{
+  display:inline-block;
+  width:4px;height:4px;
+  border-radius:50%;
+  background:#cbd5e1;
+  margin:0 .55rem;
+  vertical-align:middle;
+}
+
+mjx-container{overflow-x:auto;overflow-y:hidden;max-width:100%;}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="tag">力学 · 变质量系统</div>
+    <h1>链条从桌上滑落 · 完整动力学</h1>
+    <p>运动学 · 加速度 · 重心 · 动能 · 重力势能 · 机械能守恒</p>
+  </header>
+
+  <!-- ============ 控制面板 ============ -->
+  <div class="panel controls">
+
+    <div class="slider-group">
+      <label>链条总长 L <span id="L-val">2.00 m</span></label>
+      <input type="range" id="L" min="1" max="3" value="2" step="0.05">
+    </div>
+
+    <div class="slider-group">
+      <label>初始悬垂 x₀/L <span id="ratio-val">15%</span></label>
+      <input type="range" id="ratio" min="0.05" max="0.40" value="0.15" step="0.01">
+    </div>
+
+    <div class="slider-group">
+      <label>链条质量 M <span id="mass-val">1.00 kg</span></label>
+      <input type="range" id="mass" min="0.2" max="3" value="1" step="0.05">
+    </div>
+
+    <div class="slider-group">
+      <label>重力加速度 g <span id="g-val">10.0 m/s²</span></label>
+      <input type="range" id="g" min="5" max="20" value="10" step="0.5">
+    </div>
+
+    <div class="slider-group">
+      <label>动画速度 <span id="speed-val">0.7×</span></label>
+      <input type="range" id="speed" min="0.25" max="2" value="0.7" step="0.05">
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-primary" id="play-btn">▶ 播放</button>
+      <button class="btn btn-ghost" id="reset-btn">↺ 重置</button>
+    </div>
+
+  </div>
+
+  <!-- ============ 动画 + 数据 ============ -->
+  <div class="grid-main">
+
+    <div class="panel scene-panel">
+      <canvas id="scene" width="620" height="470"></canvas>
+    </div>
+
+    <div class="panel readout">
+      <h3>实时数据</h3>
+      <div class="readout-grid">
+        <div class="readout-item accent">
+          <span class="k">时间 t</span>
+          <span class="v" id="r-t">0.000<small>s</small></span>
+        </div>
+        <div class="readout-item green">
+          <span class="k">悬垂长度 x</span>
+          <span class="v" id="r-x">0.300<small>m</small></span>
+        </div>
+        <div class="readout-item red">
+          <span class="k">速度 v</span>
+          <span class="v" id="r-v">0.000<small>m/s</small></span>
+        </div>
+        <div class="readout-item amber">
+          <span class="k">加速度 a</span>
+          <span class="v" id="r-a">1.500<small>m/s²</small></span>
+        </div>
+        <div class="readout-item purple">
+          <span class="k">重心高度 y<sub>c</sub></span>
+          <span class="v" id="r-yc">−0.023<small>m</small></span>
+        </div>
+        <div class="readout-item blue">
+          <span class="k">动能 E<sub>k</sub></span>
+          <span class="v" id="r-ek">0.000<small>J</small></span>
+        </div>
+        <div class="readout-item green">
+          <span class="k">势能变化 ΔE<sub>p</sub></span>
+          <span class="v" id="r-dep">0.000<small>J</small></span>
+        </div>
+        <div class="readout-item">
+          <span class="k">总机械能 E</span>
+          <span class="v" id="r-etot">−0.225<small>J</small></span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============ 六张图表 ============ -->
+  <div class="charts-grid">
+
+    <div class="panel chart-panel">
+      <canvas id="chart-x"></canvas>
+    </div>
+
+    <div class="panel chart-panel">
+      <canvas id="chart-v"></canvas>
+    </div>
+
+    <div class="panel chart-panel">
+      <canvas id="chart-a"></canvas>
+    </div>
+
+    <div class="panel chart-panel">
+      <canvas id="chart-yc"></canvas>
+    </div>
+
+    <div class="panel chart-panel">
+      <canvas id="chart-ek"></canvas>
+    </div>
+
+    <div class="panel chart-panel">
+      <canvas id="chart-ep"></canvas>
+    </div>
+
+    <!-- 能量守恒对比（宽图） -->
+    <div class="panel chart-panel wide">
+      <canvas id="chart-energy"></canvas>
+    </div>
+
+  </div>
+
+  <!-- ============ 公式推导 ============ -->
+  <div class="panel derivation">
+    <h3>公式推导</h3>
+
+    <h4>一、物理模型</h4>
+    <p>
+      设链条总长 $L$、总质量 $M$、线密度 $\lambda = M/L$。
+      初始时刻，长度为 $x_0$ 的一段悬垂于桌边外，其余部分平铺在光滑桌面上。
+      取桌面为零势能面，忽略摩擦与弯曲处的能量损失。
+    </p>
+
+    <div class="note">
+      <strong>关键假设：</strong>桌面光滑，整条链条以相同速度运动。
+      这是经典问题的标准设定，可保证机械能守恒。
+    </div>
+
+    <h4>二、运动方程</h4>
+    <p>
+      任意时刻，悬垂部分长度为 $x$，其质量为 $\lambda x$，所受重力为 $\lambda x g$。
+      对整条链条（质量 $M = \lambda L$）应用牛顿第二定律：
+    </p>
+
+    <div class="formula-row">
+      $$\lambda x g = M a = \lambda L a
+      \quad\Longrightarrow\quad
+      a = \frac{g}{L}\,x$$
+    </div>
+
+    <p>写成二阶微分方程：</p>
+
+    <div class="formula-row hl">
+      $$\ddot{x} = \omega^2 x,\qquad \omega \equiv \sqrt{\frac{g}{L}}$$
+    </div>
+
+    <h4>三、运动学解</h4>
+    <p>
+      代入初始条件 $x(0) = x_0$、$v(0) = 0$，得
+    </p>
+
+    <div class="formula-row hl">
+      $$x(t) = x_0\cosh(\omega t)$$
+      $$v(t) = x_0\,\omega\sinh(\omega t)$$
+      $$a(t) = x_0\,\omega^2\cosh(\omega t) = \frac{g}{L}x(t)$$
+    </div>
+
+    <div class="note">
+      <strong>物理意义：</strong>$\ddot{x} = +\omega^2 x$ 的系数为正，
+      对应双曲余弦增长；重力持续把链条往外拉，悬垂越长拉力越大，
+      形成正反馈式的加速过程。
+    </div>
+
+    <h4>四、重心高度</h4>
+    <p>
+      桌面部分（长 $L-x$）位于 $y=0$；悬垂部分（长 $x$）的质心在桌边下方 $x/2$ 处，
+      即 $y = -x/2$。故整条链条重心高度为
+    </p>
+
+    <div class="formula-row hl">
+      $$y_c = \frac{(L-x)\cdot 0 + x \cdot \left(-\dfrac{x}{2}\right)}{L}
+      = -\frac{x^2}{2L}$$
+    </div>
+
+    <p>
+      重心随悬垂长度增大而单调下降，且以 $x^2$ 规律下降，这正是势能释放的来源。
+    </p>
+
+    <h4>五、动能与重力势能</h4>
+    <p>
+      动能：
+    </p>
+    <div class="formula-row">
+      $$E_k = \tfrac{1}{2}Mv^2
+      = \tfrac{1}{2}M \cdot \frac{g}{L}\left(x^2 - x_0^2\right)$$
+    </div>
+
+    <p>
+      重力势能（桌面为零势能面）：
+    </p>
+    <div class="formula-row">
+      $$E_p = M g y_c = -\frac{Mg}{2L}x^2$$
+    </div>
+
+    <p>
+      势能变化量（相对于初始状态）：
+    </p>
+    <div class="formula-row hl">
+      $$\Delta E_p = E_p - E_{p0}
+      = -\frac{Mg}{2L}\left(x^2 - x_0^2\right)$$
+    </div>
+
+    <p>
+      势能减少量 $|\Delta E_p|$ 与动能 $E_k$ 完全相等：
+    </p>
+    <div class="formula-row final">
+      $$\boxed{\;E_k = -\,\Delta E_p
+      = \frac{Mg}{2L}\left(x^2 - x_0^2\right)\;}$$
+    </div>
+
+    <h4>六、机械能守恒验证</h4>
+    <p>
+      总机械能 $E = E_k + E_p$ 在运动过程中保持恒定：
+    </p>
+    <div class="formula-row">
+      $$E = \frac{Mg}{2L}(x^2 - x_0^2) - \frac{Mg}{2L}x^2
+      = -\frac{Mg}{2L}x_0^2 = \text{const}$$
+    </div>
+
+    <p>
+      这与运动学解完全自洽，说明上述模型满足机械能守恒。
+      下方图表中的“能量守恒对比图”会把 $E_k$ 与 $|\Delta E_p|$ 同时绘出，
+      两条曲线应完全重合。
+    </p>
+
+    <h4>七、链条完全离开桌面的时刻</h4>
+    <p>当 $x = L$ 时链条尾端脱离桌面，由 $L = x_0\cosh(\omega t_{\rm end})$ 解得</p>
+    <div class="formula-row">
+      $$t_{\rm end} = \frac{1}{\omega}\,\operatorname{arccosh}\!\left(\frac{L}{x_0}\right)$$
+    </div>
+
+    <p>此时速度、动能、势能释放量分别为</p>
+    <div class="formula-row final">
+      $$v_{\rm end} = \sqrt{\frac{g}{L}\left(L^2 - x_0^2\right)}$$
+      $$E_{k,\rm end} = \frac{Mg}{2L}\left(L^2 - x_0^2\right)$$
+      $$|\Delta E_{p,\rm end}| = \frac{Mg}{2L}\left(L^2 - x_0^2\right)$$
+    </div>
+
+    <h4>八、当前参数的数值示例</h4>
+    <div class="table-wrap">
+      <table class="energy-table" id="energy-table">
+        <thead>
+          <tr>
+            <th>物理量</th>
+            <th>初始 t = 0</th>
+            <th>结束 t = t_end</th>
+          </tr>
+        </thead>
+        <tbody id="energy-body">
+          <!-- filled by JS -->
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <strong>观察：</strong>初始悬垂比例 $x_0/L$ 越小，
+      加速越“慢热”但最终速度越大、释放的势能越多；
+      $x_0/L$ 越大，链条越快离开桌面，但最终速度较小。
+    </div>
+  </div>
+
+  <footer>
+    链条滑落仿真<span class="dot"></span>双曲运动<span class="dot"></span>Classical Mechanics Lab
+  </footer>
+
+</div>
+
+<script>
+/* ============================================================
+   状态
+   ============================================================ */
+const state = {
+  L: 2.0,
+  ratio: 0.15,
+  mass: 1.0,
+  g: 10,
+  speed: 0.7,
+  t: 0,
+  playing: false,
+  lastTime: 0
+};
+
+let P = null;
+
+/* ============================================================
+   物理参数
+   ============================================================ */
+function computeParams() {
+  const L = state.L;
+  const M = state.mass;
+  const x0 = L * state.ratio;
+  const g = state.g;
+  const omega = Math.sqrt(g / L);
+  const tEnd = Math.acosh(L / x0) / omega;
+  const vEnd = omega * Math.sqrt(L * L - x0 * x0);
+
+  /* 能量 */
+  const Ep0 = -M * g * x0 * x0 / (2 * L);
+  const EpEnd = -M * g * L * L / (2 * L);
+  const EkEnd = 0.5 * M * vEnd * vEnd;
+  const E_total = Ep0;   // 机械能守恒 = 初始势能（动能 0）
+
+  /* 数值上限，用于图表轴范围 */
+  const EkMax = EkEnd;
+  const dEpMax = EkEnd;
+
+  return {
+    L, M, x0, g, omega, tEnd, vEnd,
+    Ep0, EpEnd, EkEnd, E_total,
+    EkMax, dEpMax
+  };
+}
+
+/* 返回任意时刻的完整物理量 */
+function stateAt(t) {
+  const { x0, omega, g, L, M } = P;
+
+  const ct = Math.cosh(omega * t);
+  const sh = Math.sinh(omega * t);
+
+  const x = x0 * ct;
+  const v = x0 * omega * sh;
+  const a = (g / L) * x;
+
+  const yc = -(x * x) / (2 * L);              // 重心高度
+  const Ek = 0.5 * M * v * v;                  // 动能
+  const Ep = -M * g * x * x / (2 * L);         // 势能（相对桌面）
+  const dEp = Ep - P.Ep0;                      // 势能变化量（负值）
+  const absDEp = -dEp;                         // 势能减少量（正值）
+  const Etot = Ek + Ep;                        // 总机械能（应恒定）
+
+  return { x, v, a, yc, Ek, Ep, dEp, absDEp, Etot };
+}
+
+/* ============================================================
+   画布工具
+   ============================================================ */
+function fitCanvas(canvas) {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const W = Math.max(1, Math.round(rect.width));
+  const H = Math.max(1, Math.round(rect.height));
+  if (canvas.width !== W * dpr || canvas.height !== H * dpr) {
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+  }
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx, W, H };
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function drawArrow(ctx, x1, y1, x2, y2, color, width) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const len = Math.hypot(dx, dy);
+  if (len < 1.5) return;
+
+  const ux = dx / len, uy = dy / len;
+  const headLen = Math.min(12, len * 0.42);
+  const headW = headLen * 0.5;
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2 - ux * headLen * 0.85, y2 - uy * headLen * 0.85);
+  ctx.stroke();
+
+  const px = -uy, py = ux;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - ux * headLen + px * headW, y2 - uy * headLen + py * headW);
+  ctx.lineTo(x2 - ux * headLen - px * headW, y2 - uy * headLen - py * headW);
+  ctx.closePath();
+  ctx.fill();
+}
+
+/* ============================================================
+   链环绘制
+   ============================================================ */
+function drawLink(ctx, x, y, horizontal) {
+  ctx.save();
+  ctx.translate(x, y);
+  if (!horizontal) ctx.rotate(Math.PI / 2);
+
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 5.2, 3.4, 0, 0, Math.PI * 2);
+  ctx.fillStyle = '#334155';
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.ellipse(-0.7, -0.8, 3.2, 1.7, 0, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.32)';
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.ellipse(0.4, 0.4, 2.0, 1.1, 0, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.55)';
+  ctx.fill();
+
+  ctx.restore();
+}
+
+/* ============================================================
+   场景绘制
+   ============================================================ */
+const sceneCanvas = document.getElementById('scene');
+
+function drawScene() {
+  const { ctx, W, H } = fitCanvas(sceneCanvas);
+  ctx.clearRect(0, 0, W, H);
+
+  /* 背景 */
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#fbfcff');
+  bg.addColorStop(1, '#f3f6fd');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  /* 布局 */
+  const tableLeft = W * 0.09;
+  const tableRight = W * 0.62;
+  const tableTop = H * 0.22;
+  const tableBottom = H * 0.94;
+  const tableWidth = tableRight - tableLeft;
+  const edgeX = tableRight;
+
+  const scale = tableWidth / P.L;
+
+  const st = stateAt(state.t);
+  const xTable = P.L - st.x;
+  const xHang = st.x;
+
+  /* 桌面 */
+  ctx.save();
+  ctx.shadowColor = 'rgba(22, 33, 58, 0.12)';
+  ctx.shadowBlur = 22;
+  ctx.shadowOffsetY = 6;
+  ctx.fillStyle = '#e8ecf6';
+  roundRect(ctx, tableLeft, tableTop, tableWidth, tableBottom - tableTop, 10);
+  ctx.fill();
+  ctx.restore();
+
+  const tableGrad = ctx.createLinearGradient(0, tableTop, 0, tableBottom);
+  tableGrad.addColorStop(0, 'rgba(255,255,255,0.55)');
+  tableGrad.addColorStop(0.25, 'rgba(255,255,255,0)');
+  ctx.fillStyle = tableGrad;
+  roundRect(ctx, tableLeft, tableTop, tableWidth, tableBottom - tableTop, 10);
+  ctx.fill();
+
+  ctx.strokeStyle = '#c7cfe4';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(tableLeft, tableTop);
+  ctx.lineTo(tableRight, tableTop);
+  ctx.stroke();
+
+  ctx.strokeStyle = '#b8c2d8';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(tableRight, tableTop);
+  ctx.lineTo(tableRight, tableBottom);
+  ctx.stroke();
+
+  ctx.fillStyle = '#9aa5bd';
+  ctx.font = '600 12px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('光滑桌面', tableLeft + 14, tableTop + 14);
+
+  /* 链条 */
+  const linkSpacingTarget = 11.5;
+  const N = Math.max(4, Math.round(P.L * scale / linkSpacingTarget));
+  const ds = P.L / N;
+  const topY = tableTop;
+
+  for (let i = 0; i < N; i++) {
+    const s = (i + 0.5) * ds;
+    let cx, cy, horizontal;
+
+    if (s < xTable) {
+      const distFromEdge = xTable - s;
+      cx = edgeX - distFromEdge * scale;
+      cy = topY - 3.5;
+      horizontal = true;
+    } else {
+      const distFromTop = s - xTable;
+      cx = edgeX + 2.5;
+      cy = topY + distFromTop * scale;
+      horizontal = false;
+    }
+
+    drawLink(ctx, cx, cy, horizontal);
+  }
+
+  /* 拐点 */
+  ctx.save();
+  ctx.fillStyle = 'rgba(79, 70, 229, 0.20)';
+  ctx.beginPath();
+  ctx.arc(edgeX, topY, 13, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(79, 70, 229, 0.55)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(edgeX, topY, 13, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+
+  /* 悬垂长度标注 */
+  if (xHang > 0.02) {
+    const xLabelX = edgeX + 26;
+    const y1 = topY;
+    const y2 = topY + xHang * scale;
+
+    ctx.strokeStyle = 'rgba(239, 68, 68, 0.55)';
+    ctx.lineWidth = 1.2;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(xLabelX, y1);
+    ctx.lineTo(xLabelX, y2);
+    ctx.stroke();
+
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(xLabelX - 4, y1);
+    ctx.lineTo(xLabelX + 4, y1);
+    ctx.moveTo(xLabelX - 4, y2);
+    ctx.lineTo(xLabelX + 4, y2);
+    ctx.stroke();
+
+    ctx.fillStyle = '#dc2626';
+    ctx.font = 'bold 12px "Times New Roman", Georgia, serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('x', xLabelX + 10, (y1 + y2) / 2);
+  }
+
+  /* 重心标记 */
+  if (xHang > 0.05) {
+    const ycPx = topY + (xHang / 2) * scale;
+    const xcPx = (edgeX - xTable * scale + edgeX) / 2;
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(139, 92, 246, 0.18)';
+    ctx.beginPath();
+    ctx.arc(xcPx, ycPx, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(139, 92, 246, 0.7)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.arc(xcPx, ycPx, 10, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = '#7c3aed';
+    ctx.font = 'bold 11px "Times New Roman", Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('c', xcPx, ycPx);
+    ctx.restore();
+  }
+
+  /* 速度箭头 */
+  const vPx = (st.v / P.vEnd) * 72;
+  if (vPx > 4) {
+    const ax = edgeX + 2.5;
+    const ay = topY + xHang * scale;
+    drawArrow(ctx, ax, ay, ax, ay + vPx, '#ef4444', 3);
+
+    ctx.fillStyle = '#dc2626';
+    ctx.font = 'bold 13px "Times New Roman", Georgia, serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('v', ax + 10, ay + vPx + 6);
+  }
+
+  /* 左上角信息 */
+  ctx.fillStyle = '#4a5568';
+  ctx.font = 'bold 13px "Times New Roman", Georgia, serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('t = ' + state.t.toFixed(3) + ' s', 16, 14);
+
+  ctx.fillStyle = '#8892a8';
+  ctx.font = '600 11.5px -apple-system, sans-serif';
+  ctx.fillText(
+    'x = ' + xHang.toFixed(3) + ' m  |  v = ' + st.v.toFixed(3) + ' m/s' +
+    '  |  Ek = ' + st.Ek.toFixed(3) + ' J',
+    16, 34
+  );
+}
+
+/* ============================================================
+   通用曲线绘制（支持多条曲线）
+   ============================================================ */
+function drawPlot(canvas, opts) {
+  const { ctx, W, H } = fitCanvas(canvas);
+  ctx.clearRect(0, 0, W, H);
+
+  const padL = 56, padR = 20, padT = 34, padB = 38;
+  const pw = W - padL - padR;
+  const ph = H - padT - padB;
+
+  const tMax = opts.tMax;
+  const yMin = opts.yMin !== undefined ? opts.yMin : 0;
+  const yMax = opts.yMax;
+
+  const X = t => padL + (t / tMax) * pw;
+  const Y = y => padT + ph - ((y - yMin) / (yMax - yMin)) * ph;
+
+  /* 网格 */
+  ctx.strokeStyle = '#f1f4fa';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = padT + (i / 4) * ph;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + pw, y); ctx.stroke();
+  }
+  for (let i = 0; i <= 4; i++) {
+    const x = padL + (i / 4) * pw;
+    ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, padT + ph); ctx.stroke();
+  }
+
+  /* 坐标轴 */
+  ctx.strokeStyle = '#cbd5e1';
+  ctx.lineWidth = 1.3;
+  ctx.beginPath();
+  ctx.moveTo(padL, padT);
+  ctx.lineTo(padL, padT + ph);
+  ctx.lineTo(padL + pw, padT + ph);
+  ctx.stroke();
+
+  /* 零线 */
+  if (yMin < 0 && yMax > 0) {
+    const yZero = Y(0);
+    ctx.strokeStyle = '#d8dfeb';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padL, yZero);
+    ctx.lineTo(padL + pw, yZero);
+    ctx.stroke();
+  }
+
+  /* 每条曲线 */
+  const N = 200;
+  opts.curves.forEach(curve => {
+    /* 填充 */
+    if (curve.fill) {
+      ctx.beginPath();
+      ctx.moveTo(X(0), Y(curve.valueFn(0)));
+      for (let i = 0; i <= N; i++) {
+        const t = (i / N) * tMax;
+        ctx.lineTo(X(t), Y(curve.valueFn(t)));
+      }
+      ctx.lineTo(X(tMax), Y(yMin));
+      ctx.lineTo(X(0), Y(yMin));
+      ctx.closePath();
+      const grad = ctx.createLinearGradient(0, padT, 0, padT + ph);
+      grad.addColorStop(0, curve.fill);
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = grad;
+      ctx.fill();
+    }
+
+    /* 曲线 */
+    ctx.strokeStyle = curve.color;
+    ctx.lineWidth = 2.2;
+    if (curve.dash) ctx.setLineDash(curve.dash);
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    for (let i = 0; i <= N; i++) {
+      const t = (i / N) * tMax;
+      const px = X(t), py = Y(curve.valueFn(t));
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+  });
+
+  /* 当前时刻的竖线 */
+  const curT = Math.min(state.t, tMax);
+  const cx = X(curT);
+
+  ctx.save();
+  ctx.setLineDash([4, 4]);
+  ctx.strokeStyle = 'rgba(239, 68, 68, 0.40)';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(cx, padT);
+  ctx.lineTo(cx, padT + ph);
+  ctx.stroke();
+  ctx.restore();
+
+  /* 当前点 */
+  opts.curves.forEach(curve => {
+    const cy = Y(curve.valueFn(curT));
+    ctx.fillStyle = curve.color;
+    ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1.8;
+    ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI * 2); ctx.stroke();
+  });
+
+  /* 标题 */
+  ctx.fillStyle = '#4a5568';
+  ctx.font = 'bold 12.5px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText(opts.title, padL, padT - 12);
+
+  /* 图例 */
+  if (opts.curves.length > 1) {
+    ctx.font = '600 10.5px -apple-system, sans-serif';
+    ctx.textBaseline = 'middle';
+    let lx = padL + pw - 8;
+
+    opts.curves.slice().reverse().forEach(curve => {
+      const label = curve.label || '';
+      const lw = ctx.measureText(label).width;
+      lx -= (lw + 24);
+
+      ctx.strokeStyle = curve.color;
+      ctx.lineWidth = 2.2;
+      if (curve.dash) ctx.setLineDash(curve.dash);
+      ctx.beginPath();
+      ctx.moveTo(lx, padT - 14);
+      ctx.lineTo(lx + 14, padT - 14);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = '#4a5568';
+      ctx.textAlign = 'left';
+      ctx.fillText(label, lx + 18, padT - 14);
+
+      lx -= 8;
+    });
+  }
+
+  /* 轴标签 */
+  ctx.fillStyle = '#a0aac0';
+  ctx.font = '11px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('t / s', padL + pw / 2, padT + ph + 7);
+
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(yMax.toFixed(opts.decimals !== undefined ? opts.decimals : 2),
+               padL - 7, padT + 4);
+  ctx.fillText(((yMax + yMin) / 2).toFixed(opts.decimals !== undefined ? opts.decimals : 2),
+               padL - 7, padT + ph / 2);
+  ctx.fillText(yMin.toFixed(opts.decimals !== undefined ? opts.decimals : 2),
+               padL - 7, padT + ph);
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('0', padL, padT + ph + 5);
+  ctx.textAlign = 'right';
+  ctx.fillText(tMax.toFixed(2), padL + pw, padT + ph + 5);
+}
+
+/* ============================================================
+   七张图表
+   ============================================================ */
+const chartX = document.getElementById('chart-x');
+const chartV = document.getElementById('chart-v');
+const chartA = document.getElementById('chart-a');
+const chartYc = document.getElementById('chart-yc');
+const chartEk = document.getElementById('chart-ek');
+const chartEp = document.getElementById('chart-ep');
+const chartEnergy = document.getElementById('chart-energy');
+
+function drawCharts() {
+  const tMax = P.tEnd;
+
+  /* x - t */
+  drawPlot(chartX, {
+    title: '悬垂长度 x — t',
+    tMax,
+    yMin: 0,
+    yMax: P.L * 1.08,
+    color: '#10b981',
+    decimals: 2,
+    curves: [{
+      color: '#10b981',
+      fill: 'rgba(16, 185, 129, 0.22)',
+      valueFn: t => stateAt(t).x
+    }]
+  });
+
+  /* v - t */
+  drawPlot(chartV, {
+    title: '速度 v — t',
+    tMax,
+    yMin: 0,
+    yMax: P.vEnd * 1.12 || 1,
+    color: '#ef4444',
+    decimals: 2,
+    curves: [{
+      color: '#ef4444',
+      fill: 'rgba(239, 68, 68, 0.20)',
+      valueFn: t => stateAt(t).v
+    }]
+  });
+
+  /* a - t */
+  drawPlot(chartA, {
+    title: '加速度 a — t',
+    tMax,
+    yMin: 0,
+    yMax: P.g * 1.12,
+    color: '#f59e0b',
+    decimals: 2,
+    curves: [{
+      color: '#f59e0b',
+      fill: 'rgba(245, 158, 11, 0.20)',
+      valueFn: t => stateAt(t).a
+    }]
+  });
+
+  /* y_c - t */
+  drawPlot(chartYc, {
+    title: '重心高度 y_c — t',
+    tMax,
+    yMin: -(P.L * P.L) / (2 * P.L) * 1.10,
+    yMax: 0.02,
+    color: '#8b5cf6',
+    decimals: 2,
+    curves: [{
+      color: '#8b5cf6',
+      fill: 'rgba(139, 92, 246, 0.18)',
+      valueFn: t => stateAt(t).yc
+    }]
+  });
+
+  /* Ek - t */
+  drawPlot(chartEk, {
+    title: '动能 E_k — t',
+    tMax,
+    yMin: 0,
+    yMax: P.EkMax * 1.10 || 1,
+    color: '#3b82f6',
+    decimals: 3,
+    curves: [{
+      color: '#3b82f6',
+      fill: 'rgba(59, 130, 246, 0.22)',
+      valueFn: t => stateAt(t).Ek
+    }]
+  });
+
+  /* |ΔEp| - t（势能减少量） */
+  drawPlot(chartEp, {
+    title: '势能减少 |ΔE_p| — t',
+    tMax,
+    yMin: 0,
+    yMax: P.dEpMax * 1.10 || 1,
+    color: '#22c55e',
+    decimals: 3,
+    curves: [{
+      color: '#22c55e',
+      fill: 'rgba(34, 197, 94, 0.20)',
+      valueFn: t => stateAt(t).absDEp
+    }]
+  });
+
+  /* 能量守恒对比图（宽） */
+  drawPlot(chartEnergy, {
+    title: '能量守恒验证  E_k 与 |ΔE_p| 完全重合',
+    tMax,
+    yMin: 0,
+    yMax: P.EkMax * 1.10 || 1,
+    decimals: 3,
+    curves: [
+      {
+        label: 'E_k',
+        color: '#3b82f6',
+        fill: 'rgba(59, 130, 246, 0.18)',
+        valueFn: t => stateAt(t).Ek
+      },
+      {
+        label: '|ΔE_p|',
+        color: '#22c55e',
+        dash: [6, 5],
+        valueFn: t => stateAt(t).absDEp
+      }
+    ]
+  });
+}
+
+/* ============================================================
+   数据面板
+   ============================================================ */
+const rEl = {
+  t:    document.getElementById('r-t'),
+  x:    document.getElementById('r-x'),
+  v:    document.getElementById('r-v'),
+  a:    document.getElementById('r-a'),
+  yc:   document.getElementById('r-yc'),
+  ek:   document.getElementById('r-ek'),
+  dep:  document.getElementById('r-dep'),
+  etot: document.getElementById('r-etot')
+};
+
+function updateReadout() {
+  const st = stateAt(state.t);
+
+  rEl.t.innerHTML    = state.t.toFixed(3) + '<small>s</small>';
+  rEl.x.innerHTML    = st.x.toFixed(3) + '<small>m</small>';
+  rEl.v.innerHTML    = st.v.toFixed(3) + '<small>m/s</small>';
+  rEl.a.innerHTML    = st.a.toFixed(3) + '<small>m/s²</small>';
+  rEl.yc.innerHTML   = st.yc.toFixed(4) + '<small>m</small>';
+  rEl.ek.innerHTML   = st.Ek.toFixed(4) + '<small>J</small>';
+  rEl.dep.innerHTML  = st.dEp.toFixed(4) + '<small>J</small>';
+  rEl.etot.innerHTML = st.Etot.toFixed(4) + '<small>J</small>';
+}
+
+/* ============================================================
+   数值示例表
+   ============================================================ */
+function updateEnergyTable() {
+  const tbody = document.getElementById('energy-body');
+
+  const st0 = stateAt(0);
+  const stEnd = stateAt(P.tEnd);
+
+  const rows = [
+    ['悬垂长度 x',    st0.x.toFixed(3)    + ' m', stEnd.x.toFixed(3)    + ' m'],
+    ['速度 v',        st0.v.toFixed(3)    + ' m/s', stEnd.v.toFixed(3)  + ' m/s'],
+    ['加速度 a',      st0.a.toFixed(3)    + ' m/s²', stEnd.a.toFixed(3) + ' m/s²'],
+    ['重心高度 y_c',  st0.yc.toFixed(4)   + ' m', stEnd.yc.toFixed(4)   + ' m'],
+    ['动能 E_k',      st0.Ek.toFixed(4)   + ' J', stEnd.Ek.toFixed(4)   + ' J'],
+    ['势能 E_p',      st0.Ep.toFixed(4)   + ' J', stEnd.Ep.toFixed(4)   + ' J'],
+    ['机械能 E',      st0.Etot.toFixed(4) + ' J', stEnd.Etot.toFixed(4) + ' J']
+  ];
+
+  tbody.innerHTML = rows.map(r =>
+    '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td><td>' + r[2] + '</td></tr>'
+  ).join('');
+}
+
+/* ============================================================
+   主循环
+   ============================================================ */
+function tick(now) {
+  if (!state.lastTime) state.lastTime = now;
+  const dt = Math.min((now - state.lastTime) / 1000, 0.05);
+  state.lastTime = now;
+
+  if (state.playing) {
+    state.t += dt * state.speed;
+    if (state.t >= P.tEnd) {
+      state.t = P.tEnd;
+      state.playing = false;
+      updatePlayButton();
+    }
+  }
+
+  drawScene();
+  drawCharts();
+  updateReadout();
+
+  requestAnimationFrame(tick);
+}
+
+/* ============================================================
+   UI
+   ============================================================ */
+const playBtn = document.getElementById('play-btn');
+const resetBtn = document.getElementById('reset-btn');
+
+function updatePlayButton() {
+  if (state.playing) {
+    playBtn.textContent = '⏸ 暂停';
+  } else if (state.t >= P.tEnd - 1e-6) {
+    playBtn.textContent = '↻ 重播';
+  } else {
+    playBtn.textContent = '▶ 播放';
+  }
+}
+
+function resetSim() {
+  state.t = 0;
+  state.playing = false;
+  state.lastTime = 0;
+  updatePlayButton();
+}
+
+playBtn.addEventListener('click', () => {
+  if (state.t >= P.tEnd - 1e-6) state.t = 0;
+  state.playing = !state.playing;
+  state.lastTime = 0;
+  updatePlayButton();
+});
+
+resetBtn.addEventListener('click', resetSim);
+
+function bindSlider(id, key, fmt) {
+  const el = document.getElementById(id);
+  const out = document.getElementById(id + '-val');
+  el.addEventListener('input', () => {
+    state[key] = parseFloat(el.value);
+    out.textContent = fmt(state[key]);
+    P = computeParams();
+    updateEnergyTable();
+    resetSim();
+  });
+}
+
+bindSlider('L',     'L',     v => v.toFixed(2) + ' m');
+bindSlider('ratio', 'ratio', v => (v * 100).toFixed(0) + '%');
+bindSlider('mass',  'mass',  v => v.toFixed(2) + ' kg');
+bindSlider('g',     'g',     v => v.toFixed(1) + ' m/s²');
+bindSlider('speed', 'speed', v => v.toFixed(2) + '×');
+
+/* ---- 窗口大小变化 ---- */
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    drawScene();
+    drawCharts();
+  }, 120);
+});
+
+/* ============================================================
+   启动
+   ============================================================ */
+P = computeParams();
+updateEnergyTable();
+updatePlayButton();
+requestAnimationFrame(tick);
+</script>
+
+</body>
+</html>

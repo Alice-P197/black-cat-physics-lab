@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>横波与纵波的传播 · 交互动画</title>
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$','$']],
+    displayMath: [['$$','$$']]
+  },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+
+:root{
+  --bg:#f5f7fc;
+  --card:#ffffff;
+  --ink:#1a2238;
+  --ink2:#4a5568;
+  --muted:#8892a8;
+  --accent:#4f46e5;
+  --accent2:#7c6cf5;
+  --line:#e6eaf3;
+  --green:#10b981;
+  --red:#ef4444;
+  --amber:#f59e0b;
+  --cyan:#0891b2;
+}
+
+html,body{height:100%;}
+
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--bg);
+  background-image:
+    radial-gradient(900px 500px at 10% -10%,#e7ebff 0%,transparent 60%),
+    radial-gradient(700px 500px at 95% 0%,#f1e9ff 0%,transparent 55%);
+  background-attachment:fixed;
+  color:var(--ink);
+  line-height:1.65;
+  min-height:100vh;
+  padding:28px 16px 56px;
+}
+
+.wrap{max-width:1100px;margin:0 auto;}
+
+header{text-align:center;margin-bottom:26px;}
+
+header h1{
+  font-size:clamp(1.5rem,3.4vw,2.1rem);
+  font-weight:750;
+  letter-spacing:-.02em;
+  color:#2b2e70;
+  margin-bottom:6px;
+}
+
+header p{color:var(--muted);font-size:.95rem;}
+
+header .tag{
+  display:inline-block;
+  font-size:.75rem;
+  letter-spacing:.14em;
+  color:var(--accent);
+  background:#eef1ff;
+  border:1px solid #dde3ff;
+  padding:.25rem .85rem;
+  border-radius:999px;
+  font-weight:600;
+  margin-bottom:12px;
+}
+
+.panel{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:18px 20px;
+  box-shadow:0 1px 2px rgba(22,33,58,.03),
+             0 10px 28px -20px rgba(22,33,58,.28);
+  margin-bottom:16px;
+}
+
+/* ---------- Controls ---------- */
+.controls{
+  display:flex;
+  flex-wrap:wrap;
+  gap:18px 26px;
+  align-items:flex-end;
+}
+
+.seg-group{display:flex;flex-direction:column;gap:6px;}
+
+.seg-label{
+  font-size:.76rem;
+  color:var(--muted);
+  font-weight:650;
+  letter-spacing:.04em;
+}
+
+.seg{
+  display:flex;
+  gap:4px;
+  background:#f1f3fa;
+  padding:5px;
+  border-radius:11px;
+}
+
+.seg-btn{
+  border:none;
+  background:transparent;
+  padding:7px 14px;
+  font-size:.85rem;
+  font-family:inherit;
+  font-weight:600;
+  color:var(--ink2);
+  border-radius:8px;
+  cursor:pointer;
+  transition:all .18s ease;
+  white-space:nowrap;
+}
+
+.seg-btn:hover{color:var(--accent);}
+
+.seg-btn.active{
+  background:#fff;
+  color:var(--accent);
+  box-shadow:0 2px 8px -2px rgba(79,70,229,.35);
+}
+
+.slider-group{
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  min-width:150px;
+  flex:1;
+  max-width:200px;
+}
+
+.slider-group label{
+  font-size:.78rem;
+  color:var(--muted);
+  font-weight:600;
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+}
+
+.slider-group label span{
+  color:var(--accent);
+  font-weight:700;
+  font-variant-numeric:tabular-nums;
+}
+
+input[type=range]{
+  -webkit-appearance:none;
+  appearance:none;
+  width:100%;
+  height:5px;
+  border-radius:3px;
+  background:#e4e8f3;
+  outline:none;
+  cursor:pointer;
+}
+
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  appearance:none;
+  width:16px;height:16px;
+  border-radius:50%;
+  background:linear-gradient(140deg,var(--accent),var(--accent2));
+  box-shadow:0 2px 6px -1px rgba(79,70,229,.6);
+  cursor:pointer;
+  transition:transform .15s;
+}
+
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15);}
+
+input[type=range]::-moz-range-thumb{
+  width:16px;height:16px;
+  border:none;
+  border-radius:50%;
+  background:linear-gradient(140deg,var(--accent),var(--accent2));
+  box-shadow:0 2px 6px -1px rgba(79,70,229,.6);
+  cursor:pointer;
+}
+
+.btn-group{display:flex;gap:10px;}
+
+.btn{
+  border:none;
+  padding:10px 22px;
+  font-family:inherit;
+  font-size:.9rem;
+  font-weight:650;
+  border-radius:10px;
+  cursor:pointer;
+  transition:all .18s ease;
+  white-space:nowrap;
+}
+
+.btn-primary{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;
+  box-shadow:0 6px 16px -6px rgba(79,70,229,.8);
+}
+
+.btn-primary:hover{
+  transform:translateY(-1px);
+  box-shadow:0 10px 22px -8px rgba(79,70,229,.9);
+}
+
+.btn-ghost{background:#f1f3fa;color:var(--ink2);}
+.btn-ghost:hover{background:#e8ebf5;color:var(--accent);}
+
+/* ---------- Canvas ---------- */
+.scene-panel{
+  padding:16px;
+  background:linear-gradient(180deg,#fbfcff,#f6f8ff);
+}
+
+#mainCanvas{
+  display:block;
+  width:100%;
+  height:360px;
+  border-radius:12px;
+  transition:height .25s ease;
+}
+
+/* ---------- Info cards ---------- */
+.grid-info{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  margin-bottom:16px;
+}
+
+@media(max-width:720px){
+  .grid-info{grid-template-columns:1fr;}
+}
+
+.info-card h3{
+  font-size:.95rem;
+  font-weight:700;
+  color:var(--ink);
+  margin-bottom:12px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.info-card h3::before{
+  content:"";
+  width:4px;height:16px;
+  border-radius:2px;
+  flex:none;
+}
+
+.info-card.transverse h3::before{
+  background:linear-gradient(180deg,#4f46e5,#7c6cf5);
+}
+
+.info-card.longitudinal h3::before{
+  background:linear-gradient(180deg,#0891b2,#22d3ee);
+}
+
+.info-card p{
+  font-size:.9rem;
+  color:var(--ink2);
+  margin:.5rem 0;
+}
+
+.info-card ul{
+  margin:.6rem 0;
+  padding-left:1.3rem;
+  color:var(--ink2);
+}
+
+.info-card ul li{
+  margin:.35rem 0;
+  font-size:.88rem;
+}
+
+.formula-box{
+  background:linear-gradient(180deg,#fbfcff,#f5f7ff);
+  border:1px solid #e8ecfb;
+  border-radius:11px;
+  padding:11px 13px;
+  margin:10px 0;
+  text-align:center;
+  overflow-x:auto;
+}
+
+.formula-box mjx-container{margin:0 !important;font-size:100% !important;}
+
+/* ---------- Comparison table ---------- */
+.compare-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:.9rem;
+  margin-top:6px;
+}
+
+.compare-table th{
+  text-align:left;
+  font-weight:650;
+  color:var(--muted);
+  font-size:.72rem;
+  letter-spacing:.06em;
+  padding:.5rem .7rem;
+  border-bottom:2px solid var(--line);
+}
+
+.compare-table td{
+  padding:.6rem .7rem;
+  border-bottom:1px solid var(--line);
+  color:var(--ink2);
+  font-size:.87rem;
+  vertical-align:top;
+}
+
+.compare-table tr:last-child td{border-bottom:none;}
+
+.compare-table td:first-child{
+  font-weight:650;
+  color:var(--accent);
+  white-space:nowrap;
+}
+
+.compare-table td.cy{color:var(--cyan);font-weight:600;}
+
+footer{
+  text-align:center;
+  color:var(--muted);
+  font-size:.82rem;
+  margin-top:26px;
+}
+
+footer .dot{
+  display:inline-block;
+  width:4px;height:4px;
+  border-radius:50%;
+  background:#cbd5e1;
+  margin:0 .55rem;
+  vertical-align:middle;
+}
+
+mjx-container{overflow-x:auto;overflow-y:hidden;max-width:100%;}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="tag">波动学 · 交互仿真</div>
+    <h1>横波与纵波的传播</h1>
+    <p>质点振动方向 · 波形传播方向 · 压缩与稀疏</p>
+  </header>
+
+  <!-- ============ 控制面板 ============ -->
+  <div class="panel controls">
+
+    <div class="seg-group">
+      <span class="seg-label">波形类型</span>
+      <div class="seg" id="mode-seg">
+        <button class="seg-btn active" data-val="transverse">横波</button>
+        <button class="seg-btn" data-val="longitudinal">纵波</button>
+        <button class="seg-btn" data-val="both">两者对比</button>
+      </div>
+    </div>
+
+    <div class="slider-group">
+      <label>振幅 A <span id="amp-val">45 px</span></label>
+      <input type="range" id="amp" min="10" max="80" value="45" step="1">
+    </div>
+
+    <div class="slider-group">
+      <label>波长 λ <span id="wav-val">200 px</span></label>
+      <input type="range" id="wav" min="80" max="340" value="200" step="5">
+    </div>
+
+    <div class="slider-group">
+      <label>频率 f <span id="freq-val">0.70 Hz</span></label>
+      <input type="range" id="freq" min="0.20" max="1.50" value="0.70" step="0.05">
+    </div>
+
+    <div class="slider-group">
+      <label>动画速度 <span id="speed-val">1.00×</span></label>
+      <input type="range" id="speed" min="0.2" max="2" value="1" step="0.05">
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-primary" id="play-btn">⏸ 暂停</button>
+      <button class="btn btn-ghost" id="reset-btn">↺ 重置</button>
+    </div>
+
+  </div>
+
+  <!-- ============ 动画画布 ============ -->
+  <div class="panel scene-panel">
+    <canvas id="mainCanvas"></canvas>
+  </div>
+
+  <!-- ============ 说明卡片 ============ -->
+  <div class="grid-info">
+
+    <div class="panel info-card transverse">
+      <h3>横波：质点上下振动</h3>
+      <p>质点振动方向与波的传播方向<strong>垂直</strong>。</p>
+      <div class="formula-box">
+        $$y(x,t) = A\sin(\omega t - kx)$$
+      </div>
+      <ul>
+        <li>波形呈现正弦曲线形状</li>
+        <li>有波峰、波谷</li>
+        <li>绳波、水面波、电磁波（真空）属于此类</li>
+      </ul>
+    </div>
+
+    <div class="panel info-card longitudinal">
+      <h3>纵波：质点左右振动</h3>
+      <p>质点振动方向与波的传播方向<strong>平行</strong>。</p>
+      <div class="formula-box">
+        $$\xi(x,t) = A\sin(\omega t - kx)$$
+      </div>
+      <ul>
+        <li>形成压缩区与稀疏区</li>
+        <li>没有波峰与波谷</li>
+        <li>声波、声呐、地震 P 波属于此类</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- ============ 核心公式 ============ -->
+  <div class="panel">
+    <div class="formula-box" style="padding:18px;">
+      $$\omega = 2\pi f,\qquad k = \frac{2\pi}{\lambda},\qquad v = \frac{\omega}{k} = \lambda f$$
+    </div>
+    <div class="formula-box" style="padding:18px;margin-bottom:0;">
+      $$T = \frac{1}{f},\qquad v_{\text{波}} = \frac{\lambda}{T}$$
+    </div>
+  </div>
+
+  <!-- ============ 对比表 ============ -->
+  <div class="panel">
+    <h3 style="font-size:.95rem;font-weight:700;color:var(--ink);margin-bottom:10px;display:flex;align-items:center;gap:8px;">
+      <span style="display:inline-block;width:4px;height:16px;border-radius:2px;background:linear-gradient(180deg,#4f46e5,#0891b2);"></span>
+      横波与纵波对比
+    </h3>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>特征</th>
+          <th>横波</th>
+          <th>纵波</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>振动方向</td>
+          <td>垂直于传播方向</td>
+          <td class="cy">平行于传播方向</td>
+        </tr>
+        <tr>
+          <td>波形</td>
+          <td>波峰 / 波谷</td>
+          <td class="cy">压缩区 / 稀疏区</td>
+        </tr>
+        <tr>
+          <td>典型实例</td>
+          <td>绳波、水面波、光波</td>
+          <td class="cy">声波、地震 P 波</td>
+        </tr>
+        <tr>
+          <td>能否在液体中传播</td>
+          <td>不能（理想液体无剪切弹性）</td>
+          <td class="cy">能</td>
+        </tr>
+        <tr>
+          <td>方程形式</td>
+          <td>$y = A\sin(\omega t - kx)$</td>
+          <td class="cy">$\xi = A\sin(\omega t - kx)$</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <footer>
+    波传播仿真<span class="dot"></span>横波 · 纵波<span class="dot"></span>Wave Mechanics Lab
+  </footer>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  /* ============================================================
+     状态
+     ============================================================ */
+  const state = {
+    mode: 'transverse',   // transverse | longitudinal | both
+    amplitude: 45,        // px
+    wavelength: 200,      // px
+    frequency: 0.7,       // Hz
+    playback: 1.0,
+    playing: true,
+    time: 0
+  };
+
+  const canvas = document.getElementById('mainCanvas');
+  const ctx = canvas.getContext('2d');
+
+  /* ============================================================
+     画布尺寸
+     ============================================================ */
+  function updateCanvasHeight() {
+    let h = 360;
+    if (state.mode === 'both') h = 580;
+    canvas.style.height = h + 'px';
+  }
+
+  function setupCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    const W = Math.max(1, Math.round(rect.width));
+    const H = Math.max(1, Math.round(rect.height));
+
+    if (canvas.width !== W * dpr || canvas.height !== H * dpr) {
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+    }
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { W, H };
+  }
+
+  /* ============================================================
+     通用工具
+     ============================================================ */
+  function roundRect(c, x, y, w, h, r) {
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.lineTo(x + w - r, y);
+    c.quadraticCurveTo(x + w, y, x + w, y + r);
+    c.lineTo(x + w, y + h - r);
+    c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    c.lineTo(x + r, y + h);
+    c.quadraticCurveTo(x, y + h, x, y + h - r);
+    c.lineTo(x, y + r);
+    c.quadraticCurveTo(x, y, x + r, y);
+    c.closePath();
+  }
+
+  function drawRegionLabel(c, x, y, text, color) {
+    c.fillStyle = color;
+    c.font = '700 11px -apple-system, sans-serif';
+    c.textAlign = 'left';
+    c.textBaseline = 'middle';
+    c.fillText(text, x, y);
+  }
+
+  /* ============================================================
+     背景
+     ============================================================ */
+  function drawBackground(W, H) {
+    const bg = ctx.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, '#fbfcff');
+    bg.addColorStop(1, '#f4f7fd');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  /* ============================================================
+     横波绘制
+     ============================================================ */
+  function drawTransverse(W, top, regionH, t) {
+    const yBase = top + regionH * 0.55;
+    const A = state.amplitude;
+    const k = 2 * Math.PI / state.wavelength;
+    const omega = 2 * Math.PI * state.frequency;
+
+    const margin = 76;
+    const xStart = margin;
+    const xEnd = W - margin;
+    const span = xEnd - xStart;
+
+    /* 区域标题 */
+    drawRegionLabel(ctx, xStart - 6, top + 22, '横 波', '#4f46e5');
+    ctx.fillStyle = '#a0aac0';
+    ctx.font = '600 11px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('质点上下振动 ↕', xStart + 54, top + 22);
+
+    /* 平衡位置基线 */
+    ctx.strokeStyle = '#e3e9f5';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 6]);
+    ctx.beginPath();
+    ctx.moveTo(xStart - 34, yBase);
+    ctx.lineTo(xEnd + 34, yBase);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    /* 传播方向箭头 */
+    const arrowY = yBase + A + 42;
+    const arrowX1 = xEnd - 130;
+    const arrowX2 = xEnd - 40;
+
+    ctx.strokeStyle = '#c7cfe4';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(arrowX1, arrowY);
+    ctx.lineTo(arrowX2, arrowY);
+    ctx.stroke();
+
+    ctx.fillStyle = '#c7cfe4';
+    ctx.beginPath();
+    ctx.moveTo(arrowX2 + 9, arrowY);
+    ctx.lineTo(arrowX2, arrowY - 5);
+    ctx.lineTo(arrowX2, arrowY + 5);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = '#a0aac0';
+    ctx.font = '600 11px -apple-system, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('波传播方向 →', arrowX1 - 8, arrowY);
+
+    /* 正弦波形曲线 */
+    const N = 600;
+    ctx.beginPath();
+    for (let i = 0; i <= N; i++) {
+      const x = xStart + (i / N) * span;
+      const y = yBase - A * Math.sin(k * x - omega * t);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+
+    const grad = ctx.createLinearGradient(xStart, 0, xEnd, 0);
+    grad.addColorStop(0, 'rgba(79, 70, 229, 0.35)');
+    grad.addColorStop(0.5, 'rgba(79, 70, 229, 0.85)');
+    grad.addColorStop(1, 'rgba(79, 70, 229, 1)');
+
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 3;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    /* 质点 */
+    const dotSpacing = 26;
+    const nDots = Math.floor(span / dotSpacing);
+    const dotOffset = (span - (nDots - 1) * dotSpacing) / 2;
+
+    for (let i = 0; i < nDots; i++) {
+      const x = xStart + dotOffset + i * dotSpacing;
+      const y = yBase - A * Math.sin(k * x - omega * t);
+
+      /* 光晕 */
+      ctx.fillStyle = 'rgba(79, 70, 229, 0.10)';
+      ctx.beginPath();
+      ctx.arc(x, y, 12, 0, Math.PI * 2);
+      ctx.fill();
+
+      /* 质点 */
+      ctx.beginPath();
+      ctx.arc(x, y, 6.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.strokeStyle = '#4f46e5';
+      ctx.lineWidth = 2.4;
+      ctx.stroke();
+    }
+
+    /* 波源标记 */
+    const srcX = xStart + dotOffset;
+    const srcY = yBase - A * Math.sin(k * srcX - omega * t);
+    ctx.fillStyle = '#7c6cf5';
+    ctx.beginPath();
+    ctx.arc(srcX, srcY, 5, 0, Math.PI * 2);
+    ctx.fill();
+
+    /* ---- 高亮质点 ---- */
+    const hlX = xStart + span * 0.5;
+    const hlY = yBase - A * Math.sin(k * hlX - omega * t);
+
+    /* 到基线的虚线 */
+    ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)';
+    ctx.lineWidth = 1.3;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(hlX, hlY);
+    ctx.lineTo(hlX, yBase);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    /* 高亮圆点 */
+    ctx.save();
+    ctx.shadowColor = 'rgba(239, 68, 68, 0.7)';
+    ctx.shadowBlur = 14;
+    ctx.fillStyle = '#ef4444';
+    ctx.beginPath();
+    ctx.arc(hlX, hlY, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    ctx.beginPath();
+    ctx.arc(hlX - 2.5, hlY - 3, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    /* 质点振动方向箭头（在右侧空白处） */
+    const vyArrowX = xStart - 40;
+    const vyArrowY = yBase;
+    const arrowLen = 32;
+
+    ctx.strokeStyle = 'rgba(239, 68, 68, 0.55)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(vyArrowX, vyArrowY - arrowLen);
+    ctx.lineTo(vyArrowX, vyArrowY + arrowLen);
+    ctx.stroke();
+
+    /* 上箭头 */
+    ctx.fillStyle = 'rgba(239, 68, 68, 0.7)';
+    ctx.beginPath();
+    ctx.moveTo(vyArrowX, vyArrowY - arrowLen - 6);
+    ctx.lineTo(vyArrowX - 4, vyArrowY - arrowLen + 2);
+    ctx.lineTo(vyArrowX + 4, vyArrowY - arrowLen + 2);
+    ctx.closePath();
+    ctx.fill();
+
+    /* 下箭头 */
+    ctx.beginPath();
+    ctx.moveTo(vyArrowX, vyArrowY + arrowLen + 6);
+    ctx.lineTo(vyArrowX - 4, vyArrowY + arrowLen - 2);
+    ctx.lineTo(vyArrowX + 4, vyArrowY + arrowLen - 2);
+    ctx.closePath();
+    ctx.fill();
+
+    /* 波长标注 */
+    const waveStart = xStart + span * 0.5;
+    const waveEnd = waveStart + state.wavelength;
+    const waveLabelY = yBase - A - 30;
+
+    if (waveEnd < xEnd) {
+      ctx.strokeStyle = 'rgba(124, 108, 245, 0.6)';
+      ctx.lineWidth = 1.3;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(waveStart, waveLabelY);
+      ctx.lineTo(waveStart, yBase + A + 12);
+      ctx.moveTo(waveEnd, waveLabelY);
+      ctx.lineTo(waveEnd, yBase + A + 12);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.beginPath();
+      ctx.moveTo(waveStart, waveLabelY);
+      ctx.lineTo(waveEnd, waveLabelY);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(waveStart, waveLabelY - 4);
+      ctx.lineTo(waveStart, waveLabelY + 4);
+      ctx.moveTo(waveEnd, waveLabelY - 4);
+      ctx.lineTo(waveEnd, waveLabelY + 4);
+      ctx.stroke();
+
+      ctx.fillStyle = '#7c6cf5';
+      ctx.font = 'italic 13px "Times New Roman", Georgia, serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('λ', (waveStart + waveEnd) / 2, waveLabelY - 4);
+    }
+
+    /* 振幅标注 */
+    const ampX = xStart + 30;
+    const ampTopY = yBase - A;
+
+    ctx.strokeStyle = 'rgba(79, 70, 229, 0.55)';
+    ctx.lineWidth = 1.3;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(ampX, yBase);
+    ctx.lineTo(ampX, ampTopY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.beginPath();
+    ctx.moveTo(ampX - 4, ampTopY);
+    ctx.lineTo(ampX + 4, ampTopY);
+    ctx.stroke();
+
+    ctx.fillStyle = '#4f46e5';
+    ctx.font = 'italic 12px "Times New Roman", Georgia, serif';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('A', ampX - 6, (yBase + ampTopY) / 2);
+  }
+
+  /* ============================================================
+     纵波绘制
+     ============================================================ */
+  function drawLongitudinal(W, top, regionH, t) {
+    const yMid = top + regionH * 0.55;
+    const A = Math.min(state.amplitude * 0.55, state.wavelength * 0.09);
+    const k = 2 * Math.PI / state.wavelength;
+    const omega = 2 * Math.PI * state.frequency;
+
+    const margin = 76;
+    const xStart = margin;
+    const xEnd = W - margin;
+    const span = xEnd - xStart;
+
+    /* 区域标题 */
+    drawRegionLabel(ctx, xStart - 6, top + 22, '纵 波', '#0891b2');
+    ctx.fillStyle = '#a0aac0';
+    ctx.font = '600 11px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('质点左右振动 ↔', xStart + 54, top + 22);
+
+    /* 网格参数 */
+    const colSpacing = 10;
+    const nCols = Math.floor(span / colSpacing);
+    const actualColSpacing = span / nCols;
+
+    const rowSpacing = 12;
+    const nRows = 9;
+    const startY = yMid - (nRows - 1) * rowSpacing / 2;
+
+    /* 计算每一列的位移 */
+    const disps = new Float32Array(nCols);
+    for (let c = 0; c < nCols; c++) {
+      const xEq = xStart + c * actualColSpacing;
+      disps[c] = A * Math.sin(k * xEq - omega * t);
+    }
+
+    /* 绘制密度带（压缩区域更深） */
+    ctx.save();
+    for (let c = 0; c < nCols - 1; c++) {
+      const xEq = xStart + c * actualColSpacing;
+      const d = (disps[c + 1] - disps[c - 1 < 0 ? 0 : c - 1]) /
+                (2 * actualColSpacing);
+      const comp = Math.max(0, -d);
+      if (comp > 0.15) {
+        const alpha = Math.min(0.10, comp * 0.10);
+        ctx.fillStyle = 'rgba(8, 145, 178, ' + alpha + ')';
+        ctx.fillRect(
+          xEq + disps[c] - actualColSpacing / 2,
+          startY - rowSpacing / 2,
+          actualColSpacing * 1.5,
+          (nRows - 1) * rowSpacing + rowSpacing
+        );
+      }
+    }
+    ctx.restore();
+
+    /* 绘制质点 */
+    for (let r = 0; r < nRows; r++) {
+      const y = startY + r * rowSpacing;
+
+      for (let c = 0; c < nCols; c++) {
+        const xEq = xStart + c * actualColSpacing;
+        const x = xEq + disps[c];
+
+        /* 基于压缩程度的颜色 */
+        let d = 0;
+        if (c > 0 && c < nCols - 1) {
+          d = (disps[c + 1] - disps[c - 1]) / (2 * actualColSpacing);
+        }
+        const comp = -d;  // 正值 = 压缩
+
+        const intensity = Math.max(0, Math.min(1, 0.45 + comp * 1.4));
+        const alpha = 0.35 + intensity * 0.62;
+
+        ctx.fillStyle = 'rgba(8, 145, 178, ' + alpha.toFixed(3) + ')';
+        ctx.beginPath();
+        ctx.arc(x, y, 2.9, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    /* ---- 高亮列 ---- */
+    const hlCol = Math.floor(nCols / 2);
+    const hlXEq = xStart + hlCol * actualColSpacing;
+    const hlDisp = disps[hlCol];
+    const hlX = hlXEq + hlDisp;
+    const hlY = startY + Math.floor(nRows / 2) * rowSpacing;
+
+    /* 平衡位置虚线 */
+    ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)';
+    ctx.lineWidth = 1.2;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(hlXEq, startY - 20);
+    ctx.lineTo(hlXEq, startY + (nRows - 1) * rowSpacing + 20);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    /* 位移指示线 */
+    if (Math.abs(hlDisp) > 1) {
+      ctx.strokeStyle = 'rgba(239, 68, 68, 0.75)';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(hlXEq, hlY);
+      ctx.lineTo(hlX, hlY);
+      ctx.stroke();
+
+      /* 箭头 */
+      const dir = hlDisp > 0 ? 1 : -1;
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath();
+      ctx.moveTo(hlX + dir * 4, hlY);
+      ctx.lineTo(hlX - dir * 3, hlY - 4);
+      ctx.lineTo(hlX - dir * 3, hlY + 4);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    /* 高亮质点 */
+    ctx.save();
+    ctx.shadowColor = 'rgba(239, 68, 68, 0.7)';
+    ctx.shadowBlur = 14;
+    ctx.fillStyle = '#ef4444';
+    ctx.beginPath();
+    ctx.arc(hlX, hlY, 5.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    /* 振动方向箭头（左侧） */
+    const hArrowX = xStart - 40;
+    const hArrowY = yMid;
+    const hArrowLen = 38;
+
+    ctx.strokeStyle = 'rgba(239, 68, 68, 0.55)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(hArrowX - hArrowLen, hArrowY);
+    ctx.lineTo(hArrowX + hArrowLen, hArrowY);
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(239, 68, 68, 0.7)';
+    /* 左箭头 */
+    ctx.beginPath();
+    ctx.moveTo(hArrowX - hArrowLen - 6, hArrowY);
+    ctx.lineTo(hArrowX - hArrowLen + 2, hArrowY - 4);
+    ctx.lineTo(hArrowX - hArrowLen + 2, hArrowY + 4);
+    ctx.closePath();
+    ctx.fill();
+    /* 右箭头 */
+    ctx.beginPath();
+    ctx.moveTo(hArrowX + hArrowLen + 6, hArrowY);
+    ctx.lineTo(hArrowX + hArrowLen - 2, hArrowY - 4);
+    ctx.lineTo(hArrowX + hArrowLen - 2, hArrowY + 4);
+    ctx.closePath();
+    ctx.fill();
+
+    /* 传播方向箭头 */
+    const pArrowY = startY + (nRows - 1) * rowSpacing + 46;
+    const pArrowX1 = xEnd - 130;
+    const pArrowX2 = xEnd - 40;
+
+    ctx.strokeStyle = '#c7cfe4';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(pArrowX1, pArrowY);
+    ctx.lineTo(pArrowX2, pArrowY);
+    ctx.stroke();
+
+    ctx.fillStyle = '#c7cfe4';
+    ctx.beginPath();
+    ctx.moveTo(pArrowX2 + 9, pArrowY);
+    ctx.lineTo(pArrowX2, pArrowY - 5);
+    ctx.lineTo(pArrowX2, pArrowY + 5);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = '#a0aac0';
+    ctx.font = '600 11px -apple-system, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('波传播方向 →', pArrowX1 - 8, pArrowY);
+
+    /* 波长标注 */
+    const waveStart = xStart + span * 0.5 - state.wavelength / 2;
+    const waveEnd = waveStart + state.wavelength;
+    const waveLabelY = startY - 34;
+
+    if (waveEnd < xEnd && waveStart > xStart) {
+      ctx.strokeStyle = 'rgba(34, 211, 238, 0.65)';
+      ctx.lineWidth = 1.3;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(waveStart, waveLabelY);
+      ctx.lineTo(waveStart, startY + (nRows - 1) * rowSpacing + 12);
+      ctx.moveTo(waveEnd, waveLabelY);
+      ctx.lineTo(waveEnd, startY + (nRows - 1) * rowSpacing + 12);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.beginPath();
+      ctx.moveTo(waveStart, waveLabelY);
+      ctx.lineTo(waveEnd, waveLabelY);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(waveStart, waveLabelY - 4);
+      ctx.lineTo(waveStart, waveLabelY + 4);
+      ctx.moveTo(waveEnd, waveLabelY - 4);
+      ctx.lineTo(waveEnd, waveLabelY + 4);
+      ctx.stroke();
+
+      ctx.fillStyle = '#0891b2';
+      ctx.font = 'italic 13px "Times New Roman", Georgia, serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('λ', (waveStart + waveEnd) / 2, waveLabelY - 4);
+    }
+  }
+
+  /* ============================================================
+     主绘制
+     ============================================================ */
+  function draw() {
+    const { W, H } = setupCanvas();
+
+    ctx.clearRect(0, 0, W, H);
+    drawBackground(W, H);
+
+    if (state.mode === 'transverse') {
+      drawTransverse(W, 0, H, state.time);
+    } else if (state.mode === 'longitudinal') {
+      drawLongitudinal(W, 0, H, state.time);
+    } else {
+      const half = H / 2;
+
+      /* 分隔线 */
+      ctx.strokeStyle = '#eef1f8';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(20, half);
+      ctx.lineTo(W - 20, half);
+      ctx.stroke();
+
+      drawTransverse(W, 0, half, state.time);
+      drawLongitudinal(W, half, half, state.time);
+    }
+  }
+
+  /* ============================================================
+     主循环
+     ============================================================ */
+  let lastTime = 0;
+
+  function tick(now) {
+    if (!lastTime) lastTime = now;
+    let dt = (now - lastTime) / 1000;
+    lastTime = now;
+    if (dt > 0.1) dt = 0.1;
+
+    if (state.playing) {
+      state.time += dt * state.playback;
+    }
+
+    draw();
+    requestAnimationFrame(tick);
+  }
+
+  /* ============================================================
+     UI 绑定
+     ============================================================ */
+  const playBtn = document.getElementById('play-btn');
+  const resetBtn = document.getElementById('reset-btn');
+
+  function updatePlayButton() {
+    playBtn.textContent = state.playing ? '⏸ 暂停' : '▶ 播放';
+  }
+
+  playBtn.addEventListener('click', () => {
+    state.playing = !state.playing;
+    updatePlayButton();
+  });
+
+  resetBtn.addEventListener('click', () => {
+    state.time = 0;
+    state.playing = true;
+    updatePlayButton();
+  });
+
+  /* 模式切换 */
+  document.querySelectorAll('#mode-seg .seg-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#mode-seg .seg-btn')
+        .forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      state.mode = btn.dataset.val;
+      updateCanvasHeight();
+
+      /* 等布局完成后再重绘 */
+      requestAnimationFrame(() => {
+        requestAnimationFrame(draw);
+      });
+    });
+  });
+
+  /* 滑块绑定 */
+  function bindSlider(id, key, fmt) {
+    const el = document.getElementById(id);
+    const out = document.getElementById(id + '-val');
+    el.addEventListener('input', () => {
+      state[key] = parseFloat(el.value);
+      out.textContent = fmt(state[key]);
+      draw();
+    });
+  }
+
+  bindSlider('amp',   'amplitude',  v => v.toFixed(0) + ' px');
+  bindSlider('wav',   'wavelength', v => v.toFixed(0) + ' px');
+  bindSlider('freq',  'frequency',  v => v.toFixed(2) + ' Hz');
+  bindSlider('speed', 'playback',   v => v.toFixed(2) + '×');
+
+  /* 窗口大小变化 */
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(draw, 100);
+  });
+
+  /* ============================================================
+     启动
+     ============================================================ */
+  updateCanvasHeight();
+  updatePlayButton();
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      draw();
+      requestAnimationFrame(tick);
+    });
+  });
+
+})();
+</script>
+
+</body>
+</html>

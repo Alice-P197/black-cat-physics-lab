@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>李萨如图形 · 二维简谐振动合成</title>
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#f5f7fc;--card:#fff;--ink:#1a2238;--ink2:#4a5568;--muted:#8892a8;
+  --accent:#4f46e5;--accent2:#7c6cf5;--line:#e6eaf3;
+  --green:#10b981;--red:#ef4444;--amber:#f59e0b;--blue:#3b82f6;
+}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",
+    "Microsoft YaHei",sans-serif;
+  background:var(--bg);
+  background-image:radial-gradient(900px 500px at 10% -10%,#e7ebff 0%,transparent 60%),
+                   radial-gradient(700px 500px at 95% 0%,#f1e9ff 0%,transparent 55%);
+  background-attachment:fixed;
+  color:var(--ink);line-height:1.65;padding:28px 16px 56px;min-height:100vh;
+}
+.wrap{max-width:1080px;margin:0 auto;}
+header{text-align:center;margin-bottom:26px;}
+header h1{font-size:clamp(1.5rem,3.4vw,2rem);font-weight:750;color:#2b2e70;
+  margin-bottom:6px;letter-spacing:-.02em;}
+header p{color:var(--muted);font-size:.95rem;}
+.tag{display:inline-block;font-size:.75rem;letter-spacing:.14em;color:var(--accent);
+  background:#eef1ff;border:1px solid #dde3ff;padding:.25rem .85rem;
+  border-radius:999px;font-weight:600;margin-bottom:12px;}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:18px 20px;box-shadow:0 1px 2px rgba(22,33,58,.03),
+   0 10px 28px -20px rgba(22,33,58,.28);margin-bottom:16px;}
+.controls{display:flex;flex-wrap:wrap;gap:16px 24px;align-items:flex-end;}
+.slider-group{display:flex;flex-direction:column;gap:5px;min-width:150px;
+  flex:1;max-width:210px;}
+.slider-group label{font-size:.78rem;color:var(--muted);font-weight:600;
+  display:flex;justify-content:space-between;align-items:baseline;}
+.slider-group label span{color:var(--accent);font-weight:700;
+  font-variant-numeric:tabular-nums;}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;
+  border-radius:3px;background:#e4e8f3;outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+  width:16px;height:16px;border-radius:50%;
+  background:linear-gradient(140deg,var(--accent),var(--accent2));
+  box-shadow:0 2px 6px -1px rgba(79,70,229,.6);cursor:pointer;
+  transition:transform .15s;}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15);}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border:none;
+  border-radius:50%;background:linear-gradient(140deg,var(--accent),var(--accent2));
+  box-shadow:0 2px 6px -1px rgba(79,70,229,.6);cursor:pointer;}
+.btn-group{display:flex;gap:10px;}
+.btn{border:none;padding:10px 22px;font-family:inherit;font-size:.9rem;
+  font-weight:650;border-radius:10px;cursor:pointer;transition:all .18s ease;
+  white-space:nowrap;}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;box-shadow:0 6px 16px -6px rgba(79,70,229,.8);}
+.btn-primary:hover{transform:translateY(-1px);
+  box-shadow:0 10px 22px -8px rgba(79,70,229,.9);}
+.btn-ghost{background:#f1f3fa;color:var(--ink2);}
+.btn-ghost:hover{background:#e8ebf5;color:var(--accent);}
+.scene-panel{padding:14px;background:linear-gradient(180deg,#fbfcff,#f6f8ff);}
+#cv{display:block;width:100%;height:auto;border-radius:12px;
+  background:linear-gradient(180deg,#fafbff,#f3f6fd);}
+.legend-info{display:flex;gap:20px;flex-wrap:wrap;margin-top:12px;
+  padding-top:12px;border-top:1px solid var(--line);font-size:.82rem;
+  color:var(--ink2);}
+.legend-info b{color:var(--accent);}
+.formula-row{background:linear-gradient(180deg,#fbfcff,#f5f7ff);
+  border:1px solid #e8ecfb;border-radius:12px;padding:14px 18px;margin:12px 0;
+  text-align:center;overflow-x:auto;}
+.formula-row.hl{border-left:4px solid var(--accent);
+  background:linear-gradient(180deg,#f8f9ff,#eef1ff);}
+h3.sec{font-size:1rem;font-weight:700;margin-bottom:12px;display:flex;
+  align-items:center;gap:8px;color:var(--ink);}
+h3.sec::before{content:"";width:4px;height:17px;border-radius:2px;
+  background:linear-gradient(180deg,var(--accent),var(--accent2));}
+footer{text-align:center;color:var(--muted);font-size:.82rem;margin-top:26px;}
+footer .dot{display:inline-block;width:4px;height:4px;border-radius:50%;
+  background:#cbd5e1;margin:0 .55rem;vertical-align:middle;}
+mjx-container{overflow-x:auto;overflow-y:hidden;max-width:100%;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="tag">振动合成 · Lissajous</div>
+    <h1>李萨如图形</h1>
+    <p>两个相互垂直简谐振动合成 · x=A·sin(a·ωt)　y=B·sin(b·ωt+φ)</p>
+  </header>
+
+  <div class="panel controls">
+    <div class="slider-group">
+      <label>频率比 a <span id="va">1</span></label>
+      <input type="range" id="ra" min="1" max="5" step="1" value="1">
+    </div>
+    <div class="slider-group">
+      <label>: b <span id="vb">2</span></label>
+      <input type="range" id="rb" min="1" max="5" step="1" value="2">
+    </div>
+    <div class="slider-group">
+      <label>相位差 φ <span id="vp">0.00π</span></label>
+      <input type="range" id="rp" min="0" max="628" step="1" value="0">
+    </div>
+    <div class="slider-group">
+      <label>振幅比 B/A <span id="vamp">0.70</span></label>
+      <input type="range" id="ramp" min="30" max="100" step="1" value="70">
+    </div>
+  </div>
+
+  <div class="panel scene-panel">
+    <canvas id="cv" width="1000" height="520"></canvas>
+    <div class="legend-info">
+      <span>X 参考轨迹 <b style="color:#dc2626">sin(a·ωt)</b></span>
+      <span>Y 参考轨迹 <b style="color:#059669">B·sin(b·ωt+φ)</b></span>
+      <span>李萨如曲线 <b style="color:#4f46e5">(X,Y) 平面</b></span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3 class="sec">基本公式</h3>
+    <div class="formula-row hl">
+      $$x(t)=A\sin(a\,\omega t),\qquad y(t)=B\sin(b\,\omega t+\varphi)$$
+    </div>
+    <div class="formula-row">
+      $$\frac{\omega_x}{\omega_y}=\frac{a}{b}\in\mathbb{Q}
+        \quad\Rightarrow\quad\text{轨道闭合，形成李萨如图形}$$
+    </div>
+    <div class="formula-row">
+      $$\varphi=\varphi_y-\varphi_x:
+        \; \varphi=0\ \text{直线},\;
+        \varphi=\tfrac{\pi}{2}\ \text{椭圆},\;
+        0<\varphi<\tfrac{\pi}{2}\ \text{斜椭圆}$$
+    </div>
+  </div>
+
+  <footer>李萨如图形仿真<span class="dot"></span>二维简谐振动合成
+    <span class="dot"></span>Mechanics Lab</footer>
+</div>
+<script>
+(function(){
+  "use strict";
+  var cv=document.getElementById("cv");
+  var ctx=cv.getContext("2d");
+  var W=cv.width, H=cv.height;
+
+  /* 布局 */
+  var cx=W/2, cy=262, R=172;      /* 主线区域中心与半径 */
+  var railTop=cy-R-46;            /* 顶部 X 参考导轨 */
+  var railLeft=cx-R-46;           /* 左侧 Y 参考导轨 */
+
+  /* 参数 */
+  var A=1, a=1, b=2, phi=0, B=0.7;
+  var u=0, playing=true;
+
+  /* 数值 */
+  var va=document.getElementById("va"),
+      vb=document.getElementById("vb"),
+      vp=document.getElementById("vp"),
+      vamp=document.getElementById("vamp");
+
+  function fmtPhase(v){
+    var pi=v/314.0;
+    return (Math.round(pi*100)/100).toFixed(2)+"π";
+  }
+
+  function bind(id,valId,cb){
+    var el=document.getElementById(id);
+    var out=document.getElementById(valId);
+    el.addEventListener("input",function(){
+      cb(parseFloat(el.value));
+      if(valId==="vp")out.textContent=fmtPhase(parseFloat(el.value));
+      else if(valId==="vamp")out.textContent=
+        (parseFloat(el.value)/100).toFixed(2);
+      else out.textContent=el.value;
+    });
+  }
+  bind("ra","va",function(v){a=v;});
+  bind("rb","vb",function(v){b=v;});
+  bind("rp","vp",function(v){phi=v/314.0;});
+  bind("ramp","vamp",function(v){B=v/100;});
+
+  /* 分量位置（归一化幅值） */
+  function xv(u){return Math.sin(a*u);}       /* 幅值 A=1 */
+  function yv(u){return B*Math.sin(b*u+phi);}
+
+  /* 绘制主线闭合曲线 */
+  function drawCurve(){
+    var N=(a+b)*60;
+    ctx.save();
+    ctx.strokeStyle="#4f46e5";
+    ctx.lineWidth=2.6;
+    ctx.lineJoin="round";
+    ctx.shadowColor="rgba(79,70,229,.4)";
+    ctx.shadowBlur=10;
+    ctx.beginPath();
+    var uStep=2*Math.PI/N;
+    for(var i=0;i<=N;i++){
+      var t=i*uStep;
+      var px=cx+xv(t)*R;
+      var py=cy-yv(t)*R;
+      if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /* 主区域网格与坐标轴 */
+  function drawGrid(){
+    ctx.strokeStyle="#e9edf6";
+    ctx.lineWidth=1;
+    for(var i=0;i<=4;i++){
+      var gx=cx-R+(2*R*i/4);
+      ctx.beginPath();ctx.moveTo(gx,cy-R);ctx.lineTo(gx,cy+R);
+      ctx.stroke();
+      var gy=cy-R+(2*R*i/4);
+      ctx.beginPath();ctx.moveTo(cx-R,gy);ctx.lineTo(cx+R,gy);
+      ctx.stroke();
+    }
+    ctx.strokeStyle="#cbd5e1";
+    ctx.beginPath();
+    ctx.moveTo(cx-R-14,cy);ctx.lineTo(cx+R+14,cy);
+    ctx.moveTo(cx,cy-R-14);ctx.lineTo(cx,cy+R+14);
+    ctx.stroke();
+  }
+
+  /* 参考导轨(带主线长度刻度) */
+  function drawRails(){
+    /* 顶部 X 导轨 */
+    ctx.strokeStyle="#e3e7f3";
+    ctx.lineWidth=1.2;
+    ctx.beginPath();ctx.moveTo(cx-R,railTop);ctx.lineTo(cx+R,railTop);
+    ctx.stroke();
+    for(var i=0;i<=8;i++){
+      var tx=cx-R+(2*R*i/8);
+      ctx.beginPath();ctx.moveTo(tx,railTop-4);ctx.lineTo(tx,railTop+4);
+      ctx.stroke();
+    }
+    /* 左侧 Y 导轨 */
+    ctx.beginPath();ctx.moveTo(railLeft,cy-R);ctx.lineTo(railLeft,cy+R);
+    ctx.stroke();
+    for(var j=0;j<=8;j++){
+      var ty=cy-R+(2*R*j/8);
+      ctx.beginPath();ctx.moveTo(railLeft-4,ty);ctx.lineTo(railLeft+4,ty);
+      ctx.stroke();
+    }
+    ctx.fillStyle="#8892a8";
+    ctx.font="12px -apple-system,sans-serif";
+    ctx.textAlign="right";
+    ctx.fillText("X 参考",cx+R-8,railTop-12);
+    ctx.textAlign="center";
+    ctx.fillText("Y 参考",railLeft-58,cy);
+  }
+
+  /* 参考点与投影引导线 */
+  function drawGuides(){
+    var ux=xv(u)*R, uy=yv(u)*R;
+    var fx=cx+ux, fy=cy-uy;      /* 曲线上当前位置 */
+    /* 顶部 X 投影 */
+    ctx.strokeStyle="#dc2626";
+    ctx.setLineDash([4,4]);
+    ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(fx,railTop);ctx.lineTo(fx,fy);ctx.stroke();
+    ctx.setLineDash([]);
+    drawDot(fx,railTop,"#dc2626",5);
+    /* 左侧 Y 投影 */
+    ctx.strokeStyle="#059669";
+    ctx.setLineDash([4,4]);
+    ctx.beginPath();ctx.moveTo(railLeft,fy);ctx.lineTo(fx,fy);ctx.stroke();
+    ctx.setLineDash([]);
+    drawDot(railLeft,fy,"#059669",5);
+    /* 当前点 */
+    drawDot(fx,fy,"#f59e0b",7);
+    ctx.fillStyle="#1a2238";
+    ctx.font="12px 'Times New Roman',Georgia,serif";
+    ctx.textAlign="left";
+    ctx.fillText("P(x,y)",fx+10,fy-10);
+  }
+
+  function drawDot(x,y,col,r){
+    ctx.fillStyle=col;
+    ctx.shadowColor=col;ctx.shadowBlur=8;
+    ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
+    ctx.shadowBlur=0;
+  }
+
+  function drawAll(){
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle="#f6f9fd";
+    ctx.fillRect(cx-R-8,cy-R-8,2*R+16,2*R+16);
+    drawGrid();
+    drawRails();
+    drawCurve();
+    drawGuides();
+    /* 标题 */
+    ctx.fillStyle="#4a5568";
+    ctx.font="15px -apple-system,sans-serif";
+    ctx.textAlign="center";
+    ctx.fillText("李萨如图形 · X–Y 平面",cx,26);
+    /* 实时参数 */
+    ctx.fillStyle="#8892a8";
+    ctx.font="13px -apple-system,sans-serif";
+    ctx.fillText("a : b = "+a+" : "+b+
+      "    φ = "+(Math.round(phi*100)/100).toFixed(2)+
+      " rad    B/A = "+B.toFixed(2),cx,H-16);
+  }
+
+  /* 主循环 */
+  var last=performance.now();
+  function frame(now){
+    var dt=Math.min(0.05,(now-last)/1000);
+    last=now;
+    if(playing){u=(u+dt*0.5);if(u>2*Math.PI)u-=2*Math.PI;}
+    drawAll();
+    requestAnimationFrame(frame);
+  }
+
+  /* 控制 */
+  var rb=document.getElementById("btnReset");
+  if(rb){rb.addEventListener("click",function(){u=0;});}
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

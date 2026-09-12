@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+<title>小黑喵智慧物理实验室</title>
+<link rel="preconnect"
+      href="https://fonts.googleapis.com">
+<link rel="preconnect"
+      href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap"
+      rel="stylesheet">
+<style>
+:root{
+  --bg:#050a18;
+  --panel:rgba(13,28,60,.62);
+  --panel2:rgba(16,36,80,.78);
+  --line:rgba(86,170,255,.22);
+  --ink:#e8f2ff;
+  --mut:#8fb3df;
+  --cy:#37c8ff;
+  --cy2:#2b8cff;
+  --glow:0 0 26px rgba(55,200,255,.35);
+  --rad:18px;
+  --sh:0 18px 48px rgba(0,10,35,.55);
+  font-size:16px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Rajdhani','Times New Roman',system-ui,sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+/* ---- ambient background ---- */
+.stage{position:fixed;inset:0;z-index:0;overflow:hidden}
+.glow1,.glow2,.glow3{position:absolute;border-radius:50%;filter:blur(90px);opacity:.55}
+.glow1{width:46vw;height:46vw;left:-12vw;top:-14vw;
+  background:radial-gradient(circle,#0b3f9e,transparent 68%)}
+.glow2{width:40vw;height:40vw;right:-10vw;top:24vh;
+  background:radial-gradient(circle,#0a5fb0,transparent 66%)}
+.glow3{width:34vw;height:34vw;left:26vw;bottom:-18vw;
+  background:radial-gradient(circle,#09326e,transparent 70%)}
+#stars{position:absolute;inset:0;width:100%;height:100%}
+.gridline{position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(60,140,255,.06) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(60,140,255,.06) 1px,transparent 1px);
+  background-size:48px 48px;
+  mask-image:radial-gradient(circle at 50% 22%,#000 30%,transparent 78%);
+}
+/* ---- shell ---- */
+.shell{position:relative;z-index:1;width:min(1240px,92vw);
+  margin:0 auto;padding:0 0 90px}
+/* ---- hero ---- */
+.hero{padding:84px 0 40px;text-align:center;position:relative}
+.orbit{position:absolute;top:60px;left:50%;width:560px;height:300px;
+  transform:translateX(-50%);
+  border-radius:50%;pointer-events:none;opacity:.5}
+.orbit i{position:absolute;inset:0;border-radius:50%;
+  border:1px dashed rgba(80,180,255,.35);
+  transform:rotate(var(--r,0deg))}
+.orbit i em{position:absolute;top:-6px;left:50%;width:12px;height:12px;
+  margin-left:-6px;border-radius:50%;background:var(--cy);
+  box-shadow:var(--glow)}
+.eyebrow{display:inline-flex;align-items:center;gap:10px;
+  font-family:'Orbitron','Times New Roman',sans-serif;
+  font-size:13px;letter-spacing:4px;color:var(--cy);
+  border:1px solid var(--line);background:var(--panel);
+  padding:8px 18px;border-radius:40px;backdrop-filter:blur(8px)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--cy);
+  box-shadow:var(--glow);animation:pulse 1.6s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}
+  50%{opacity:.4;transform:scale(.7)}}
+h1.title{
+  font-family:'Orbitron','Times New Roman',sans-serif;
+  font-size:clamp(34px,6vw,62px);font-weight:900;
+  line-height:1.1;margin:22px auto 8px;letter-spacing:2px;
+  background:linear-gradient(92deg,#7dffff 0%,var(--cy) 30%,#4a9dff 62%,#8fd4ff 100%);
+  -webkit-background-clip:text;background-clip:text;
+  color:transparent;
+  filter:drop-shadow(0 6px 30px rgba(64,180,255,.35))
+}
+.sub{max-width:640px;margin:0 auto;color:var(--mut);
+  font-size:17px;line-height:1.7}
+.statbar{display:flex;gap:14px;justify-content:center;
+  flex-wrap:wrap;margin-top:28px}
+.stat{background:var(--panel);border:1px solid var(--line);
+  border-radius:14px;padding:12px 22px;display:flex;
+  flex-direction:column;align-items:center;min-width:112px;
+  backdrop-filter:blur(8px)}
+.stat b{font-family:'Orbitron','Times New Roman',sans-serif;
+  font-size:26px;color:#fff;font-weight:700}
+.stat span{color:var(--mut);font-size:12px;letter-spacing:1px}
+/* ---- controls ---- */
+.controls{position:sticky;top:12px;z-index:20;margin:26px 0 8px;
+  background:rgba(7,16,38,.72);border:1px solid var(--line);
+  border-radius:20px;backdrop-filter:blur(14px) saturate(150%);
+  padding:14px;box-shadow:var(--sh);
+  display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;flex:1}
+.search{position:relative;flex:1;min-width:210px}
+.search input{width:100%;background:rgba(10,24,56,.7);
+  border:1px solid var(--line);border-radius:12px;
+  color:var(--ink);padding:12px 15px 12px 42px;font-size:15px;
+  outline:none;transition:border-color .25s,box-shadow .25s}
+.search input:focus{border-color:var(--cy);box-shadow:var(--glow)}
+.search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);
+  width:18px;height:18px;stroke:var(--mut)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{display:flex;align-items:center;gap:6px;cursor:pointer;
+  background:rgba(10,24,56,.6);border:1px solid var(--line);
+  color:var(--mut);padding:9px 15px;border-radius:12px;
+  font-size:14px;transition:.25s;user-select:none}
+.chip b{font-family:'Orbitron','Times New Roman',sans-serif;color:var(--cy);
+  font-size:11px}
+.chip:hover{border-color:var(--cy);color:var(--ink)}
+.chip.on{background:linear-gradient(120deg,var(--cy2),var(--cy));
+  color:#04121f;border-color:transparent;font-weight:600}
+.chip.on b{color:#04121f}
+.tools{display:flex;gap:8px}
+.vbtn{width:42px;height:42px;border-radius:12px;cursor:pointer;
+  background:rgba(10,24,56,.6);border:1px solid var(--line);
+  display:grid;place-items:center;color:var(--mut);transition:.25s}
+.vbtn.on{background:var(--panel2);border-color:var(--cy);color:var(--cy)}
+.vbtn svg{width:20px;height:20px;stroke:currentColor}
+/* ---- category ---- */
+.cats{position:relative;z-index:1}
+.cat{position:relative;margin-top:46px}
+.cat-head{display:flex;align-items:baseline;gap:16px;margin-bottom:20px}
+.cat-tag{font-family:'Orbitron','Times New Roman',sans-serif;
+  font-size:22px;font-weight:700;color:#fff;letter-spacing:1px;
+  display:flex;align-items:center;gap:10px}
+.cat-tag::before{content:"";width:6px;height:26px;border-radius:4px;
+  background:linear-gradient(var(--acc),transparent)}
+.cat-count{color:var(--mut);font-size:13px;letter-spacing:1px}
+.cat-line{flex:1;height:1px;
+  background:linear-gradient(90deg,var(--acc),transparent)}
+/* ---- grid cards ---- */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(252px,1fr));
+  gap:18px}
+.card{position:relative;perspective:900px}
+.card a{position:relative;display:block;height:100%
+   ;text-decoration:none;color:inherit;
+  border-radius:var(--rad);overflow:hidden;
+  background:linear-gradient(160deg,var(--panel2),rgba(8,18,44,.9));
+  border:1px solid var(--line);
+  padding:20px;transition:transform .3s,border-color .3s,box-shadow .3s;
+  box-shadow:0 10px 30px rgba(0,10,35,.35)}
+.card a:hover{transform:translateY(-6px) rotateX(2deg);
+  border-color:var(--cy);box-shadow:var(--sh),0 0 40px rgba(55,200,255,.28)}
+.card .ico{font-size:30px;line-height:1;filter:drop-shadow(0 6px 18px var(--acc))}
+.card h3{font-family:'Rajdhani','Times New Roman',sans-serif;
+  font-size:20px;margin:14px 0 6px;color:#fff;font-weight:700}
+.card p{color:var(--mut);font-size:13.5px;line-height:1.55;min-height:40px}
+.card .go{margin-top:14px;display:inline-flex;align-items:center;gap:6px;
+  color:var(--cy);font-family:'Orbitron','Times New Roman',sans-serif;
+  font-size:12px;letter-spacing:1px}
+.card .go span{transition:transform .3s}
+.card a:hover .go span{transform:translateX(4px)}
+.card .num{position:absolute;right:14px;top:10px;font-family:'Orbitron';
+  font-size:11px;color:var(--mut);opacity:.6}
+/* ---- list rows ---- */
+.list{display:none;flex-direction:column;gap:12px}
+.row{display:flex;align-items:center;gap:16px;cursor:pointer;
+  background:linear-gradient(90deg,var(--panel2),rgba(10,22,50,.7));
+  border:1px solid var(--line);border-radius:14px;
+  padding:14px 18px;text-decoration:none;color:inherit;
+  transition:.28s;position:relative;overflow:hidden}
+.row::before{content:"";position:absolute;left:0;top:0;height:100%;width:4px;
+  background:var(--acc);opacity:0;transition:.28s}
+.row:hover{transform:translateX(6px);border-color:var(--cy);
+  background-color:rgba(20,44,96,.6)}
+.row:hover::before{opacity:1}
+.row .ico{font-size:24px;flex:0 0 auto}
+.row .tx{flex:1;min-width:0}
+.row h4{font-size:18px;color:#fff;font-weight:600}
+.row p{color:var(--mut);font-size:13px;margin-top:2px}
+.row .arrow{flex:0 0 auto;color:var(--cy);transition:.3s}
+.row:hover .arrow{transform:translateX(5px)}
+/* ---- empty ---- */
+.empty{display:none;text-align:center;color:var(--mut);
+  padding:60px 0;font-size:16px}
+/* ---- footer ---- */
+.foot{text-align:center;color:var(--mut);font-size:13px;
+  margin-top:60px;border-top:1px solid var(--line);padding-top:24px;
+  letter-spacing:1px}
+/* ---- reveal ---- */
+.reveal{opacity:0;transform:translateY(28px);
+  transition:opacity .7s ease,transform .7s ease}
+.reveal.in{opacity:1;transform:none}
+/* ---- responsive ---- */
+@media(max-width:640px){
+  .hero{padding:56px 0 26px}
+  .controls{position:static}
+  .card p{min-height:auto}
+}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="glow1"></div>
+  <div class="glow2"></div>
+  <div class="glow3"></div>
+  <canvas id="stars"></canvas>
+  <div class="gridline"></div>
+</div>
+
+<div class="shell">
+  <header class="hero">
+    <div class="orbit"><i style="--r:0deg"><em></em></i>
+      <i style="--r:60deg"><em></em></i>
+      <i style="--r:120deg"><em></em></i></div>
+    <div class="eyebrow"><span class="dot"></span>
+      小黑喵 · SMART PHYSICS LAB</div>
+    <h1 class="title">小黑喵智慧物理实验室</h1>
+    <p class="sub">一个专为物理学习打造的交互动画实验室，涵盖质点运动、刚体转动、
+      振动波动与光学等经典仿真，拖动、观察、验证，让抽象的物理定律变得触手可及。</p>
+    <div class="statbar">
+      <div class="stat"><b id="stModels">0</b><span>交互模型</span></div>
+      <div class="stat"><b id="stCats">0</b><span>学科分类</span></div>
+      <div class="stat"><b>100%</b><span>物理还原度</span></div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="bar">
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"
+             stroke-linecap="round"><circle cx="11" cy="11" r="7"/>
+          <path d="M21 21l-4.3-4.3"/></svg>
+        <input id="q" type="text" placeholder="搜索模型，如：振动 / 圆周 / 衍射…">
+      </div>
+      <div class="chips" id="chips"></div>
+    </div>
+    <div class="tools">
+      <button class="vbtn on" id="gridBtn" title="卡片视图">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"
+             stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/>
+          <rect x="14" y="3" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/></svg>
+      </button>
+      <button class="vbtn" id="listBtn" title="列表视图">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"
+             stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13"/>
+          <path d="M3 6h.01M3 12h.01M3 18h.01"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <main class="cats" id="cats"></main>
+  <div class="empty" id="empty">未找到匹配的模型，换个关键词试试吧～</div>
+
+  <footer class="foot">
+    小黑喵智慧物理实验室 · Powered by 交互动画仿真
+  </footer>
+</div>
+
+<script>
+/* ---------- data ---------- */
+const U='./.uploads/';
+const CATS=[
+ {id:'kin',name:'质点运动学',acc:'#37c8ff',
+  d:'直线与曲线运动的轨迹、速度与加速度仿真'},
+ {id:'rigid',name:'刚体动力学',acc:'#2b8cff',
+  d:'滚动、自转与进动的转动规律'},
+ {id:'wave',name:'振动与波动',acc:'#6f7dff',
+  d:'简谐振动、阻尼、共振与波的传播'},
+ {id:'optics',name:'光学仿真',acc:'#4ad0e0',
+  d:'光的衍射、干涉与等厚干涉现象'},
+ {id:'thermo',name:'热学与气体',acc:'#00b4d8',
+  d:'热力学循环与气体动理论统计规律'},
+ {id:'em',name:'电磁与近代物理',acc:'#3dd6b9',
+  d:'带电粒子在磁场中的运动与相对论效应'}
+];
+const MODELS=[
+ {t:'抛体运动仿真',c:'kin',k:'平抛·斜抛·竖直上抛',i:'🚀',
+  f:'8dfffea0-553d-4a8e-9bf1-5afeab61bcf0_抛体运动仿真.html',
+  d:'模拟抛体在重力下的运动轨迹与速度矢量，可切换三种抛射方式。'},
+ {t:'圆周运动仿真',c:'kin',k:'匀速·非匀速',i:'🎡',
+  f:'8821a56e-4c3d-48c6-92fe-433186f09a99_圆周运动.html',
+  d:'展示圆周运动的角速度、向心力变化，匀速与非匀速自由切换。'},
+ {t:'打点计时器测加速度',c:'kin',k:'纸带·加速度',i:'🕐',
+  f:'06e4432c-67a5-4c49-aaa3-cf19be59434f_打点计时器测加速度.html',
+  d:'模拟打点计时器打点纸带，通过逐差法测量并分析加速度。'},
+ {t:'刚体纯滚动',c:'rigid',k:'转动·滑动',i:'🛞',
+  f:'7e8d7606-94fc-4798-85c6-60b681e85fbd_刚体纯滚动.html',
+  d:'演示刚体沿平面纯滚动的转轴、速度分布与动能关系。'},
+ {t:'陀螺仪 · 自转与进动',c:'rigid',k:'角动量守恒',i:'🌀',
+  f:'620c1757-8bcc-4a84-99e9-79c7a2503339_陀螺仪 自转与进动.html',
+  d:'观察陀螺自转稳定性与进动现象，理解角动量守恒定律。'},
+ {t:'链条从桌上滑落',c:'rigid',k:'可变质量·动力学',i:'⛓️',
+  f:'9ffe606f-2df4-4ff0-b4c9-cc847567b6a9_链条模型.html',
+  d:'模拟链条从桌面滑落的完整动力学过程，包含位移与速度变化。'},
+ {t:'弹簧振子',c:'wave',k:'简谐振动',i:'🪃',
+  f:'f319174f-050a-40ed-ad9d-929e539db6bf_弹簧振子.html',
+  d:'简谐振动的位移、速度与加速度随时间正弦变化可视化。'},
+ {t:'阻尼振动',c:'wave',k:'能量耗散',i:'📉',
+  f:'1bbb7747-f423-45d8-a21f-06a7b26f54a8_阻尼振动.html',
+  d:'演示阻尼对振幅的影响，振幅随时间指数衰减的过程。'},
+ {t:'受迫振动与共振',c:'wave',k:'频率·振幅',i:'🎵',
+  f:'334cad75-c317-4754-807f-3e4cd25b9034_受迫振动与共振.html',
+  d:'研究驱动力频率与固有频率对振幅的影响，共振现象一目了然。'},
+ {t:'横波与纵波的传播',c:'wave',k:'模式·传播',i:'🌊',
+  f:'6ca90788-da4c-43fa-b8e9-cfb111f16287_横波与纵波的传播.html',
+  d:'对比横波与纵波的质点振动方向与波的传播方向关系。'},
+ {t:'单色与彩色衍射仿真',c:'optics',k:'单缝·多缝·光谱',i:'🌈',
+  f:'e828a2e8-6d8f-417b-9c61-f11371b5ce6c_单色与彩色衍射仿真.html',
+  d:'仿真单缝、多缝与彩色光的衍射条纹与强度分布图样。'},
+ {t:'牛顿环',c:'optics',k:'等厚干涉·光强',i:'💿',
+  f:'牛顿环.html',
+  d:'平凸透镜与平板间的等厚干涉，展示环形条纹与光强分布。'},
+ {t:'李萨如图形',c:'wave',k:'振动合成·相差',i:'✖️',
+  f:'李萨如图形.html',
+  d:'两个互相垂直简谐振动的合成，改变频率比与相差呈现丰富李萨如曲线。'},
+ {t:'驻波的形成',c:'wave',k:'叠加·波节波腹',i:'〰️',
+  f:'驻波的形成.html',
+  d:'两列反向传播波的叠加成驻波，标出波节与波腹位置。'},
+ {t:'多普勒效应',c:'wave',k:'波前·接收频率',i:'📣',
+  f:'多普勒效应.html',
+  d:'模拟移动声源的波前压缩与拉伸，实时计算接收频率。'},
+ {t:'麦克斯韦速率分布',c:'thermo',k:'分布律·特征速率',i:'🌡️',
+  f:'麦克斯韦速率分布.html',
+  d:'气体分子速率分布曲线随温度变化，标注三种特征速率。'},
+ {t:'带电粒子螺旋运动',c:'em',k:'洛伦兹力·回旋',i:'🧲',
+  f:'带电粒子螺旋运动.html',
+  d:'带电粒子在匀强磁场中的螺旋运动，可拖动视角观察半径与螺距。'}
+];
+
+/* ---------- state ---------- */
+let cur='all';
+let mode='grid';
+const renderNum=
+ (n)=>String(n).padStart(2,'0');
+
+/* ---------- chips ---------- */
+const chipsEl=document.getElementById('chips');
+function buildChips(){
+ let all={id:'all',name:'全部模型',acc:'#37c8ff'};
+ [all,...CATS].forEach((c,i)=>{
+  if(i===0&&cur!=='all')c.on=false;
+ });
+ let html=`<button class="chip on" data-c="all">
+  全部 <b>${renderNum(MODELS.length)}</b></button>`;
+ CATS.forEach(c=>{
+  let n=MODELS.filter(m=>m.c===c.id).length;
+  html+=`<button class="chip" data-c="${c.id}">
+   ${c.name} <b>${renderNum(n)}</b></button>`;
+ });
+ chipsEl.innerHTML=html;
+ chipsEl.querySelectorAll('.chip').forEach(b=>{
+  b.addEventListener('click',()=>{
+   cur=b.dataset.c;
+   chipsEl.querySelectorAll('.chip').forEach(x=>
+     x.classList.toggle('on',x===b));
+   render();
+   scrollToCats();
+  });
+ });
+}
+function scrollToCats(){
+ document.getElementById('cats').scrollIntoView(
+  {behavior:'smooth',block:'start'});
+}
+
+/* ---------- render ---------- */
+const catsEl=document.getElementById('cats');
+function modelOf(m){
+ const n=MODELS.indexOf(m)+1;
+ const num=renderNum(n);
+ if(mode==='grid'){
+  return `<div class="card reveal"><a href="${U+m.f}">
+   <span class="num">#${num}</span><div class="ico">${m.i}</div>
+   <h3>${m.t}</h3><p>${m.d}</p>
+   <span class="go">进入仿真 <span>→</span></span></a></div>`;
+ }
+ return `<a class="row" href="${U+m.f}">
+   <span class="ico">${m.i}</span>
+   <div class="tx"><h4>${m.t}</h4><p>${m.k}</p></div>
+   <span class="arrow">→</span></a>`;
+}
+function buildCat(c,ms){
+ const wrapper=mode==='grid'?'grid':'list';
+ const wc=mode==='grid'?'grid':'list-wrap';
+ let inner=ms.map(modelOf).join('');
+ return `<section class="cat reveal" id="cat-${c.id}"
+   style="--acc:${c.acc}">
+   <div class="cat-head">
+     <h2 class="cat-tag">${c.name}</h2>
+     <span class="cat-count">${renderNum(ms.length)} 个模型 ·
+      ${c.d}</span>
+     <div class="cat-line"></div></div>
+   <div class="${wc}">${inner}</div></section>`;
+}
+function render(){
+ const q=(document.getElementById('q').value
+   ||'').trim().toLowerCase();
+ const visible=CATS.filter(c=>{
+  if(cur!=='all'&&c.id!==cur)return false;
+  return MODELS.some(m=>m.c===c.id&&
+    (m.t+m.k+m.d).toLowerCase().includes(q));
+ }).map(c=>{
+  let ms=MODELS.filter(m=>m.c===c.id).filter(m=>
+    (m.t+m.k+m.d).toLowerCase().includes(q));
+  return buildCat(c,ms);
+ }).join('');
+ catsEl.innerHTML=visible;
+ document.getElementById('empty').style.display=
+   visible?'none':'block';
+ requestAnimationFrame(observe);
+}
+/* ---------- view switch ---------- */
+const gridBtn=document.getElementById('gridBtn');
+const listBtn=document.getElementById('listBtn');
+function setMode(m){
+ mode=m;
+ gridBtn.classList.toggle('on',m==='grid');
+ listBtn.classList.toggle('on',m==='list');
+ document.querySelectorAll('.grid').forEach(g=>{
+  g.style.display=m==='grid'?'grid':'none';
+  g.classList.toggle('grid',m==='grid');
+  g.classList.toggle('list',m==='list');
+ });
+ render();
+}
+gridBtn.addEventListener('click',()=>setMode('grid'));
+listBtn.addEventListener('click',()=>setMode('list'));
+document.getElementById('q').addEventListener('input',()=>{
+ requestAnimationFrame(render);
+});
+
+/* ---------- reveal ---------- */
+function observe(){
+ const io=new IntersectionObserver(es=>{
+  es.forEach(e=>{
+   if(e.isIntersecting){
+    e.target.classList.add('in');
+    io.unobserve(e.target);
+   }
+  });
+ },{threshold:.08});
+ document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+}
+
+/* ---------- starfield ---------- */
+function stars(){
+ const cn=document.getElementById('stars');
+ const cx=cn.getContext('2d');
+ function fit(){
+  cn.width=cn.offsetWidth;cn.height=cn.offsetHeight;
+ }
+ fit();window.addEventListener('resize',fit);
+ const N=Math.min(130,Math.floor(cn.width/9));
+ let pts=[];
+ function init(){
+  pts=Array.from({length:N},()=>({
+   x:Math.random()*cn.width,y:Math.random()*cn.height,
+   r:Math.random()*1.4+.3,s:Math.random()*.5+.2,
+   o:Math.random()*Math.PI*2
+  }));
+ }
+ init();
+ function draw(){
+  cx.clearRect(0,0,cn.width,cn.height);
+  pts.forEach(p=>{
+   p.o+=p.s*.02;
+   let a=.2+Math.abs(Math.sin(p.o))*.6;
+   cx.beginPath();
+   cx.fillStyle=`rgba(120,200,255,${a})`;
+   cx.arc(p.x,p.y,p.r,0,Math.PI*2);
+   cx.fill();
+  });
+  requestAnimationFrame(draw);
+ }
+ draw();
+}
+
+/* ---------- boot ---------- */
+buildChips();
+document.getElementById('stModels').textContent=MODELS.length;
+document.getElementById('stCats').textContent=CATS.length;
+render();
+stars();
+</script>
+</body>
+</html>

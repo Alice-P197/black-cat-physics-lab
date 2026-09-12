@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>抛体运动仿真 · 平抛 / 斜抛 / 竖直上抛</title>
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$','$']],
+    displayMath: [['$$','$$']]
+  },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+
+:root{
+  --bg:#f5f7fc;
+  --card:#ffffff;
+  --ink:#1a2238;
+  --ink2:#4a5568;
+  --muted:#8892a8;
+  --accent:#4f46e5;
+  --accent2:#7c6cf5;
+  --line:#e6eaf3;
+  --green:#10b981;
+  --red:#ef4444;
+  --amber:#f59e0b;
+}
+
+html,body{height:100%;}
+
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--bg);
+  background-image:
+    radial-gradient(900px 500px at 10% -10%,#e7ebff 0%,transparent 60%),
+    radial-gradient(700px 500px at 95% 0%,#f1e9ff 0%,transparent 55%);
+  background-attachment:fixed;
+  color:var(--ink);
+  line-height:1.65;
+  min-height:100vh;
+  padding:28px 16px 56px;
+}
+
+.wrap{max-width:1200px;margin:0 auto;}
+
+/* ---------- Header ---------- */
+header{text-align:center;margin-bottom:26px;}
+
+header h1{
+  font-size:clamp(1.5rem,3.4vw,2.1rem);
+  font-weight:750;
+  letter-spacing:-.02em;
+  color:#2b2e70;
+  margin-bottom:6px;
+}
+
+header p{
+  color:var(--muted);
+  font-size:.95rem;
+}
+
+header .tag{
+  display:inline-block;
+  font-size:.75rem;
+  letter-spacing:.14em;
+  color:var(--accent);
+  background:#eef1ff;
+  border:1px solid #dde3ff;
+  padding:.25rem .85rem;
+  border-radius:999px;
+  font-weight:600;
+  margin-bottom:12px;
+}
+
+/* ---------- Panel ---------- */
+.panel{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:18px 20px;
+  box-shadow:0 1px 2px rgba(22,33,58,.03),
+             0 10px 28px -20px rgba(22,33,58,.28);
+  margin-bottom:16px;
+}
+
+/* ---------- Controls ---------- */
+.controls{
+  display:flex;
+  flex-wrap:wrap;
+  gap:20px 28px;
+  align-items:flex-end;
+}
+
+.mode-group{
+  display:flex;
+  gap:6px;
+  background:#f1f3fa;
+  padding:5px;
+  border-radius:11px;
+}
+
+.mode-btn{
+  border:none;
+  background:transparent;
+  padding:8px 16px;
+  font-size:.88rem;
+  font-family:inherit;
+  font-weight:600;
+  color:var(--ink2);
+  border-radius:8px;
+  cursor:pointer;
+  transition:all .18s ease;
+  white-space:nowrap;
+}
+
+.mode-btn:hover{color:var(--accent);}
+
+.mode-btn.active{
+  background:#fff;
+  color:var(--accent);
+  box-shadow:0 2px 8px -2px rgba(79,70,229,.35);
+}
+
+.slider-group{
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  min-width:170px;
+  flex:1;
+  max-width:240px;
+}
+
+.slider-group label{
+  font-size:.8rem;
+  color:var(--muted);
+  font-weight:600;
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+}
+
+.slider-group label span{
+  color:var(--accent);
+  font-weight:700;
+  font-variant-numeric:tabular-nums;
+}
+
+input[type=range]{
+  -webkit-appearance:none;
+  appearance:none;
+  width:100%;
+  height:5px;
+  border-radius:3px;
+  background:#e4e8f3;
+  outline:none;
+  cursor:pointer;
+}
+
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  appearance:none;
+  width:16px;height:16px;
+  border-radius:50%;
+  background:linear-gradient(140deg,var(--accent),var(--accent2));
+  box-shadow:0 2px 6px -1px rgba(79,70,229,.6);
+  cursor:pointer;
+  transition:transform .15s;
+}
+
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15);}
+
+input[type=range]::-moz-range-thumb{
+  width:16px;height:16px;
+  border:none;
+  border-radius:50%;
+  background:linear-gradient(140deg,var(--accent),var(--accent2));
+  box-shadow:0 2px 6px -1px rgba(79,70,229,.6);
+  cursor:pointer;
+}
+
+.btn-group{display:flex;gap:10px;}
+
+.btn{
+  border:none;
+  padding:10px 22px;
+  font-family:inherit;
+  font-size:.9rem;
+  font-weight:650;
+  border-radius:10px;
+  cursor:pointer;
+  transition:all .18s ease;
+  white-space:nowrap;
+}
+
+.btn-primary{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;
+  box-shadow:0 6px 16px -6px rgba(79,70,229,.8);
+}
+
+.btn-primary:hover{
+  transform:translateY(-1px);
+  box-shadow:0 10px 22px -8px rgba(79,70,229,.9);
+}
+
+.btn-primary:active{transform:translateY(0);}
+
+.btn-ghost{
+  background:#f1f3fa;
+  color:var(--ink2);
+}
+
+.btn-ghost:hover{background:#e8ebf5;color:var(--accent);}
+
+/* ---------- Main grid ---------- */
+.grid-main{
+  display:grid;
+  grid-template-columns:1.65fr 1fr;
+  gap:16px;
+  margin-bottom:16px;
+}
+
+@media(max-width:900px){
+  .grid-main{grid-template-columns:1fr;}
+}
+
+.scene-panel{padding:0;overflow:hidden;}
+
+#scene{
+  display:block;
+  width:100%;
+  height:460px;
+}
+
+@media(max-width:900px){
+  #scene{height:360px;}
+}
+
+/* ---------- Readout ---------- */
+.readout{
+  display:flex;
+  flex-direction:column;
+}
+
+.readout h3{
+  font-size:.85rem;
+  font-weight:700;
+  color:var(--muted);
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  margin-bottom:14px;
+}
+
+.readout-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  flex:1;
+  align-content:start;
+}
+
+.readout-item{
+  background:#f8f9fe;
+  border:1px solid #eef1f9;
+  border-radius:11px;
+  padding:11px 13px;
+}
+
+.readout-item .k{
+  font-size:.72rem;
+  color:var(--muted);
+  font-weight:600;
+  letter-spacing:.03em;
+  margin-bottom:3px;
+  display:block;
+}
+
+.readout-item .v{
+  font-size:1.15rem;
+  font-weight:700;
+  color:var(--ink);
+  font-variant-numeric:tabular-nums;
+  font-family:"SF Mono","Consolas","Menlo",monospace;
+  letter-spacing:-.01em;
+}
+
+.readout-item .v small{
+  font-size:.72rem;
+  font-weight:600;
+  color:var(--muted);
+  margin-left:2px;
+}
+
+.readout-item.accent .v{color:var(--accent);}
+.readout-item.green .v{color:var(--green);}
+.readout-item.red .v{color:var(--red);}
+.readout-item.amber .v{color:var(--amber);}
+
+/* ---------- Charts ---------- */
+.grid-charts{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  margin-bottom:16px;
+}
+
+@media(max-width:720px){
+  .grid-charts{grid-template-columns:1fr;}
+}
+
+.chart-panel{padding:14px 16px 8px;}
+
+.chart-panel canvas{
+  display:block;
+  width:100%;
+  height:190px;
+}
+
+/* ---------- Formulas ---------- */
+.formula-block{
+  display:none;
+}
+
+.formula-block.active{display:block;}
+
+.formula-block h3{
+  font-size:1rem;
+  font-weight:700;
+  color:var(--ink);
+  margin-bottom:12px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.formula-block h3::before{
+  content:"";
+  width:4px;height:17px;
+  border-radius:2px;
+  background:linear-gradient(180deg,var(--accent),var(--accent2));
+}
+
+.formula-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+  gap:12px;
+}
+
+.formula-item{
+  background:linear-gradient(180deg,#fbfcff,#f5f7ff);
+  border:1px solid #e8ecfb;
+  border-radius:12px;
+  padding:12px 14px;
+  text-align:center;
+  overflow-x:auto;
+}
+
+.formula-item .label{
+  font-size:.72rem;
+  color:var(--muted);
+  font-weight:650;
+  letter-spacing:.04em;
+  margin-bottom:6px;
+  text-align:left;
+}
+
+.formula-item mjx-container{
+  margin:0 !important;
+  font-size:105% !important;
+}
+
+/* ---------- Footer ---------- */
+footer{
+  text-align:center;
+  color:var(--muted);
+  font-size:.82rem;
+  margin-top:26px;
+}
+
+footer .dot{
+  display:inline-block;
+  width:4px;height:4px;
+  border-radius:50%;
+  background:#cbd5e1;
+  margin:0 .55rem;
+  vertical-align:middle;
+}
+
+/* MathJax overflow */
+mjx-container{overflow-x:auto;overflow-y:hidden;max-width:100%;}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="tag">运动学 · 交互仿真</div>
+    <h1>抛体运动仿真</h1>
+    <p>平抛 · 斜抛 · 竖直上抛 —— 动画 / 数据 / 公式一体化演示</p>
+  </header>
+
+  <!-- ================= 控制面板 ================= -->
+  <div class="panel controls">
+    <div class="mode-group">
+      <button class="mode-btn" data-mode="horizontal">平抛</button>
+      <button class="mode-btn active" data-mode="oblique">斜抛</button>
+      <button class="mode-btn" data-mode="vertical">竖直上抛</button>
+    </div>
+
+    <div class="slider-group">
+      <label>初速度 v₀ <span id="v0-val">20 m/s</span></label>
+      <input type="range" id="v0" min="5" max="40" value="20" step="1">
+    </div>
+
+    <div class="slider-group" id="angle-group">
+      <label>抛射角 θ <span id="angle-val">45°</span></label>
+      <input type="range" id="angle" min="10" max="85" value="45" step="1">
+    </div>
+
+    <div class="slider-group" id="h0-group" style="display:none;">
+      <label>初始高度 h <span id="h0-val">20 m</span></label>
+      <input type="range" id="h0" min="5" max="60" value="20" step="1">
+    </div>
+
+    <div class="slider-group">
+      <label>播放速度 <span id="speed-val">1.0×</span></label>
+      <input type="range" id="speed" min="0.2" max="2" value="1" step="0.1">
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-primary" id="play-btn">▶ 播放</button>
+      <button class="btn btn-ghost" id="reset-btn">↺ 重置</button>
+    </div>
+  </div>
+
+  <!-- ================= 场景 + 数据 ================= -->
+  <div class="grid-main">
+    <div class="panel scene-panel">
+      <canvas id="scene"></canvas>
+    </div>
+
+    <div class="panel readout">
+      <h3>实时数据</h3>
+      <div class="readout-grid">
+        <div class="readout-item accent">
+          <span class="k">时间 t</span>
+          <span class="v" id="r-t">0.00<small>s</small></span>
+        </div>
+        <div class="readout-item">
+          <span class="k">水平位移 x</span>
+          <span class="v" id="r-x">0.0<small>m</small></span>
+        </div>
+        <div class="readout-item">
+          <span class="k">高度 y</span>
+          <span class="v" id="r-y">0.0<small>m</small></span>
+        </div>
+        <div class="readout-item green">
+          <span class="k">速率 |v|</span>
+          <span class="v" id="r-v">0.0<small>m/s</small></span>
+        </div>
+        <div class="readout-item">
+          <span class="k">水平速度 vx</span>
+          <span class="v" id="r-vx">0.0<small>m/s</small></span>
+        </div>
+        <div class="readout-item amber">
+          <span class="k">竖直速度 vy</span>
+          <span class="v" id="r-vy">0.0<small>m/s</small></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 图表 ================= -->
+  <div class="grid-charts">
+    <div class="panel chart-panel">
+      <canvas id="chart-v"></canvas>
+    </div>
+    <div class="panel chart-panel">
+      <canvas id="chart-h"></canvas>
+    </div>
+  </div>
+
+  <!-- ================= 公式 ================= -->
+  <div class="panel">
+
+    <!-- 平抛 -->
+    <div class="formula-block" data-formula="horizontal">
+      <h3>平抛运动公式</h3>
+      <div class="formula-grid">
+        <div class="formula-item">
+          <div class="label">水平方向（匀速）</div>
+          $$x = v_0 t,\qquad v_x = v_0$$
+        </div>
+        <div class="formula-item">
+          <div class="label">竖直方向（自由落体）</div>
+          $$y = h - \tfrac{1}{2}gt^2,\qquad v_y = gt$$
+        </div>
+        <div class="formula-item">
+          <div class="label">合速度</div>
+          $$v = \sqrt{v_0^2 + g^2 t^2}$$
+        </div>
+        <div class="formula-item">
+          <div class="label">落地时间</div>
+          $$T = \sqrt{\dfrac{2h}{g}}$$
+        </div>
+      </div>
+    </div>
+
+    <!-- 斜抛 -->
+    <div class="formula-block active" data-formula="oblique">
+      <h3>斜抛运动公式</h3>
+      <div class="formula-grid">
+        <div class="formula-item">
+          <div class="label">运动方程</div>
+          $$x = v_0\cos\theta\cdot t$$
+          $$y = v_0\sin\theta\cdot t - \tfrac{1}{2}gt^2$$
+        </div>
+        <div class="formula-item">
+          <div class="label">速度分量</div>
+          $$v_x = v_0\cos\theta$$
+          $$v_y = v_0\sin\theta - gt$$
+        </div>
+        <div class="formula-item">
+          <div class="label">最大高度</div>
+          $$H = \dfrac{v_0^2\sin^2\theta}{2g}$$
+        </div>
+        <div class="formula-item">
+          <div class="label">射程与飞行时间</div>
+          $$R = \dfrac{v_0^2\sin 2\theta}{g}$$
+          $$T = \dfrac{2v_0\sin\theta}{g}$$
+        </div>
+      </div>
+    </div>
+
+    <!-- 竖直上抛 -->
+    <div class="formula-block" data-formula="vertical">
+      <h3>竖直上抛运动公式</h3>
+      <div class="formula-grid">
+        <div class="formula-item">
+          <div class="label">位移与速度</div>
+          $$y = v_0 t - \tfrac{1}{2}gt^2$$
+          $$v = v_0 - gt$$
+        </div>
+        <div class="formula-item">
+          <div class="label">最大高度</div>
+          $$H = \dfrac{v_0^2}{2g}$$
+        </div>
+        <div class="formula-item">
+          <div class="label">上升时间</div>
+          $$t_{\uparrow} = \dfrac{v_0}{g}$$
+        </div>
+        <div class="formula-item">
+          <div class="label">总飞行时间</div>
+          $$T = \dfrac{2v_0}{g}$$
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    抛体运动仿真<span class="dot"></span>平抛 · 斜抛 · 竖直上抛<span class="dot"></span>Kinematics Lab
+  </footer>
+
+</div>
+
+<script>
+/* ============================================================
+   状态
+   ============================================================ */
+const state = {
+  mode: 'oblique',   // horizontal | oblique | vertical
+  v0: 20,
+  angle: 45,
+  h0: 20,
+  g: 10,
+  speed: 1,
+  t: 0,
+  playing: false,
+  lastTime: 0
+};
+
+let P = null;   // 当前参数缓存
+
+/* ============================================================
+   参数计算
+   ============================================================ */
+function computeParams() {
+  const { mode, v0, angle, h0, g } = state;
+  const th = angle * Math.PI / 180;
+
+  let v0x, v0y, y0;
+  if (mode === 'horizontal') {
+    v0x = v0; v0y = 0; y0 = h0;
+  } else if (mode === 'oblique') {
+    v0x = v0 * Math.cos(th);
+    v0y = v0 * Math.sin(th);
+    y0 = 0;
+  } else {
+    v0x = 0; v0y = v0; y0 = 0;
+  }
+
+  const disc = v0y * v0y + 2 * g * y0;
+  const tTotal = (v0y + Math.sqrt(disc)) / g;
+  const yMax = y0 + (v0y > 0 ? v0y * v0y / (2 * g) : 0);
+  const xMax = v0x * tTotal;
+
+  // 采样求最大速率
+  let maxSpeed = 0;
+  const N = 60;
+  for (let i = 0; i <= N; i++) {
+    const t = (i / N) * tTotal;
+    const vy = v0y - g * t;
+    const s = Math.hypot(v0x, vy);
+    if (s > maxSpeed) maxSpeed = s;
+  }
+
+  return { mode, v0, g, v0x, v0y, y0, tTotal, yMax, xMax, maxSpeed };
+}
+
+function posAt(t) {
+  const p = P;
+  return {
+    x: p.v0x * t,
+    y: p.y0 + p.v0y * t - 0.5 * p.g * t * t,
+    vx: p.v0x,
+    vy: p.v0y - p.g * t
+  };
+}
+
+/* ============================================================
+   工具函数
+   ============================================================ */
+function niceStep(range, count) {
+  const raw = range / count;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const norm = raw / mag;
+  let m;
+  if (norm <= 1) m = 1;
+  else if (norm <= 2) m = 2;
+  else if (norm <= 5) m = 5;
+  else m = 10;
+  return m * mag;
+}
+
+function fitCanvas(canvas) {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const W = Math.max(1, Math.round(rect.width));
+  const H = Math.max(1, Math.round(rect.height));
+  if (canvas.width !== W * dpr || canvas.height !== H * dpr) {
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+  }
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx, W, H };
+}
+
+function drawArrow(ctx, x1, y1, x2, y2, color, width) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const len = Math.hypot(dx, dy);
+  if (len < 1.5) return;
+
+  const ux = dx / len, uy = dy / len;
+  const headLen = Math.min(13, len * 0.45);
+  const headW = headLen * 0.52;
+
+  // 线
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2 - ux * headLen * 0.85, y2 - uy * headLen * 0.85);
+  ctx.stroke();
+
+  // 箭头
+  const px = -uy, py = ux;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - ux * headLen + px * headW, y2 - uy * headLen + py * headW);
+  ctx.lineTo(x2 - ux * headLen - px * headW, y2 - uy * headLen - py * headW);
+  ctx.closePath();
+  ctx.fill();
+}
+
+/* ============================================================
+   场景绘制
+   ============================================================ */
+const sceneCanvas = document.getElementById('scene');
+
+function drawScene() {
+  const { ctx, W, H } = fitCanvas(sceneCanvas);
+
+  ctx.clearRect(0, 0, W, H);
+
+  // ---- 布局 ----
+  const padL = 46, padR = 40, padT = 28, padB = 56;
+  const availW = W - padL - padR;
+  const availH = H - padT - padB;
+
+  const contentW = P.xMax;
+  const contentH = P.yMax;
+
+  // 最小视觉宽高比，避免竖直上抛时画面过窄
+  const cW = Math.max(contentW, contentH * 0.42, 4);
+  const cH = Math.max(contentH, 2);
+
+  const scale = Math.min(availW / (cW * 1.30), availH / (cH * 1.30));
+
+  const ox = W / 2 - (contentW / 2) * scale;
+  const oy = H - padB;
+
+  const T = (x, y) => [ox + x * scale, oy - y * scale];
+
+  // ---- 天空渐变 ----
+  const sky = ctx.createLinearGradient(0, 0, 0, oy);
+  sky.addColorStop(0, '#f8faff');
+  sky.addColorStop(1, '#ffffff');
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, W, H);
+
+  // ---- 网格 ----
+  ctx.strokeStyle = '#f0f3fa';
+  ctx.lineWidth = 1;
+
+  const xSpan = Math.max(contentW, 4);
+  const stepX = niceStep(xSpan, 6);
+  for (let x = 0; x <= xSpan * 2; x += stepX) {
+    const [sx] = T(x, 0);
+    if (sx < -2 || sx > W + 2) continue;
+    ctx.beginPath();
+    ctx.moveTo(sx, 0);
+    ctx.lineTo(sx, oy);
+    ctx.stroke();
+  }
+
+  const ySpan = Math.max(contentH, 4);
+  const stepY = niceStep(ySpan, 5);
+  for (let y = stepY; y <= ySpan * 2; y += stepY) {
+    const [, sy] = T(0, y);
+    if (sy < -2 || sy > oy + 2) continue;
+    ctx.beginPath();
+    ctx.moveTo(0, sy);
+    ctx.lineTo(W, sy);
+    ctx.stroke();
+  }
+
+  // ---- 地面 ----
+  ctx.fillStyle = '#eef1f8';
+  ctx.fillRect(0, oy, W, H - oy);
+
+  // 地面斜纹
+  ctx.strokeStyle = '#dfe4ef';
+  ctx.lineWidth = 1;
+  for (let x = -20; x < W + 20; x += 14) {
+    ctx.beginPath();
+    ctx.moveTo(x, oy);
+    ctx.lineTo(x - 10, oy + 12);
+    ctx.stroke();
+  }
+
+  // 地面主线
+  ctx.strokeStyle = '#94a3b8';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, oy);
+  ctx.lineTo(W, oy);
+  ctx.stroke();
+
+  // ---- 完整路径（虚线预览）----
+  ctx.save();
+  ctx.setLineDash([6, 6]);
+  ctx.strokeStyle = 'rgba(79, 70, 229, 0.28)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  const NP = 140;
+  for (let i = 0; i <= NP; i++) {
+    const t = (i / NP) * P.tTotal;
+    const p = posAt(t);
+    const [sx, sy] = T(p.x, p.y);
+    if (i === 0) ctx.moveTo(sx, sy);
+    else ctx.lineTo(sx, sy);
+  }
+  ctx.stroke();
+  ctx.restore();
+
+  // ---- 已走过的轨迹 ----
+  if (state.t > 0.001) {
+    ctx.strokeStyle = '#4f46e5';
+    ctx.lineWidth = 2.6;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    const NT = 120;
+    for (let i = 0; i <= NT; i++) {
+      const t = (i / NT) * state.t;
+      const p = posAt(t);
+      const [sx, sy] = T(p.x, p.y);
+      if (i === 0) ctx.moveTo(sx, sy);
+      else ctx.lineTo(sx, sy);
+    }
+    ctx.stroke();
+  }
+
+  // ---- 起抛点标记 ----
+  const startP = posAt(0);
+  const [sx0, sy0] = T(startP.x, startP.y);
+  ctx.fillStyle = 'rgba(79, 70, 229, 0.18)';
+  ctx.beginPath();
+  ctx.arc(sx0, sy0, 8, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(79, 70, 229, 0.5)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(sx0, sy0, 8, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // ---- 当前小球 ----
+  const cur = posAt(state.t);
+  const [bx, by] = T(cur.x, cur.y);
+
+  // 从地面到小球的竖直参考线
+  if (cur.y > 0.05) {
+    ctx.save();
+    ctx.setLineDash([3, 4]);
+    ctx.strokeStyle = 'rgba(239, 68, 68, 0.28)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(bx, by);
+    ctx.lineTo(bx, oy);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // 小球发光
+  ctx.shadowColor = 'rgba(239, 68, 68, 0.55)';
+  ctx.shadowBlur = 18;
+  ctx.fillStyle = '#ef4444';
+  ctx.beginPath();
+  ctx.arc(bx, by, 9, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // 高光
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+  ctx.beginPath();
+  ctx.arc(bx - 3, by - 3.5, 3, 0, Math.PI * 2);
+  ctx.fill();
+
+  // ---- 速度箭头 ----
+  const sp = Math.hypot(cur.vx, cur.vy);
+
+  if (sp > 0.05) {
+    const maxArrowPx = 88;
+    const arrowPx = Math.max(18, (sp / P.maxSpeed) * maxArrowPx);
+
+    const ux = cur.vx / sp;
+    const uy = -cur.vy / sp;   // 屏幕 y 轴朝下
+
+    const ex = bx + ux * arrowPx;
+    const ey = by + uy * arrowPx;
+
+    drawArrow(ctx, bx, by, ex, ey, '#10b981', 3.2);
+
+    // 速度标签
+    ctx.fillStyle = '#059669';
+    ctx.font = 'bold 13px "Times New Roman", Georgia, serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(
+      'v = ' + sp.toFixed(1) + ' m/s',
+      ex + 8 * ux + 6,
+      ey + 8 * uy
+    );
+  }
+
+  // ---- 坐标轴刻度标注 ----
+  ctx.fillStyle = '#a0aac0';
+  ctx.font = '11px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+
+  for (let x = stepX; x <= xSpan * 2; x += stepX) {
+    const [sx] = T(x, 0);
+    if (sx < 20 || sx > W - 10) continue;
+    ctx.fillText(x + 'm', sx, oy + 5);
+  }
+
+  // ---- 高度标尺 ----
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  for (let y = stepY; y <= ySpan * 2; y += stepY) {
+    const [, sy] = T(0, y);
+    if (sy < 12 || sy > oy - 5) continue;
+    ctx.fillText(y + 'm', padL - 8, sy);
+  }
+}
+
+/* ============================================================
+   v-t 图
+   ============================================================ */
+const chartV = document.getElementById('chart-v');
+
+function drawVChart() {
+  const { ctx, W, H } = fitCanvas(chartV);
+  ctx.clearRect(0, 0, W, H);
+
+  const padL = 48, padR = 18, padT = 30, padB = 34;
+  const pw = W - padL - padR;
+  const ph = H - padT - padB;
+
+  const xMax = P.tTotal;
+  const yMax = P.maxSpeed * 1.15;
+
+  const X = t => padL + (t / xMax) * pw;
+  const Y = v => padT + ph - (v / yMax) * ph;
+
+  // 网格
+  ctx.strokeStyle = '#eef1f8';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = padT + (i / 4) * ph;
+    ctx.beginPath();
+    ctx.moveTo(padL, y);
+    ctx.lineTo(padL + pw, y);
+    ctx.stroke();
+  }
+  for (let i = 0; i <= 4; i++) {
+    const x = padL + (i / 4) * pw;
+    ctx.beginPath();
+    ctx.moveTo(x, padT);
+    ctx.lineTo(x, padT + ph);
+    ctx.stroke();
+  }
+
+  // 坐标轴
+  ctx.strokeStyle = '#cbd5e1';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(padL, padT);
+  ctx.lineTo(padL, padT + ph);
+  ctx.lineTo(padL + pw, padT + ph);
+  ctx.stroke();
+
+  // 曲线
+  ctx.strokeStyle = '#4f46e5';
+  ctx.lineWidth = 2.2;
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  const N = 120;
+  for (let i = 0; i <= N; i++) {
+    const t = (i / N) * xMax;
+    const p = posAt(t);
+    const v = Math.hypot(p.vx, p.vy);
+    const sx = X(t), sy = Y(v);
+    if (i === 0) ctx.moveTo(sx, sy);
+    else ctx.lineTo(sx, sy);
+  }
+  ctx.stroke();
+
+  // 当前点
+  const cp = posAt(state.t);
+  const cv = Math.hypot(cp.vx, cp.vy);
+  const cx = X(state.t), cy = Y(cv);
+
+  ctx.save();
+  ctx.setLineDash([4, 4]);
+  ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(cx, padT + ph);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(padL, cy);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.fillStyle = '#ef4444';
+  ctx.beginPath();
+  ctx.arc(cx, cy, 4.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 4.5, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // 标题与轴标签
+  ctx.fillStyle = '#4a5568';
+  ctx.font = 'bold 12.5px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText('速率 |v| — t', padL, padT - 11);
+
+  ctx.fillStyle = '#a0aac0';
+  ctx.font = '11px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('t / s', padL + pw / 2, padT + ph + 8);
+
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(yMax.toFixed(0), padL - 6, padT + 4);
+  ctx.fillText((yMax / 2).toFixed(0), padL - 6, padT + ph / 2);
+  ctx.fillText('0', padL - 6, padT + ph);
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('0', padL, padT + ph + 6);
+  ctx.textAlign = 'right';
+  ctx.fillText(xMax.toFixed(1), padL + pw, padT + ph + 6);
+}
+
+/* ============================================================
+   H-t 图
+   ============================================================ */
+const chartH = document.getElementById('chart-h');
+
+function drawHChart() {
+  const { ctx, W, H } = fitCanvas(chartH);
+  ctx.clearRect(0, 0, W, H);
+
+  const padL = 48, padR = 18, padT = 30, padB = 34;
+  const pw = W - padL - padR;
+  const ph = H - padT - padB;
+
+  const xMax = P.tTotal;
+  const yMax = P.yMax * 1.18 || 1;
+
+  const X = t => padL + (t / xMax) * pw;
+  const Y = y => padT + ph - (y / yMax) * ph;
+
+  // 网格
+  ctx.strokeStyle = '#eef1f8';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = padT + (i / 4) * ph;
+    ctx.beginPath();
+    ctx.moveTo(padL, y);
+    ctx.lineTo(padL + pw, y);
+    ctx.stroke();
+  }
+  for (let i = 0; i <= 4; i++) {
+    const x = padL + (i / 4) * pw;
+    ctx.beginPath();
+    ctx.moveTo(x, padT);
+    ctx.lineTo(x, padT + ph);
+    ctx.stroke();
+  }
+
+  // 坐标轴
+  ctx.strokeStyle = '#cbd5e1';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(padL, padT);
+  ctx.lineTo(padL, padT + ph);
+  ctx.lineTo(padL + pw, padT + ph);
+  ctx.stroke();
+
+  // 填充区域
+  ctx.beginPath();
+  const N = 120;
+  ctx.moveTo(X(0), Y(0));
+  for (let i = 0; i <= N; i++) {
+    const t = (i / N) * xMax;
+    const p = posAt(t);
+    ctx.lineTo(X(t), Y(p.y));
+  }
+  ctx.lineTo(X(xMax), Y(0));
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0, padT, 0, padT + ph);
+  grad.addColorStop(0, 'rgba(124, 108, 245, 0.25)');
+  grad.addColorStop(1, 'rgba(124, 108, 245, 0.04)');
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // 曲线
+  ctx.strokeStyle = '#7c6cf5';
+  ctx.lineWidth = 2.2;
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  for (let i = 0; i <= N; i++) {
+    const t = (i / N) * xMax;
+    const p = posAt(t);
+    const sx = X(t), sy = Y(p.y);
+    if (i === 0) ctx.moveTo(sx, sy);
+    else ctx.lineTo(sx, sy);
+  }
+  ctx.stroke();
+
+  // 当前点
+  const cp = posAt(state.t);
+  const cx = X(state.t), cy = Y(cp.y);
+
+  ctx.save();
+  ctx.setLineDash([4, 4]);
+  ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(cx, padT + ph);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(padL, cy);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.fillStyle = '#ef4444';
+  ctx.beginPath();
+  ctx.arc(cx, cy, 4.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 4.5, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // 标题与轴标签
+  ctx.fillStyle = '#4a5568';
+  ctx.font = 'bold 12.5px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText('高度 y — t', padL, padT - 11);
+
+  ctx.fillStyle = '#a0aac0';
+  ctx.font = '11px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('t / s', padL + pw / 2, padT + ph + 8);
+
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(yMax.toFixed(0), padL - 6, padT + 4);
+  ctx.fillText((yMax / 2).toFixed(0), padL - 6, padT + ph / 2);
+  ctx.fillText('0', padL - 6, padT + ph);
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('0', padL, padT + ph + 6);
+  ctx.textAlign = 'right';
+  ctx.fillText(xMax.toFixed(1), padL + pw, padT + ph + 6);
+}
+
+/* ============================================================
+   数据面板
+   ============================================================ */
+const rEl = {
+  t: document.getElementById('r-t'),
+  x: document.getElementById('r-x'),
+  y: document.getElementById('r-y'),
+  v: document.getElementById('r-v'),
+  vx: document.getElementById('r-vx'),
+  vy: document.getElementById('r-vy')
+};
+
+function updateReadout() {
+  const p = posAt(state.t);
+  const v = Math.hypot(p.vx, p.vy);
+
+  rEl.t.innerHTML = state.t.toFixed(2) + '<small>s</small>';
+  rEl.x.innerHTML = p.x.toFixed(1) + '<small>m</small>';
+  rEl.y.innerHTML = Math.max(0, p.y).toFixed(1) + '<small>m</small>';
+  rEl.v.innerHTML = v.toFixed(1) + '<small>m/s</small>';
+  rEl.vx.innerHTML = p.vx.toFixed(1) + '<small>m/s</small>';
+  rEl.vy.innerHTML = p.vy.toFixed(1) + '<small>m/s</small>';
+}
+
+/* ============================================================
+   主循环
+   ============================================================ */
+function tick(now) {
+  if (!state.lastTime) state.lastTime = now;
+  const dt = Math.min((now - state.lastTime) / 1000, 0.05);
+  state.lastTime = now;
+
+  if (state.playing) {
+    state.t += dt * state.speed;
+    if (state.t >= P.tTotal) {
+      state.t = P.tTotal;
+      state.playing = false;
+      updatePlayButton();
+    }
+  }
+
+  drawScene();
+  drawVChart();
+  drawHChart();
+  updateReadout();
+
+  requestAnimationFrame(tick);
+}
+
+/* ============================================================
+   UI 交互
+   ============================================================ */
+const playBtn = document.getElementById('play-btn');
+const resetBtn = document.getElementById('reset-btn');
+
+function updatePlayButton() {
+  if (state.playing) {
+    playBtn.textContent = '⏸ 暂停';
+  } else if (state.t >= P.tTotal - 1e-6) {
+    playBtn.textContent = '↻ 重播';
+  } else {
+    playBtn.textContent = '▶ 播放';
+  }
+}
+
+function resetSim() {
+  state.t = 0;
+  state.playing = false;
+  state.lastTime = 0;
+  updatePlayButton();
+}
+
+playBtn.addEventListener('click', () => {
+  if (state.t >= P.tTotal - 1e-6) {
+    state.t = 0;
+  }
+  state.playing = !state.playing;
+  state.lastTime = 0;
+  updatePlayButton();
+});
+
+resetBtn.addEventListener('click', resetSim);
+
+/* ---- 模式切换 ---- */
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    state.mode = btn.dataset.mode;
+
+    // 显示 / 隐藏相关滑块
+    document.getElementById('angle-group').style.display =
+      state.mode === 'oblique' ? 'flex' : 'none';
+    document.getElementById('h0-group').style.display =
+      state.mode === 'horizontal' ? 'flex' : 'none';
+
+    // 切换公式显示
+    document.querySelectorAll('.formula-block').forEach(fb => {
+      fb.classList.toggle('active', fb.dataset.formula === state.mode);
+    });
+
+    P = computeParams();
+    resetSim();
+  });
+});
+
+/* ---- 滑块 ---- */
+function bindSlider(id, key, fmt) {
+  const el = document.getElementById(id);
+  const out = document.getElementById(id + '-val');
+  el.addEventListener('input', () => {
+    state[key] = parseFloat(el.value);
+    out.textContent = fmt(state[key]);
+    P = computeParams();
+    resetSim();
+  });
+}
+
+bindSlider('v0', 'v0', v => v + ' m/s');
+bindSlider('angle', 'angle', v => v + '°');
+bindSlider('h0', 'h0', v => v + ' m');
+bindSlider('speed', 'speed', v => v.toFixed(1) + '×');
+
+/* ---- 窗口大小变化 ---- */
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    drawScene();
+    drawVChart();
+    drawHChart();
+  }, 120);
+});
+
+/* ============================================================
+   启动
+   ============================================================ */
+P = computeParams();
+updatePlayButton();
+requestAnimationFrame(tick);
+</script>
+
+</body>
+</html>

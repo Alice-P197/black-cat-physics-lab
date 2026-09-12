@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>陀螺仪 · 自转与进动</title>
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#f5f7fc;--card:#fff;--ink:#1a2238;--ink2:#4a5568;--muted:#8892a8;
+  --accent:#4f46e5;--accent2:#7c6cf5;--line:#e6eaf3;
+  --green:#10b981;--red:#ef4444;--amber:#f59e0b;--blue:#3b82f6;
+}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--bg);
+  background-image:radial-gradient(900px 500px at 10% -10%,#e7ebff 0%,transparent 60%),
+                   radial-gradient(700px 500px at 95% 0%,#f1e9ff 0%,transparent 55%);
+  background-attachment:fixed;
+  color:var(--ink);line-height:1.65;padding:28px 16px 56px;min-height:100vh;
+}
+.wrap{max-width:1080px;margin:0 auto;}
+header{text-align:center;margin-bottom:26px;}
+header h1{font-size:clamp(1.5rem,3.4vw,2rem);font-weight:750;color:#2b2e70;margin-bottom:6px;letter-spacing:-.02em;}
+header p{color:var(--muted);font-size:.95rem;}
+.tag{display:inline-block;font-size:.75rem;letter-spacing:.14em;color:var(--accent);
+  background:#eef1ff;border:1px solid #dde3ff;padding:.25rem .85rem;border-radius:999px;
+  font-weight:600;margin-bottom:12px;}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:18px 20px;box-shadow:0 1px 2px rgba(22,33,58,.03),0 10px 28px -20px rgba(22,33,58,.28);
+  margin-bottom:16px;}
+.controls{display:flex;flex-wrap:wrap;gap:16px 24px;align-items:flex-end;}
+.slider-group{display:flex;flex-direction:column;gap:5px;min-width:150px;flex:1;max-width:200px;}
+.slider-group label{font-size:.78rem;color:var(--muted);font-weight:600;
+  display:flex;justify-content:space-between;align-items:baseline;}
+.slider-group label span{color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums;}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;
+  border-radius:3px;background:#e4e8f3;outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+  width:16px;height:16px;border-radius:50%;
+  background:linear-gradient(140deg,var(--accent),var(--accent2));
+  box-shadow:0 2px 6px -1px rgba(79,70,229,.6);cursor:pointer;transition:transform .15s;}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15);}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border:none;border-radius:50%;
+  background:linear-gradient(140deg,var(--accent),var(--accent2));
+  box-shadow:0 2px 6px -1px rgba(79,70,229,.6);cursor:pointer;}
+.btn-group{display:flex;gap:10px;}
+.btn{border:none;padding:10px 22px;font-family:inherit;font-size:.9rem;font-weight:650;
+  border-radius:10px;cursor:pointer;transition:all .18s ease;white-space:nowrap;}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;
+  box-shadow:0 6px 16px -6px rgba(79,70,229,.8);}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 10px 22px -8px rgba(79,70,229,.9);}
+.btn-ghost{background:#f1f3fa;color:var(--ink2);}
+.btn-ghost:hover{background:#e8ebf5;color:var(--accent);}
+.grid-main{display:grid;grid-template-columns:1.6fr 1fr;gap:16px;margin-bottom:16px;}
+@media(max-width:900px){.grid-main{grid-template-columns:1fr;}}
+.scene-panel{padding:14px;background:linear-gradient(180deg,#fbfcff,#f4f7fd);}
+#scene{display:block;width:100%;height:380px;border-radius:12px;}
+.readout{display:flex;flex-direction:column;}
+.readout h3{font-size:.85rem;font-weight:700;color:var(--muted);letter-spacing:.08em;
+  text-transform:uppercase;margin-bottom:14px;}
+.readout-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;flex:1;align-content:start;}
+.readout-item{background:#f8f9fe;border:1px solid #eef1f9;border-radius:11px;padding:10px 12px;}
+.readout-item .k{font-size:.7rem;color:var(--muted);font-weight:600;
+  letter-spacing:.03em;margin-bottom:3px;display:block;}
+.readout-item .v{font-size:1.05rem;font-weight:700;color:var(--ink);
+  font-variant-numeric:tabular-nums;font-family:"SF Mono","Consolas","Menlo",monospace;}
+.readout-item .v small{font-size:.68rem;font-weight:600;color:var(--muted);margin-left:2px;}
+.readout-item.accent .v{color:var(--accent);}
+.readout-item.green .v{color:var(--green);}
+.readout-item.amber .v{color:var(--amber);}
+.readout-item.blue .v{color:var(--blue);}
+.readout-item.red .v{color:var(--red);}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;background:#f1f3fa;
+  padding:5px;border-radius:11px;width:fit-content;}
+.tab-btn{border:none;background:transparent;padding:7px 14px;font-size:.85rem;
+  font-family:inherit;font-weight:600;color:var(--ink2);border-radius:8px;
+  cursor:pointer;transition:all .18s ease;white-space:nowrap;}
+.tab-btn:hover{color:var(--accent);}
+.tab-btn.active{background:#fff;color:var(--accent);
+  box-shadow:0 2px 8px -2px rgba(79,70,229,.35);}
+#chart{display:block;width:100%;height:250px;}
+.formula-row{background:linear-gradient(180deg,#fbfcff,#f5f7ff);border:1px solid #e8ecfb;
+  border-radius:12px;padding:14px 18px;margin:12px 0;text-align:center;overflow-x:auto;}
+.formula-row.hl{border-left:4px solid var(--accent);
+  background:linear-gradient(180deg,#f8f9ff,#eef1ff);}
+h3.sec{font-size:1rem;font-weight:700;margin-bottom:12px;display:flex;
+  align-items:center;gap:8px;color:var(--ink);}
+h3.sec::before{content:"";width:4px;height:17px;border-radius:2px;
+  background:linear-gradient(180deg,var(--accent),var(--accent2));}
+.note{background:linear-gradient(90deg,#fffbf2,#fffdfa);border-left:3px solid var(--amber);
+  padding:12px 16px;border-radius:0 12px 12px 0;color:var(--ink2);margin:12px 0;font-size:.92rem;}
+.note strong{color:#b3761a;}
+footer{text-align:center;color:var(--muted);font-size:.82rem;margin-top:26px;}
+footer .dot{display:inline-block;width:4px;height:4px;border-radius:50%;
+  background:#cbd5e1;margin:0 .55rem;vertical-align:middle;}
+mjx-container{overflow-x:auto;overflow-y:hidden;max-width:100%;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="tag">刚体动力学 · 角动量</div>
+    <h1>陀螺仪 · 自转与进动</h1>
+    <p>角动量守恒 · 重力矩驱动进动 · 进动速率与自转速率反比</p>
+  </header>
+
+  <div class="panel controls">
+    <div class="slider-group">
+      <label>质量 m <span id="m-val">0.50 kg</span></label>
+      <input type="range" id="m" min="0.2" max="1.5" value="0.5" step="0.05">
+    </div>
+    <div class="slider-group">
+      <label>圆盘半径 R <span id="R-val">15.0 cm</span></label>
+      <input type="range" id="R" min="0.08" max="0.25" value="0.15" step="0.005">
+    </div>
+    <div class="slider-group">
+      <label>支点距离 r <span id="r-val">20.0 cm</span></label>
+      <input type="range" id="r" min="0.1" max="0.35" value="0.2" step="0.005">
+    </div>
+    <div class="slider-group">
+      <label>自转 ω<sub>s</sub> <span id="omS-val">200 rad/s</span></label>
+      <input type="range" id="omS" min="60" max="500" value="200" step="5">
+    </div>
+    <div class="slider-group">
+      <label>倾角 θ <span id="tilt-val">30°</span></label>
+      <input type="range" id="tilt" min="15" max="60" value="30" step="1">
+    </div>
+    <div class="slider-group">
+      <label>动画速度 <span id="speed-val">1.00×</span></label>
+      <input type="range" id="speed" min="0.2" max="2" value="1" step="0.05">
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-primary" id="play-btn">⏸ 暂停</button>
+      <button class="btn btn-ghost" id="reset-btn">↺ 重置</button>
+    </div>
+  </div>
+
+  <div class="grid-main">
+    <div class="panel scene-panel">
+      <canvas id="scene"></canvas>
+    </div>
+    <div class="panel readout">
+      <h3>实时数据</h3>
+      <div class="readout-grid">
+        <div class="readout-item accent">
+          <span class="k">时间 t</span>
+          <span class="v" id="r-t">0.00<small>s</small></span>
+        </div>
+        <div class="readout-item blue">
+          <span class="k">进动角 φ<sub>p</sub></span>
+          <span class="v" id="r-phip">0.0<small>°</small></span>
+        </div>
+        <div class="readout-item green">
+          <span class="k">自转角 φ<sub>s</sub></span>
+          <span class="v" id="r-phis">0.0<small>°</small></span>
+        </div>
+        <div class="readout-item amber">
+          <span class="k">进动速率 ω<sub>p</sub></span>
+          <span class="v" id="r-omp">0.870<small>rad/s</small></span>
+        </div>
+        <div class="readout-item red">
+          <span class="k">进动周期 T<sub>p</sub></span>
+          <span class="v" id="r-Tp">7.22<small>s</small></span>
+        </div>
+        <div class="readout-item accent">
+          <span class="k">角动量 L</span>
+          <span class="v" id="r-L">0.056<small>kg·m²/s</small></span>
+        </div>
+        <div class="readout-item green">
+          <span class="k">自转动能 E<sub>k</sub></span>
+          <span class="v" id="r-Ek">5.63<small>J</small></span>
+        </div>
+        <div class="readout-item amber">
+          <span class="k">重力矩 τ</span>
+          <span class="v" id="r-tau">0.490<small>N·m</small></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="tabs">
+      <button class="tab-btn active" data-q="phi_p">进动角 φ<sub>p</sub></button>
+      <button class="tab-btn" data-q="phi_s">自转角 φ<sub>s</sub></button>
+      <button class="tab-btn" data-q="L">角动量 L</button>
+      <button class="tab-btn" data-q="Ek">自转动能</button>
+    </div>
+    <canvas id="chart"></canvas>
+  </div>
+
+  <div class="panel">
+    <h3 class="sec">陀螺的进动理论</h3>
+    <p style="color:var(--ink2);font-size:.94rem;">
+      陀螺在支点 O 处受重力作用，质心在圆盘中心。当自转轴与竖直方向成 $\theta$ 角时，
+      重力矩大小为
+    </p>
+    <div class="formula-row">
+      $$\tau = m g r \sin\theta$$
+    </div>
+    <p style="color:var(--ink2);font-size:.94rem;">
+      这一力矩垂直于角动量方向，使角动量矢量绕竖直轴进动。由 $\mathrm{d}\vec{L} = \vec{\tau}\,\mathrm{d}t$ 可得进动角速度
+    </p>
+    <div class="formula-row hl">
+      $$\omega_p = \frac{\tau}{L\sin\theta} = \frac{m g r}{I_s \omega_s}$$
+    </div>
+    <p style="color:var(--ink2);font-size:.94rem;">
+      其中 $I_s = \dfrac{1}{2}mR^2$ 为圆盘对自转轴的转动惯量。代入后 $\sin\theta$ 被约去，
+      说明稳态进动速率与倾角无关：
+    </p>
+    <div class="formula-row final">
+      $$\omega_p = \frac{2 g r}{R^2 \omega_s},\qquad
+      T_p = \frac{2\pi}{\omega_p} = \frac{\pi R^2 \omega_s}{g r}$$
+    </div>
+
+    <div class="note">
+      <strong>关键结论：</strong>自转越快（$\omega_s$ 越大），进动越慢（$\omega_p$ 越小）。
+      这正是"高速自转的陀螺能立住"的本质——角动量越大，同样的重力矩需要更长时间才能改变方向。
+    </div>
+
+    <h3 class="sec" style="margin-top:18px;">角动量守恒与陀螺仪应用</h3>
+    <ul style="padding-left:1.4rem;color:var(--ink2);font-size:.94rem;">
+      <li>在无外力矩时，自转轴方向保持不变——这是陀螺罗盘、惯性导航的原理</li>
+      <li>外力矩作用下，角动量矢量沿力矩方向进动，形成"陀螺效应"</li>
+      <li>自行车行驶时车轮自转，产生稳定力矩帮助保持平衡</li>
+      <li>导弹、航天器用陀螺仪测量姿态变化，不依赖外部参照</li>
+    </ul>
+  </div>
+
+  <footer>陀螺仪仿真<span class="dot"></span>自转 · 进动<span class="dot"></span>Rigid Body Lab</footer>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  const state = {
+    m: 0.5, R: 0.15, r: 0.2,
+    omegaS: 200, tilt: 30,
+    speed: 1, t: 0, playing: true,
+    tMax: 20, dt: 0.001,
+    q: 'phi_p'
+  };
+
+  const g = 9.8;
+
+  let data = [];
+  let Params = null;
+
+  /* ================= 物理 ================= */
+  function computeParams() {
+    const Is = 0.5 * state.m * state.R * state.R;
+    const omegaP = state.m * g * state.r / (Is * state.omegaS);
+    const Tp = 2 * Math.PI / omegaP;
+    const L = Is * state.omegaS;
+    const Ek = 0.5 * Is * state.omegaS * state.omegaS;
+    const tau = state.m * g * state.r * Math.sin(state.tilt * Math.PI/180);
+
+    return { Is, omegaP, Tp, L, Ek, tau };
+  }
+
+  function computeData() {
+    Params = computeParams();
+
+    const N = Math.round(state.tMax / state.dt);
+    data = new Array(N + 1);
+
+    for (let i = 0; i <= N; i++) {
+      const t = i * state.dt;
+      const phiP = Params.omegaP * t;           // 进动角
+      const phiS = state.omegaS * t;            // 自转角
+      data[i] = {
+        t,
+        phi_p: phiP,
+        phi_s: phiS,
+        L: Params.L,
+        Ek: Params.Ek
+      };
+    }
+
+    /* 更新面板 */
+    document.getElementById('r-omp').innerHTML = Params.omegaP.toFixed(3) + '<small>rad/s</small>';
+    document.getElementById('r-Tp').innerHTML  = Params.Tp.toFixed(2) + '<small>s</small>';
+    document.getElementById('r-L').innerHTML   = Params.L.toFixed(4) + '<small>kg·m²/s</small>';
+    document.getElementById('r-Ek').innerHTML  = Params.Ek.toFixed(3) + '<small>J</small>';
+    document.getElementById('r-tau').innerHTML = Params.tau.toFixed(3) + '<small>N·m</small>';
+  }
+
+  function stateAt(t) {
+    let idx = Math.round(t / state.dt);
+    if (idx < 0) idx = 0;
+    if (idx >= data.length) idx = data.length - 1;
+    return data[idx];
+  }
+
+  /* ================= 工具 ================= */
+  function fitCanvas(canvas) {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    const W = Math.max(1, Math.round(rect.width));
+    const H = Math.max(1, Math.round(rect.height));
+    if (canvas.width !== W*dpr || canvas.height !== H*dpr) {
+      canvas.width = W*dpr; canvas.height = H*dpr;
+    }
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx, W, H };
+  }
+
+  function drawArrow(ctx, x1, y1, x2, y2, color, width) {
+    const dx = x2-x1, dy = y2-y1;
+    const len = Math.hypot(dx, dy);
+    if (len < 1.5) return;
+    const ux = dx/len, uy = dy/len;
+    const headLen = Math.min(12, len*0.42);
+    const headW = headLen*0.5;
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2 - ux*headLen*0.85, y2 - uy*headLen*0.85);
+    ctx.stroke();
+
+    const px = -uy, py = ux;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - ux*headLen + px*headW, y2 - uy*headLen + py*headW);
+    ctx.lineTo(x2 - ux*headLen - px*headW, y2 - uy*headLen - py*headW);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  /* ================= 场景 ================= */
+  const sceneCanvas = document.getElementById('scene');
+
+  function drawScene() {
+    const { ctx, W, H } = fitCanvas(sceneCanvas);
+    ctx.clearRect(0, 0, W, H);
+
+    /* 背景 */
+    const bg = ctx.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, '#fbfcff');
+    bg.addColorStop(1, '#f2f5fc');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    /* 布局 */
+    const cx = W / 2;
+    const cy = H * 0.82;                      // 支点
+    const rPx = Math.min(H * 0.55, 220);      // 支点到圆盘视觉长度
+    const kTilt = 0.35;                       // 俯视投影系数
+
+    const theta = state.tilt * Math.PI / 180;
+    const st = stateAt(state.t);
+    const phiP = st.phi_p;
+    const phiS = st.phi_s;
+
+    /* 支撑平台（地面） */
+    ctx.fillStyle = '#e8edf7';
+    ctx.fillRect(0, cy + 8, W, H - cy - 8);
+    ctx.strokeStyle = '#c7cfe4';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, cy + 8);
+    ctx.lineTo(W, cy + 8);
+    ctx.stroke();
+
+    /* 支点圈 */
+    ctx.fillStyle = '#94a3b8';
+    ctx.beginPath();
+    ctx.arc(cx, cy, 7, 0, Math.PI*2);
+    ctx.fill();
+
+    /* 竖直轴 */
+    ctx.strokeStyle = 'rgba(124,108,245,0.35)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 6]);
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - rPx * 1.15);
+    ctx.lineTo(cx, cy);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(124,108,245,0.7)';
+    ctx.font = '600 11px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('竖直轴', cx, cy - rPx * 1.15 - 4);
+
+    /* 进动轨迹椭圆（阴影圆） */
+    const aEll = rPx * Math.sin(theta);
+    const bEll = aEll * kTilt;
+
+    ctx.strokeStyle = 'rgba(124,108,245,0.18)';
+    ctx.lineWidth = 1.2;
+    ctx.setLineDash([3, 4]);
+    ctx.beginPath();
+    ctx.ellipse(cx, cy - rPx * Math.cos(theta), aEll, bEll, 0, 0, Math.PI*2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    /* 进动轨迹（已走过的部分用实线强调） */
+    ctx.strokeStyle = 'rgba(79,70,229,0.45)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    const N = 90;
+    const phi0 = Math.max(0, phiP - 2*Math.PI);  // 只画最近一整圈
+    for (let i = 0; i <= N; i++) {
+      const phi = phi0 + (i/N) * Math.min(phiP, 2*Math.PI);
+      const px = cx + aEll * Math.cos(phi);
+      const py = cy - rPx * Math.cos(theta) + bEll * Math.sin(phi);
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+
+    /* 圆盘中心位置（3D 投影到 2D） */
+    const pxDisk = cx + rPx * Math.sin(theta) * Math.cos(phiP);
+    const pyDisk = cy - rPx * Math.cos(theta) + rPx * Math.sin(theta) * kTilt * Math.sin(phiP);
+
+    /* 自转轴 */
+    ctx.strokeStyle = '#3730a3';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(pxDisk, pyDisk);
+    ctx.stroke();
+
+    /* 自转轴内高光 */
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(pxDisk, pyDisk);
+    ctx.stroke();
+
+    /* 圆盘（侧面看是椭圆，因为倾斜） */
+    const diskR = state.R * (rPx / state.r) * 0.55;
+    const diskAngle = Math.atan2(pyDisk - cy, pxDisk - cx);
+
+    ctx.save();
+    ctx.translate(pxDisk, pyDisk);
+    ctx.rotate(diskAngle + Math.PI/2);
+
+    /* 圆盘阴影 */
+    ctx.save();
+    ctx.shadowColor = 'rgba(22,33,58,0.25)';
+    ctx.shadowBlur = 16;
+    ctx.shadowOffsetY = 3;
+    const diskGrad = ctx.createRadialGradient(-diskR*0.3, -diskR*0.3, 0, 0, 0, diskR);
+    diskGrad.addColorStop(0, '#818cf8');
+    diskGrad.addColorStop(1, '#4338ca');
+    ctx.fillStyle = diskGrad;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, diskR, diskR * 0.28, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.strokeStyle = '#312e81';
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, diskR, diskR * 0.28, 0, 0, Math.PI*2);
+    ctx.stroke();
+
+    /* 自转标记：绕盘面转的小点 */
+    const markerAngle = phiS;   // 用真实自转角（视觉上会很快）
+    const markerX = diskR * 0.62 * Math.cos(markerAngle);
+    const markerY = diskR * 0.28 * 0.62 * Math.sin(markerAngle);
+
+    /* 从盘心到标记的辐条 */
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(markerX, markerY);
+    ctx.stroke();
+
+    ctx.fillStyle = '#fbbf24';
+    ctx.beginPath();
+    ctx.arc(markerX, markerY, 3.6, 0, Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.arc(markerX, markerY, 3.6, 0, Math.PI*2);
+    ctx.stroke();
+
+    ctx.restore();
+
+    /* 进动方向箭头（沿轨迹切向） */
+    const arrowPhi = phiP;
+    const tangent = {
+      x: -aEll * Math.sin(arrowPhi),
+      y:  bEll * Math.cos(arrowPhi)
+    };
+    const tlen = Math.hypot(tangent.x, tangent.y) || 1;
+    const dirX = tangent.x / tlen;
+    const dirY = tangent.y / tlen;
+
+    const arrowBase = {
+      x: cx + aEll * Math.cos(arrowPhi),
+      y: cy - rPx * Math.cos(theta) + bEll * Math.sin(arrowPhi)
+    };
+
+    drawArrow(ctx,
+      arrowBase.x, arrowBase.y,
+      arrowBase.x + dirX * 34,
+      arrowBase.y + dirY * 34,
+      '#7c6cf5', 2.4
+    );
+
+    ctx.fillStyle = '#6d28d9';
+    ctx.font = 'bold 11.5px "Times New Roman", Georgia, serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('ω_p',
+      arrowBase.x + dirX * 46 + 6,
+      arrowBase.y + dirY * 46
+    );
+
+    /* 倾斜角标注 */
+    const arcR = 60;
+    ctx.strokeStyle = 'rgba(124,108,245,0.6)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(cx, cy, arcR, -Math.PI/2 - theta, -Math.PI/2);
+    ctx.stroke();
+    ctx.fillStyle = '#7c6cf5';
+    ctx.font = 'italic 13px "Times New Roman", Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('θ',
+      cx + (arcR + 14) * Math.sin(theta/2),
+      cy - (arcR + 14) * Math.cos(theta/2)
+    );
+
+    /* 状态文字 */
+    ctx.fillStyle = '#4a5568';
+    ctx.font = 'bold 13px "Times New Roman", Georgia, serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText('t = ' + state.t.toFixed(2) + ' s', 16, 14);
+
+    ctx.fillStyle = '#8892a8';
+    ctx.font = '600 11.5px -apple-system, sans-serif';
+    ctx.fillText(
+      'ω_s = ' + state.omegaS.toFixed(0) + ' rad/s   ω_p = ' + Params.omegaP.toFixed(3) + ' rad/s',
+      16, 34
+    );
+  }
+
+  /* ================= 图表 ================= */
+  const chartCanvas = document.getElementById('chart');
+
+  const QINFO = {
+    phi_p: { color:'#4f46e5', fill:'rgba(79,70,229,0.16)', label:'进动角 φ_p',   unit:'rad', deg:true },
+    phi_s: { color:'#10b981', fill:'rgba(16,185,129,0.16)', label:'自转角 φ_s',   unit:'rad', deg:false },
+    L:     { color:'#3b82f6', fill:'rgba(59,130,246,0.16)', label:'角动量 L',     unit:'kg·m²/s', deg:false },
+    Ek:    { color:'#f59e0b', fill:'rgba(245,158,11,0.16)', label:'自转动能 E_k', unit:'J', deg:false }
+  };
+
+  function drawChart() {
+    const { ctx, W, H } = fitCanvas(chartCanvas);
+    ctx.clearRect(0, 0, W, H);
+
+    const padL = 62, padR = 22, padT = 28, padB = 40;
+    const pw = W - padL - padR;
+    const ph = H - padT - padB;
+
+    const q = state.q;
+    const info = QINFO[q];
+
+    let yMin = Infinity, yMax = -Infinity;
+    for (const d of data) {
+      const y = d[q];
+      if (y < yMin) yMin = y;
+      if (y > yMax) yMax = y;
+    }
+    if (!isFinite(yMin)) { yMin = -1; yMax = 1; }
+    if (yMax - yMin < 1e-6) { yMin -= 0.5; yMax += 0.5; }
+    const range = yMax - yMin;
+    yMin -= range*0.10;
+    yMax += range*0.10;
+
+    const tMax = state.tMax;
+    const X = t => padL + (t/tMax)*pw;
+    const Y = y => padT + ph - ((y - yMin)/(yMax - yMin))*ph;
+
+    ctx.fillStyle = '#fafbff';
+    ctx.fillRect(padL, padT, pw, ph);
+
+    ctx.strokeStyle = '#f1f4fa';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = padT + (i/4)*ph;
+      ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(padL+pw,y); ctx.stroke();
+    }
+    for (let i = 0; i <= 5; i++) {
+      const x = padL + (i/5)*pw;
+      ctx.beginPath(); ctx.moveTo(x,padT); ctx.lineTo(x,padT+ph); ctx.stroke();
+    }
+
+    if (yMin < 0 && yMax > 0) {
+      const yZ = Y(0);
+      ctx.strokeStyle = '#dde4f0';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(padL, yZ);
+      ctx.lineTo(padL+pw, yZ);
+      ctx.stroke();
+    }
+
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 1.3;
+    ctx.beginPath();
+    ctx.moveTo(padL, padT);
+    ctx.lineTo(padL, padT+ph);
+    ctx.lineTo(padL+pw, padT+ph);
+    ctx.stroke();
+
+    /* 曲线 */
+    ctx.strokeStyle = info.color;
+    ctx.lineWidth = 2.2;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    const N = Math.min(data.length, 1200);
+    for (let i = 0; i <= N; i++) {
+      const di = Math.floor(i / N * (data.length - 1));
+      const px = X(data[di].t), py = Y(data[di][q]);
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+
+    /* 当前点 */
+    const curT = Math.min(state.t, tMax);
+    const curS = stateAt(curT);
+    const cx = X(curT), cy = Y(curS[q]);
+
+    ctx.save();
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = 'rgba(239,68,68,0.42)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx, padT+ph); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(padL, cy); ctx.stroke();
+    ctx.restore();
+
+    ctx.fillStyle = '#ef4444';
+    ctx.beginPath(); ctx.arc(cx, cy, 5, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(cx, cy, 5, 0, Math.PI*2); ctx.stroke();
+
+    /* 标题 */
+    ctx.fillStyle = '#4a5568';
+    ctx.font = 'bold 13px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText(info.label + ' — t', padL, padT - 10);
+
+    /* 轴 */
+    ctx.fillStyle = '#a0aac0';
+    ctx.font = '11.5px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('t / s', padL+pw/2, padT+ph+9);
+
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(yMax.toFixed(2), padL-7, padT+4);
+    ctx.fillText(((yMax+yMin)/2).toFixed(2), padL-7, padT+ph/2);
+    ctx.fillText(yMin.toFixed(2), padL-7, padT+ph);
+
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText('0', padL, padT+ph+6);
+    ctx.textAlign = 'right';
+    ctx.fillText(tMax.toFixed(1), padL+pw, padT+ph+6);
+  }
+
+  /* ================= 主循环 ================= */
+  let lastTime = 0;
+  function tick(now) {
+    if (!lastTime) lastTime = now;
+    let dt = (now - lastTime)/1000;
+    lastTime = now;
+    if (dt > 0.1) dt = 0.1;
+
+    if (state.playing) {
+      state.t += dt * state.speed;
+      if (state.t >= state.tMax) {
+        state.t = state.tMax;
+        state.playing = false;
+        updatePlayBtn();
+      }
+    }
+
+    drawScene();
+    drawChart();
+
+    /* 实时更新读数（进动角、自转角） */
+    const s = stateAt(state.t);
+    document.getElementById('r-t').innerHTML =
+      state.t.toFixed(2) + '<small>s</small>';
+    document.getElementById('r-phip').innerHTML =
+      (s.phi_p % (2*Math.PI)).toFixed(1) + '<small>rad</small>';
+    document.getElementById('r-phis').innerHTML =
+      ((s.phi_s % (2*Math.PI))).toFixed(1) + '<small>rad</small>';
+
+    requestAnimationFrame(tick);
+  }
+
+  /* ================= UI ================= */
+  const playBtn = document.getElementById('play-btn');
+  const resetBtn = document.getElementById('reset-btn');
+
+  function updatePlayBtn() {
+    playBtn.textContent = state.playing ? '⏸ 暂停' : '▶ 播放';
+  }
+
+  playBtn.addEventListener('click', () => {
+    if (state.t >= state.tMax - 1e-6) state.t = 0;
+    state.playing = !state.playing;
+    updatePlayBtn();
+  });
+
+  resetBtn.addEventListener('click', () => {
+    state.t = 0;
+    state.playing = true;
+    updatePlayBtn();
+  });
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.q = btn.dataset.q;
+    });
+  });
+
+  function bindSlider(id, key, fmt, recompute) {
+    const el = document.getElementById(id);
+    const out = document.getElementById(id + '-val');
+    el.addEventListener('input', () => {
+      state[key] = parseFloat(el.value);
+      out.textContent = fmt(state[key]);
+      if (recompute) {
+        computeData();
+        state.t = 0;
+      }
+    });
+  }
+
+  bindSlider('m', 'm', v => v.toFixed(2) + ' kg', true);
+  bindSlider('R', 'R', v => (v*100).toFixed(1) + ' cm', true);
+  bindSlider('r', 'r', v => (v*100).toFixed(1) + ' cm', true);
+  bindSlider('omS', 'omegaS', v => v.toFixed(0) + ' rad/s', true);
+  bindSlider('tilt', 'tilt', v => v.toFixed(0) + '°', true);
+  bindSlider('speed', 'speed', v => v.toFixed(2) + '×', false);
+
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => { drawScene(); drawChart(); }, 100);
+  });
+
+  computeData();
+  updatePlayBtn();
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
