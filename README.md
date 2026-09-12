@@ -1,11 +1,31 @@
 # 小黑喵智慧物理实验室 · Smart Physics Lab
 
 > 一只来自中国的小黑猫，正在为人、社会和整个宇宙学习物理。
-> 这里汇集了一批 **可交互的物理仿真模型**，用拖拽、调节、观察的方式，让抽象的物理定律变得触手可及。
+> 这里汇集了一批**可交互的物理仿真模型**，用拖拽、调节、观察的方式，让抽象的物理定律变得触手可及。
 
 一个专为物理学习打造的交互动画实验室，涵盖 **质点运动学、刚体动力学、振动与波动、光学、热学与电磁近代物理** 等经典仿真。
 
-**本项目将持续更新**，新的物理模型会不断加入本仓库，欢迎 Star、收藏，也欢迎提出你想要的物理仿真。
+**本项目将持续更新**，新的物理模型会不断加入，欢迎 Star、收藏，也欢迎提出你想要的物理仿真。
+
+---
+
+## 🌐 在线访问
+
+本项目通过 **GitHub Pages** 在线运行：<https://Alice-P197.github.io/black-cat-physics-lab/>
+
+## 📂 目录结构
+
+```
+black-cat-physics-lab/
+├── README.md                        # 项目说明（本文件）
+├── physics-lab/                     # 实验室源码目录（部署为网站的根目录）
+│   ├── index.html                   # 实验室入口页（分类 / 搜索 / 卡片与列表视图）
+│   └── .uploads/                    # 全部交互式物理仿真模型
+│       └── *.html                   # 各物理模型（质点运动 / 刚体 / 振动波动 / 光学 / 热学 / 电磁）
+└── .github/workflows/pages.yml      # GitHub Pages 自动部署配置
+```
+
+> 站点源码放在 `physics-lab/` 文件夹，由 GitHub Actions 自动部署到 GitHub Pages，无需任何构建工具。
 
 ---
 
@@ -15,18 +35,6 @@
 - 🔬 **还原物理本质**：每个模型对应明确的物理方程与运动规律
 - 📐 **公式可视化**：配合公式讲解，仿真与理论一一对应
 - 📱 **响应式布局**：桌面端与移动端均可流畅使用
-
----
-
-## 📂 目录结构
-
-```
-black-cat-physics-lab/
-├── index.html          # 实验室入口页（分类/搜索/卡片与列表视图）
-├── README.md           # 项目说明
-└── .uploads/           # 全部交互式物理仿真模型
-    ├── *.html          # 各物理模型（质点运动/刚体/振动波动/光学/热学/电磁）
-```
 
 ---
 
@@ -75,24 +83,23 @@ black-cat-physics-lab/
 
 ---
 
-## 🚀 在线体验
-
-部署完成后，可通过 **GitHub Pages** 在线访问本实验室：  
-`https://Alice-P197.github.io/black-cat-physics-lab/`
-
----
-
 ## 🛠 本地运行
 
 无需任何构建工具，直接使用任意静态服务器打开即可：
 
 ```bash
 git clone https://github.com/Alice-P197/black-cat-physics-lab.git
-cd black-cat-physics-lab
+cd black-cat-physics-lab/physics-lab
 python3 -m http.server 8000
 ```
 
 浏览器访问 `http://localhost:8000` 即可。
+
+---
+
+## 🚀 部署方式（GitHub Actions）
+
+推送到 `main` 分支时，`.github/workflows/pages.yml` 会自动把 `physics-lab/` 部署到 GitHub Pages。首次部署前，请在仓库 **Settings → Pages** 中把 Source 设为 **GitHub Actions**。
 
 ---
 
