@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>氢原子光谱线系 · 交互仿真</title>
+<style>
+:root{
+  --bg:#f5f7fc;--card:#fff;--ink:#1a2238;--ink2:#4a5568;
+  --muted:#8892a8;--accent:#4f46e5;--accent2:#7c6cf5;--line:#e6eaf3;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",
+  "Microsoft YaHei",sans-serif;background:var(--bg);
+  background-image:radial-gradient(900px 500px at 10% -10%,#e7ebff 0,transparent 60%),
+  radial-gradient(700px 500px at 95% 0,#f1e9ff 0,transparent 55%);
+  background-attachment:fixed;color:var(--ink);min-height:100vh;
+  padding:26px 16px 54px;line-height:1.65}
+.wrap{max-width:1080px;margin:0 auto}
+header{text-align:center;margin-bottom:22px}
+header h1{font-size:clamp(1.4rem,3.2vw,1.9rem);font-weight:750;
+  color:#2b2e70;letter-spacing:-.02em}
+header p{color:var(--muted);font-size:.92rem}
+header .tag{display:inline-block;font-size:.74rem;letter-spacing:.14em;
+  color:var(--accent);background:#eef1ff;border:1px solid #dde3ff;
+  padding:.24rem .85rem;border-radius:999px;font-weight:600;margin-bottom:11px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:17px 20px;box-shadow:0 1px 2px rgba(22,33,58,.03),
+  0 10px 28px -20px rgba(22,33,58,.28);margin-bottom:15px}
+.ser{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.chip{border:1px solid var(--line);background:#fff;color:var(--ink2);
+  padding:8px 18px;border-radius:11px;cursor:pointer;font-size:.9rem;
+  font-weight:600;transition:.2s;font-family:inherit}
+.chip.on{background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;border-color:transparent}
+.scene-panel{padding:0;overflow:hidden}
+canvas#cv{display:block;width:100%;height:360px}
+.results{display:flex;flex-wrap:wrap;gap:12px}
+.rbox{flex:1;min-width:140px;background:#f8faff;border:1px solid var(--line);
+  border-radius:12px;padding:11px 15px}
+.rbox .t{font-size:.72rem;color:var(--muted);letter-spacing:.06em}
+.rbox .v{font-size:1.2rem;font-weight:750;color:var(--accent);
+  font-variant-numeric:tabular-nums}
+.rbox .c{display:inline-block;width:1.1em;height:1.1em;border-radius:50%;
+  vertical-align:-2px;margin-right:6px;box-shadow:0 0 8px rgba(0,0,0,.15)}
+.notes{font-size:.88rem;color:var(--ink2);line-height:1.7}
+.notes b{color:var(--ink)}.notes .f{color:var(--accent);font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="tag">原子物理 · ATOMIC</div>
+    <h1>氢原子光谱线系</h1>
+    <p>用里德伯公式计算并展示氢原子各谱线系在波长坐标上的分布</p>
+  </header>
+
+  <div class="panel">
+    <div class="ser" id="ser">
+
+    </div>
+  </div>
+
+  <div class="panel scene-panel"><canvas id="cv"></canvas></div>
+
+  <div class="panel">
+    <div class="results">
+      <div class="rbox"><div class="t">跃迁</div><div class="v" id="rTrans">—</div></div>
+      <div class="rbox"><div class="t">波长 λ</div><div class="v" id="rL">—</div></div>
+      <div class="rbox"><div class="t">区域</div><div class="v" id="rReg">—</div></div>
+      <div class="rbox"><div class="t">谱线颜色</div><div class="v">
+        <span class="c" id="rDot" style="background:#fff"></span><span id="rCol">—</span></div></div>
+    </div>
+  </div>
+
+  <div class="panel notes">
+    谱线的波长满足 <span class="f">1/λ = R_H (1/n₁² − 1/n₂²)</span>，
+    里德伯常数 R_H = 1.097×10⁷ m⁻¹。选择不同线系可查看其全部谱线的波长分布。
+    点击谱线查看对应跃迁。氢原子光谱的<b>分立性</b>直接验证了能级量子化。
+  </div>
+</div>
+
+<script>
+const cv=document.getElementById('cv'),cx=cv.getContext('2d');
+const W=900,H=360,padL=64,padR=28,padT=40,padB=52;
+cv.width=W;cv.height=H;
+const RH=1.097e7; // m^-1
+const NM_CONV=(1/(1e-9)); // m -> nm: 1/nm
+const SERIES=[
+ {n1:1,name:'莱曼系 Lyman',lo:91,hi:121.6,region:'紫外'},
+ {n1:2,name:'巴耳末系 Balmer',lo:364.5,hi:656.3,region:'可见'},
+ {n1:3,name:'帕邢系 Paschen',lo:820,hi:1875,region:'红外'},
+ {n1:4,name:'布拉开系 Brackett',lo:1458,hi:4052,region:'红外'}
+];
+let cur=1,n2max=9,hit=null;
+const rT=document.getElementById('rTrans'),rL=document.getElementById('rL'),
+      rR=document.getElementById('rReg'),rD=document.getElementById('rDot'),
+      rC=document.getElementById('rCol');
+function wl(c,nm){ return nm; }
+function lam(n1,n2){ // nm
+  return 1e9/(RH*(1/(n1*n1)-1/(n2*n2)));
+}
+function wlColor(nm){
+  if(nm<400)return {fl:'#a5b0c6',lab:'紫外'};
+  if(nm>700)return {fl:'#a5b0c6',lab:'红外'};
+  let r,g,b;
+  if(nm<440){r=-(nm-440)/40;g=0;b=1;}
+  else if(nm<490){r=0;g=(nm-440)/50;b=1;}
+  else if(nm<510){r=0;g=1;b=-(nm-510)/20;}
+  else if(nm<580){r=(nm-510)/70;g=1;b=0;}
+  else if(nm<645){r=1;g=-(nm-645)/65;b=0;}
+  else if(nm<=700){r=1;g=(nm-700)/55;b=0;}
+  const c=(x)=>Math.max(0,Math.min(1,x));
+  const to=(v)=>Math.round(c(v)*255);
+  return {fl:`rgb(${to(r)},${to(g)},${to(b)})`,lab:'可见光'};
+}
+function ser(){
+  return SERIES[cur];
+}
+function lines(s){
+  const arr=[];
+  for(let n2=s.n1+1;n2<=n2max;n2++)arr.push({n1:s.n1,n2:n2,wl:lam(s.n1,n2)});
+  return arr;
+}
+// log-scale mapping wavelength -> x across series range
+function xOf(w,lo,hi){
+  const logW=Math.log(w),logL=Math.log(lo),logH=Math.log(hi);
+  const t=(logW-logL)/(logH-logL);
+  return padL+t*(W-padL-padR);
+}
+function buildSer(){
+  const box=document.getElementById('ser');
+  box.innerHTML=SERIES.map((s,i)=>{
+    return `<button class="chip${i===cur?' on':''}" data-n="${i}">${s.name}</button>`;
+  }).join('');
+  box.querySelectorAll('.chip').forEach((b,i)=>{
+    b.onclick=()=>{cur=i;buildSer();hit=null;setRead(hit);};
+  });
+}
+function setRead(h){
+  if(!h){rT.textContent='—';rL.textContent='—';rR.textContent='—';
+    rD.style.background='#fff';rC.textContent='—';return;}
+  const col=wlColor(h.wl);
+  rT.textContent=h.n2+' → '+h.n1;
+  rL.textContent=h.wl>1000?h.wl.toFixed(0)+' nm':h.wl.toFixed(1)+' nm';
+  rR.textContent=ser().region+(h.wl>400&&h.wl<700?'·可见':'');
+  rD.style.background=col.fl;
+  rC.textContent=col.lab;
+}
+function draw(){
+  cx.clearRect(0,0,W,H);
+  const s=ser(),ls=lines(s);
+  const lo=Math.min(...ls.map(l=>l.wl)),hi=Math.max(...ls.map(l=>l.wl));
+  // axis
+  const yA=H-padB+22;
+  cx.strokeStyle='#c5cde2';cx.beginPath();
+  cx.moveTo(padL,yA);cx.lineTo(W-padR,yA);cx.stroke();
+  // visible band (380-700) shown on log axis
+  const xv1=xOf(380,lo,hi),xv2=xOf(700,lo,hi);
+  if(xv2>xv1){
+    cx.fillStyle='rgba(79,70,229,.07)';cx.fillRect(xv1,yA-8,xv2-xv1,16);
+    cx.fillStyle='#7c6cf5';cx.font='11px sans-serif';cx.textAlign='center';
+    cx.fillText('可见光区',(xv1+xv2)/2,yA-14);
+  }
+  // axis ticks
+  cx.fillStyle='#5b6478';cx.font='11px sans-serif';cx.textAlign='center';
+  Array.from(divs(lo,hi)).forEach(d=>{
+    let x=xOf(d,lo,hi),lab=d>=1000?(d/1000).toFixed(0)+'μm':d+'nm';
+    cx.beginPath();cx.moveTo(x,yA);cx.lineTo(x,yA+5);cx.stroke();
+    cx.fillText(lab,x,yA+16);
+  });
+  // lines
+  ls.forEach(l=>{
+    const x=xOf(l.wl,lo,hi);
+    const col=wlColor(l.wl);
+    cx.strokeStyle=col.fl;cx.lineWidth=3;
+    cx.beginPath();cx.moveTo(x,yA-6);cx.lineTo(x,yA-56);cx.stroke();
+    if(hit&&hit.n2===l.n2){
+      cx.strokeStyle='#4f46e5';cx.lineWidth=1.4;cx.setLineDash([5,4]);
+      cx.beginPath();cx.moveTo(x,yA-6);cx.lineTo(x,padT+14);cx.stroke();
+      cx.setLineDash([]);
+    }
+    cx.fillStyle='#4a5568';cx.font='11px sans-serif';cx.textAlign='left';
+    cx.fillText('n'+l.n2,x+4,yA-46);
+  });
+  // header
+  const ttl=ls.map(l=>l.wl.toFixed(1)).length>0?`${s.name} · 点击谱线查看跃迁`:'';
+  cx.fillStyle='#2b2e70';cx.font='700 15px sans-serif';cx.textAlign='left';
+  cx.fillText(s.name,padL,padT-6);
+  if(hit){
+    const x=xOf(hit.wl,lo,hi);
+    cx.strokeStyle='#e6a23c';cx.lineWidth=2;
+    cx.beginPath();cx.moveTo(x,padT+14);cx.lineTo(x,yA-6);cx.stroke();
+  }
+}
+function* divs(lo,hi){
+  const step=[10,20,50,100,200,500,1000,2000][
+    [0,1,2,3,4,5,6,7].find((_,k)=>{
+      const st=[10,20,50,100,200,500,1000,2000][k];
+      return (hi-lo)/st<=4;
+    })||0];
+  const rStart=Math.floor(lo/step)*step;
+  for(let v=rStart;v<=hi+step;v+=step)if(v>=lo&&v<=hi)yield v;
+}
+cv.addEventListener('click',e=>{
+  const rect=cv.getBoundingClientRect();
+  const xm=(e.clientX-rect.left)*W/rect.width;
+  const y=(e.clientY-rect.top)*H/rect.height;
+  if(y>H-padB||y<padT+14)return;
+  const s=ser(),ls=lines(s);
+  const lo=Math.min(...ls.map(l=>l.wl)),hi=Math.max(...ls.map(l=>l.wl));
+  let best=null,bd=6;
+  ls.forEach(l=>{const d=Math.abs(xOf(l.wl,lo,hi)-xm);
+    if(d<bd){bd=d;best=l;}});
+  hit=best;setRead(best);
+});
+buildSer();
+setRead(null);
+function tick(){draw();requestAnimationFrame(tick);}tick();
+</script>
+</body>
+</html>

@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>打点计时器测加速度 · 交互仿真</title>
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$','$']],
+    displayMath: [['$$','$$']]
+  },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+
+:root{
+  --bg:#f5f7fc;
+  --card:#ffffff;
+  --ink:#1a2238;
+  --ink2:#4a5568;
+  --muted:#8892a8;
+  --accent:#4f46e5;
+  --accent2:#7c6cf5;
+  --line:#e6eaf3;
+  --green:#10b981;
+  --red:#ef4444;
+  --amber:#f59e0b;
+  --blue:#3b82f6;
+}
+
+html,body{height:100%;}
+
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--bg);
+  background-image:
+    radial-gradient(900px 500px at 10% -10%,#e7ebff 0%,transparent 60%),
+    radial-gradient(700px 500px at 95% 0%,#f1e9ff 0%,transparent 55%);
+  background-attachment:fixed;
+  color:var(--ink);
+  line-height:1.65;
+  min-height:100vh;
+  padding:28px 16px 56px;
+}
+
+.wrap{max-width:1200px;margin:0 auto;}
+
+/* ---------- Header ---------- */
+header{text-align:center;margin-bottom:26px;}
+
+header h1{
+  font-size:clamp(1.5rem,3.4vw,2.1rem);
+  font-weight:750;
+  letter-spacing:-.02em;
+  color:#2b2e70;
+  margin-bottom:6px;
+}
+
+header p{
+  color:var(--muted);
+  font-size:.95rem;
+}
+
+header .tag{
+  display:inline-block;
+  font-size:.75rem;
+  letter-spacing:.14em;
+  color:var(--accent);
+  background:#eef1ff;
+  border:1px solid #dde3ff;
+  padding:.25rem .85rem;
+  border-radius:999px;
+  font-weight:600;
+  margin-bottom:12px;
+}
+
+/* ---------- Panel ---------- */
+.panel{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:18px 20px;
+  box-shadow:0 1px 2px rgba(22,33,58,.03),
+             0 10px 28px -20px rgba(22,33,58,.28);
+  margin-bottom:16px;
+}
+
+/* ---------- Controls ---------- */
+.controls{
+  display:flex;
+  flex-wrap:wrap;
+  gap:20px 28px;
+  align-items:flex-end;
+}
+
+.slider-group{
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  min-width:170px;
+  flex:1;
+  max-width:240px;
+}
+
+.slider-group label{
+  font-size:.8rem;
+  color:var(--muted);
+  font-weight:600;
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+}
+
+.slider-group label span{
+  color:var(--accent);
+  font-weight:700;
+  font-variant-numeric:tabular-nums;
+}
+
+input[type=range]{
+  -webkit-appearance:none;
+  appearance:none;
+  width:100%;
+  height:5px;
+  border-radius:3px;
+  background:#e4e8f3;
+  outline:none;
+  cursor:pointer;
+}
+
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  appearance:none;
+  width:16px;height:16px;
+  border-radius:50%;
+  background:linear-gradient(140deg,var(--accent),var(--accent2));
+  box-shadow:0 2px 6px -1px rgba(79,70,229,.6);
+  cursor:pointer;
+  transition:transform .15s;
+}
+
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15);}
+
+input[type=range]::-moz-range-thumb{
+  width:16px;height:16px;
+  border:none;
+  border-radius:50%;
+  background:linear-gradient(140deg,var(--accent),var(--accent2));
+  box-shadow:0 2px 6px -1px rgba(79,70,229,.6);
+  cursor:pointer;
+}
+
+.btn-group{display:flex;gap:10px;}
+
+.btn{
+  border:none;
+  padding:10px 22px;
+  font-family:inherit;
+  font-size:.9rem;
+  font-weight:650;
+  border-radius:10px;
+  cursor:pointer;
+  transition:all .18s ease;
+  white-space:nowrap;
+}
+
+.btn-primary{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;
+  box-shadow:0 6px 16px -6px rgba(79,70,229,.8);
+}
+
+.btn-primary:hover{
+  transform:translateY(-1px);
+  box-shadow:0 10px 22px -8px rgba(79,70,229,.9);
+}
+
+.btn-primary:active{transform:translateY(0);}
+
+.btn-ghost{
+  background:#f1f3fa;
+  color:var(--ink2);
+}
+
+.btn-ghost:hover{background:#e8ebf5;color:var(--accent);}
+
+/* ---------- Scene ---------- */
+.scene-panel{padding:0;overflow:hidden;}
+
+#tape{
+  display:block;
+  width:100%;
+  height:320px;
+}
+
+/* ---------- Grid ---------- */
+.grid-main{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  margin-bottom:16px;
+}
+
+@media(max-width:900px){
+  .grid-main{grid-template-columns:1fr;}
+}
+
+/* ---------- Data table ---------- */
+.table-wrap{overflow-x:auto;}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:.92rem;
+}
+
+table th{
+  text-align:left;
+  font-weight:650;
+  color:var(--muted);
+  font-size:.76rem;
+  letter-spacing:.06em;
+  padding:.55rem .75rem;
+  border-bottom:2px solid var(--line);
+  white-space:nowrap;
+}
+
+table td{
+  padding:.62rem .75rem;
+  border-bottom:1px solid var(--line);
+  color:var(--ink2);
+  font-family:"SF Mono","Consolas","Menlo",monospace;
+  font-size:.88rem;
+  font-variant-numeric:tabular-nums;
+}
+
+table td:first-child{
+  font-family:inherit;
+  font-weight:650;
+  color:var(--accent);
+}
+
+table tr:last-child td{border-bottom:none;}
+
+table tr.highlight{
+  background:#f5f4ff;
+}
+
+table tr.highlight td{
+  color:var(--ink);
+  font-weight:600;
+}
+
+/* ---------- Chart ---------- */
+.chart-panel canvas{
+  display:block;
+  width:100%;
+  height:260px;
+}
+
+/* ---------- Diff method ---------- */
+.diff-box{
+  background:linear-gradient(140deg,#f8f6ff,#eef2ff 60%,#f4f7ff);
+  border:1px solid #ddd8ff;
+  border-radius:14px;
+  padding:18px 22px;
+  margin-top:12px;
+}
+
+.diff-box .title{
+  font-size:.85rem;
+  font-weight:700;
+  color:var(--accent);
+  letter-spacing:.05em;
+  margin-bottom:10px;
+}
+
+.diff-box .formula{
+  font-family:"Times New Roman",Georgia,serif;
+  font-size:1.02rem;
+  color:var(--ink);
+  text-align:center;
+  margin:8px 0;
+  overflow-x:auto;
+}
+
+.diff-box .result{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  margin-top:14px;
+  padding-top:14px;
+  border-top:1px dashed #d3d6ee;
+}
+
+.diff-box .result .label{
+  font-size:.85rem;
+  color:var(--muted);
+  font-weight:600;
+}
+
+.diff-box .result .value{
+  font-family:"SF Mono","Consolas","Menlo",monospace;
+  font-size:1.5rem;
+  font-weight:800;
+  color:var(--accent);
+  letter-spacing:-.01em;
+}
+
+.diff-box .result .value small{
+  font-size:.85rem;
+  font-weight:600;
+  color:var(--muted);
+}
+
+/* ============================================================
+   Formula blocks —— 优化后的实验原理公式区
+   ============================================================ */
+.formula-section{
+  padding:22px 22px 24px;
+}
+
+.formula-grid{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+  gap:16px;
+}
+
+@media(max-width:820px){
+  .formula-grid{grid-template-columns:1fr;}
+}
+
+.formula-item{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  background:linear-gradient(168deg,#ffffff 0%,#f8f9ff 100%);
+  border:1px solid #e8ecfb;
+  border-radius:14px;
+  padding:20px 20px 18px;
+  overflow:hidden;
+  transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+  box-shadow:0 1px 2px rgba(22,33,58,.03),
+             0 12px 24px -22px rgba(22,33,58,.35);
+}
+
+.formula-item::before{
+  content:"";
+  position:absolute;
+  top:0;left:0;right:0;
+  height:3px;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  opacity:.85;
+}
+
+.formula-item:hover{
+  transform:translateY(-3px);
+  border-color:#d5dcff;
+  box-shadow:0 1px 2px rgba(22,33,58,.03),
+             0 20px 34px -22px rgba(79,70,229,.55);
+}
+
+.formula-item .label{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  align-self:flex-start;
+  font-size:.73rem;
+  color:var(--accent);
+  background:#eef1ff;
+  border:1px solid #e0e5ff;
+  padding:.26rem .82rem;
+  border-radius:999px;
+  font-weight:700;
+  letter-spacing:.06em;
+  margin-bottom:16px;
+}
+
+.formula-item .label::before{
+  content:"";
+  width:5px;height:5px;
+  border-radius:50%;
+  background:var(--accent);
+  box-shadow:0 0 0 3px rgba(79,70,229,.15);
+}
+
+/* 公式主体：统一高度，垂直居中，横向可滚动 */
+.formula-item .formula-body{
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:74px;
+  padding:6px 2px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  color:var(--ink);
+  scrollbar-width:thin;
+}
+
+.formula-item .formula-body::-webkit-scrollbar{height:5px;}
+.formula-item .formula-body::-webkit-scrollbar-thumb{
+  background:#d5daf0;border-radius:3px;
+}
+
+/* MathJax 尺寸：display 公式略放大、行内公式保持协调 */
+.formula-item .formula-body mjx-container{
+  margin:0 !important;
+  font-size:126% !important;
+}
+
+.formula-item .formula-body mjx-container[display="true"]{
+  margin:0 !important;
+}
+
+/* 逐差法这条公式较长，单独缩一点字号 */
+.formula-item.is-wide .formula-body mjx-container{
+  font-size:112% !important;
+}
+
+.formula-item .desc{
+  font-size:.74rem;
+  color:var(--muted);
+  line-height:1.6;
+  margin-top:14px;
+  padding-top:12px;
+  border-top:1px dashed #e3e7f5;
+  letter-spacing:.01em;
+}
+
+/* ---------- Section title ---------- */
+h3.section-title{
+  font-size:1rem;
+  font-weight:700;
+  color:var(--ink);
+  margin-bottom:12px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+h3.section-title::before{
+  content:"";
+  width:4px;height:17px;
+  border-radius:2px;
+  background:linear-gradient(180deg,var(--accent),var(--accent2));
+}
+
+/* ---------- Footer ---------- */
+footer{
+  text-align:center;
+  color:var(--muted);
+  font-size:.82rem;
+  margin-top:26px;
+}
+
+footer .dot{
+  display:inline-block;
+  width:4px;height:4px;
+  border-radius:50%;
+  background:#cbd5e1;
+  margin:0 .55rem;
+  vertical-align:middle;
+}
+
+mjx-container{overflow-x:auto;overflow-y:hidden;max-width:100%;}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="tag">力学实验 · 交互仿真</div>
+    <h1>打点计时器测加速度</h1>
+    <p>小车拖动纸带 · 打点计时 · 逐差法 · v-t 图像</p>
+  </header>
+
+  <!-- ============ 控制面板 ============ -->
+  <div class="panel controls">
+    <div class="slider-group">
+      <label>加速度 a <span id="a-val">2.0 m/s²</span></label>
+      <input type="range" id="a" min="0.5" max="5" value="2" step="0.1">
+    </div>
+
+    <div class="slider-group">
+      <label>初速度 v₀ <span id="v0-val">0.30 m/s</span></label>
+      <input type="range" id="v0" min="0" max="1" value="0.3" step="0.05">
+    </div>
+
+    <div class="slider-group">
+      <label>打点频率 f <span id="f-val">50 Hz</span></label>
+      <input type="range" id="f" min="20" max="50" value="50" step="10">
+    </div>
+
+    <div class="slider-group">
+      <label>打点个数 N <span id="n-val">7</span></label>
+      <input type="range" id="n" min="5" max="9" value="7" step="1">
+    </div>
+
+    <div class="slider-group">
+      <label>播放速度 <span id="speed-val">1.0×</span></label>
+      <input type="range" id="speed" min="0.5" max="2.5" value="1" step="0.1">
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-primary" id="play-btn">▶ 播放</button>
+      <button class="btn btn-ghost" id="reset-btn">↺ 重置</button>
+    </div>
+  </div>
+
+  <!-- ============ 动画场景 ============ -->
+  <div class="panel scene-panel">
+    <canvas id="tape"></canvas>
+  </div>
+
+  <!-- ============ 数据表 + v-t 图 ============ -->
+  <div class="grid-main">
+    <div class="panel">
+      <h3 class="section-title">数据记录</h3>
+      <div class="table-wrap">
+        <table id="data-table">
+          <thead>
+            <tr>
+              <th>间隔 n</th>
+              <th>sₙ (cm)</th>
+              <th>vₙ = sₙ / T (m/s)</th>
+            </tr>
+          </thead>
+          <tbody id="data-body">
+            <!-- filled by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel chart-panel">
+      <canvas id="vchart"></canvas>
+    </div>
+  </div>
+
+  <!-- ============ 逐差法 ============ -->
+  <div class="panel">
+    <h3 class="section-title">逐差法计算加速度</h3>
+    <div class="diff-box" id="diff-box">
+      <!-- filled by JS -->
+    </div>
+  </div>
+
+  <!-- ============ 公式 ============ -->
+  <div class="panel formula-section">
+    <h3 class="section-title">实验原理公式</h3>
+    <div class="formula-grid">
+      <div class="formula-item">
+        <div class="label">打点周期</div>
+        <div class="formula-body">$$T = \frac{1}{f}$$</div>
+        <div class="desc">相邻两计数点的时间间隔，由打点频率决定</div>
+      </div>
+
+      <div class="formula-item">
+        <div class="label">间隔平均速度</div>
+        <div class="formula-body">$$v_n = \frac{s_n}{T}$$</div>
+        <div class="desc">用间隔内的平均速度近似瞬时速度</div>
+      </div>
+
+      <div class="formula-item">
+        <div class="label">匀变速判据</div>
+        <div class="formula-body">$$\Delta s = s_{n+1} - s_n = aT^2$$</div>
+        <div class="desc">连续相等时间间隔的位移差为恒量</div>
+      </div>
+
+      <div class="formula-item is-wide">
+        <div class="label">逐差法（6 个间隔）</div>
+        <div class="formula-body">$$a = \frac{(s_4+s_5+s_6)-(s_1+s_2+s_3)}{9T^2}$$</div>
+        <div class="desc">分组求差，充分利用全部测量数据</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    打点计时器测加速度<span class="dot"></span>物理仿真实验<span class="dot"></span>Kinematics Lab
+  </footer>
+
+</div>
+
+<script>
+/* ============================================================
+   状态
+   ============================================================ */
+const state = {
+  a: 2,
+  v0: 0.3,
+  freq: 50,
+  N: 7,
+  speed: 1,
+  t: 0,
+  playing: false,
+  lastTime: 0
+};
+
+let D = null;   // 计算后的数据
+
+/* ============================================================
+   数据计算
+   ============================================================ */
+function computeData() {
+  const a = state.a;
+  const v0 = state.v0;
+  const N = state.N;
+  const T = 1 / state.freq;
+
+  // 纸带上各计数点的时刻与相对位移
+  //   x_n = v0·t_n + ½·a·t_n²      (t_n = n·T)
+  const points = [];
+  for (let i = 0; i < N; i++) {
+    const t = i * T;
+    const x = v0 * t + 0.5 * a * t * t;
+    points.push({ idx: i + 1, t, x });
+  }
+
+  // 相邻间隔长度与间隔平均速度
+  const intervals = [];
+  for (let i = 0; i < N - 1; i++) {
+    const s = points[i + 1].x - points[i].x;
+    const v = s / T;
+    const tMid = (points[i].t + points[i + 1].t) / 2;
+    intervals.push({ idx: i + 1, s, v, tMid });
+  }
+
+  // 逐差法
+  let aMeasured = null;
+  let groups = null;
+
+  const m0 = intervals.length;
+  if (m0 >= 2) {
+    let work = intervals;
+    let skipped = 0;
+    if (m0 % 2 !== 0) {
+      work = intervals.slice(1);
+      skipped = 1;
+    }
+    const k = work.length / 2;
+    const g1 = work.slice(0, k);
+    const g2 = work.slice(k, 2 * k);
+    const s1 = g1.reduce((sum, iv) => sum + iv.s, 0);
+    const s2 = g2.reduce((sum, iv) => sum + iv.s, 0);
+    aMeasured = (s2 - s1) / (k * k * T * T);
+    groups = { s1, s2, k, skipped };
+  }
+
+  const xMax = points[N - 1].x;
+  const totalT = (N - 1) * T;
+  const vMax = intervals.length ? Math.max(...intervals.map(iv => iv.v)) : 0;
+
+  return { points, intervals, aMeasured, groups, T, totalT, xMax, vMax };
+}
+
+/* ============================================================
+   工具
+   ============================================================ */
+function fitCanvas(canvas) {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const W = Math.max(1, Math.round(rect.width));
+  const H = Math.max(1, Math.round(rect.height));
+  if (canvas.width !== Math.round(W * dpr) || canvas.height !== Math.round(H * dpr)) {
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+  }
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx, W, H };
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  const rr = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + rr, y);
+  ctx.lineTo(x + w - rr, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
+  ctx.lineTo(x + w, y + h - rr);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+  ctx.lineTo(x + rr, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - rr);
+  ctx.lineTo(x, y + rr);
+  ctx.quadraticCurveTo(x, y, x + rr, y);
+  ctx.closePath();
+}
+
+/* ============================================================
+   场景绘制：小车 + 纸带 + 打点计时器
+   ============================================================ */
+const tapeCanvas = document.getElementById('tape');
+
+/* —— 屏幕布局常量 —— */
+const LAYOUT = {
+  railY: 252,          // 轨道上表面 y
+  tapeTop: 188,        // 纸带上边缘
+  tapeBot: 210,        // 纸带下边缘
+  timerW: 88,          // 打点计时器宽
+  timerH: 56,          // 打点计时器高
+  timerY: 128,         // 打点计时器顶 y
+  cartH: 68,           // 小车高（含轮子）
+  cartWheelR: 7
+};
+
+function drawScene() {
+  const { ctx, W, H } = fitCanvas(tapeCanvas);
+  ctx.clearRect(0, 0, W, H);
+
+  /* ---------- 背景 ---------- */
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#fbfcff');
+  bg.addColorStop(1, '#ffffff');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  /* ---------- 水平布局 ---------- */
+  const padL = 40, padR = 40;
+  const usableW = Math.max(200, W - padL - padR);
+
+  const railY   = LAYOUT.railY;
+  const tapeTop = LAYOUT.tapeTop;
+  const tapeBot = LAYOUT.tapeBot;
+  const tapeMidY = (tapeTop + tapeBot) / 2;
+
+  const timerSX = padL + 0.42 * usableW;   // 打点计时器所在屏幕 x
+  const cartSX0 = padL + 0.46 * usableW;   // 小车初始左端
+  const cartSX1 = padL + 0.88 * usableW;   // 小车最终左端
+  const cartWpx = 0.095 * usableW;         // 小车屏幕宽
+  const tapeLenPx = 0.52 * usableW;        // 纸带屏幕长
+
+  const Dmax = D.xMax;
+  const kpx = Dmax > 1e-9 ? (cartSX1 - cartSX0) / Dmax : 0;  // px/m
+
+  /* ---------- 当前位移 ---------- */
+  const t = state.t;
+  const disp = state.v0 * t + 0.5 * state.a * t * t;
+
+  const cartSX = cartSX0 + disp * kpx;     // 小车左端（纸带连接点）
+  const tapeLeft = cartSX - tapeLenPx;
+  const tapeRight = cartSX;
+
+  /* ==========================================================
+     1. 轨道
+     ========================================================== */
+  const railGrad = ctx.createLinearGradient(0, railY, 0, railY + 12);
+  railGrad.addColorStop(0, '#dde4f2');
+  railGrad.addColorStop(1, '#eef2fa');
+  ctx.fillStyle = railGrad;
+  ctx.fillRect(0, railY, W, 12);
+
+  ctx.strokeStyle = '#c9d3e6';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(0, railY + 0.5);
+  ctx.lineTo(W, railY + 0.5);
+  ctx.stroke();
+
+  /* ==========================================================
+     2. 纸带（先画，被计时器与小车遮挡）
+     ========================================================== */
+  ctx.save();
+  ctx.shadowColor = 'rgba(22,33,58,0.12)';
+  ctx.shadowBlur = 12;
+  ctx.shadowOffsetY = 3;
+  ctx.fillStyle = '#fdfbf0';
+  ctx.beginPath();
+  ctx.rect(tapeLeft, tapeTop, tapeRight - tapeLeft, tapeBot - tapeTop);
+  ctx.fill();
+  ctx.restore();
+
+  // 纸带横纹（表现纸带材质，同时强化“纸带在动”的视觉）
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(tapeLeft, tapeTop, tapeRight - tapeLeft, tapeBot - tapeTop);
+  ctx.clip();
+  ctx.strokeStyle = '#f2ecd8';
+  ctx.lineWidth = 1;
+  for (let y = tapeTop + 3.5; y < tapeBot; y += 5) {
+    ctx.beginPath();
+    ctx.moveTo(tapeLeft, y);
+    ctx.lineTo(tapeRight, y);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // 纸带边框
+  ctx.strokeStyle = '#e8e0c8';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.rect(tapeLeft + 0.5, tapeTop + 0.5,
+           tapeRight - tapeLeft - 1, tapeBot - tapeTop - 1);
+  ctx.stroke();
+
+  /* ==========================================================
+     3. 纸带上的点
+     —— 第 n 个点在 t_n 时刻打于计时器处，
+        此后随纸带（小车）一起向右平移：
+        px = timerSX + [disp(t) − disp(t_n)]·k
+     ========================================================== */
+  const T = D.T;
+  const nVisible = Math.min(
+    D.points.length,
+    Math.max(0, Math.floor(state.t / T + 1e-9) + 1)
+  );
+
+  for (let i = 0; i < nVisible; i++) {
+    const tn = i * T;
+    const dispAt = state.v0 * tn + 0.5 * state.a * tn * tn;
+    const px = timerSX + (disp - dispAt) * kpx;
+    const py = tapeMidY;
+
+    // 光晕
+    ctx.save();
+    ctx.globalAlpha = 0.22;
+    ctx.fillStyle = '#4f46e5';
+    ctx.beginPath();
+    ctx.arc(px, py, 9, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // 实心点
+    ctx.fillStyle = '#1a2238';
+    ctx.beginPath();
+    ctx.arc(px, py, 4.6, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 序号
+    ctx.fillStyle = '#98a2b8';
+    ctx.font = '600 9.5px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(i + 1, px, tapeBot + 4);
+  }
+
+  /* ==========================================================
+     4. 打点计时器
+     ========================================================== */
+  const tcW = LAYOUT.timerW;
+  const tcH = LAYOUT.timerH;
+  const tcX = timerSX - tcW / 2;
+  const tcY = LAYOUT.timerY;
+  const tcBottom = tcY + tcH;
+
+  // 主体
+  ctx.save();
+  ctx.shadowColor = 'rgba(22,33,58,0.16)';
+  ctx.shadowBlur = 16;
+  ctx.shadowOffsetY = 5;
+  const tg = ctx.createLinearGradient(0, tcY, 0, tcBottom);
+  tg.addColorStop(0, '#ffffff');
+  tg.addColorStop(1, '#eceff8');
+  ctx.fillStyle = tg;
+  roundRect(ctx, tcX, tcY, tcW, tcH, 11);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.strokeStyle = '#ccd4e6';
+  ctx.lineWidth = 1.5;
+  roundRect(ctx, tcX, tcY, tcW, tcH, 11);
+  ctx.stroke();
+
+  // 顶部装饰条
+  ctx.save();
+  roundRect(ctx, tcX, tcY, tcW, tcH, 11);
+  ctx.clip();
+  ctx.fillStyle = '#e0e5f5';
+  ctx.fillRect(tcX, tcY, tcW, 5);
+  ctx.restore();
+
+  // 文字
+  ctx.fillStyle = '#4a5568';
+  ctx.font = '700 11.5px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('打点计时器', timerSX, tcY + tcH / 2 - 8);
+
+  ctx.fillStyle = '#98a2b8';
+  ctx.font = '600 10px "SF Mono", Consolas, monospace';
+  ctx.fillText(state.freq + ' Hz', timerSX, tcY + tcH / 2 + 10);
+
+  // 打点针：每次打点前瞬间下压
+  const phase = (state.t / T) % 1;                 // 当前打点周期相位
+  const press = state.playing ? Math.max(0, 1 - phase * 5) : 0;
+  const stylusTop = tcBottom - 4;
+  const stylusBottom = tcBottom + 2 + press * 12;
+
+  ctx.strokeStyle = '#4f46e5';
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(timerSX, stylusTop);
+  ctx.lineTo(timerSX, stylusBottom);
+  ctx.stroke();
+
+  ctx.fillStyle = '#4f46e5';
+  ctx.beginPath();
+  ctx.arc(timerSX, stylusBottom, 3.4, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 打点冲击波纹
+  if (state.playing && press > 0.6) {
+    const wave = (press - 0.6) / 0.4;
+    ctx.save();
+    ctx.globalAlpha = wave * 0.55;
+    ctx.strokeStyle = '#4f46e5';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(timerSX, tapeMidY, 7 + (1 - wave) * 18, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /* ==========================================================
+     5. 小车
+     ========================================================== */
+  const bodyTop = railY - LAYOUT.cartH;
+  const bodyBot = railY - 14;
+  const wheelR = LAYOUT.cartWheelR;
+
+  // 车身阴影
+  ctx.save();
+  ctx.shadowColor = 'rgba(22,33,58,0.20)';
+  ctx.shadowBlur = 14;
+  ctx.shadowOffsetY = 5;
+  const cg = ctx.createLinearGradient(0, bodyTop, 0, bodyBot);
+  cg.addColorStop(0, '#8b7df7');
+  cg.addColorStop(1, '#4f46e5');
+  ctx.fillStyle = cg;
+  roundRect(ctx, cartSX, bodyTop, cartWpx, bodyBot - bodyTop, 9);
+  ctx.fill();
+  ctx.restore();
+
+  // 车身高光
+  ctx.save();
+  roundRect(ctx, cartSX, bodyTop, cartWpx, bodyBot - bodyTop, 9);
+  ctx.clip();
+  const hl = ctx.createLinearGradient(0, bodyTop, 0, bodyTop + 22);
+  hl.addColorStop(0, 'rgba(255,255,255,0.35)');
+  hl.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = hl;
+  ctx.fillRect(cartSX, bodyTop, cartWpx, 24);
+  ctx.restore();
+
+  // 车轮
+  ctx.fillStyle = '#2b3050';
+  [cartSX + Math.min(20, cartWpx * 0.24),
+   cartSX + Math.max(cartWpx - 20, cartWpx * 0.76)].forEach(wx => {
+    ctx.beginPath();
+    ctx.arc(wx, railY - wheelR, wheelR, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.fillStyle = '#8e97b5';
+  [cartSX + Math.min(20, cartWpx * 0.24),
+   cartSX + Math.max(cartWpx - 20, cartWpx * 0.76)].forEach(wx => {
+    ctx.beginPath();
+    ctx.arc(wx, railY - wheelR, wheelR * 0.42, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // 小车标签
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  ctx.font = '700 11px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('小车', cartSX + cartWpx / 2, (bodyTop + bodyBot) / 2 + 2);
+
+  /* ==========================================================
+     6. 说明文字
+     ========================================================== */
+  ctx.fillStyle = '#8892a8';
+  ctx.font = '600 11px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+
+  // 运动方向箭头
+  const arrowY = railY + 30;
+  ctx.strokeStyle = '#b8c0d6';
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  ctx.moveTo(cartSX + cartWpx / 2 - 26, arrowY);
+  ctx.lineTo(cartSX + cartWpx / 2 + 26, arrowY);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cartSX + cartWpx / 2 + 26, arrowY);
+  ctx.lineTo(cartSX + cartWpx / 2 + 19, arrowY - 4);
+  ctx.lineTo(cartSX + cartWpx / 2 + 19, arrowY + 4);
+  ctx.closePath();
+  ctx.fillStyle = '#b8c0d6';
+  ctx.fill();
+
+  ctx.textAlign = 'center';
+  ctx.fillText('运动方向', cartSX + cartWpx / 2, arrowY + 16);
+
+  // 底部时间信息
+  const curPoint = D.points[Math.min(nVisible - 1, D.points.length - 1)];
+  ctx.fillStyle = '#8892a8';
+  ctx.font = '600 12.5px "SF Mono", Consolas, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(
+    't = ' + curPoint.t.toFixed(3) + ' s   ·   已打 ' + nVisible + ' 点',
+    W / 2,
+    H - 18
+  );
+}
+
+/* ============================================================
+   v-t 图
+   ============================================================ */
+const vchart = document.getElementById('vchart');
+
+function drawVChart() {
+  const { ctx, W, H } = fitCanvas(vchart);
+  ctx.clearRect(0, 0, W, H);
+
+  const padL = 58, padR = 24, padT = 44, padB = 46;
+  const pw = W - padL - padR;
+  const ph = H - padT - padB;
+
+  const tMax = D.totalT || 1;
+  const vTheoryMax = state.v0 + state.a * tMax;
+  const vTop = Math.max(D.vMax, vTheoryMax) * 1.25 || 1;
+
+  const X = t => padL + (t / tMax) * pw;
+  const Y = v => padT + ph - (v / vTop) * ph;
+
+  /* ---- 网格 ---- */
+  ctx.strokeStyle = '#f1f4fa';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = padT + (i / 4) * ph;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + pw, y); ctx.stroke();
+  }
+  for (let i = 0; i <= 4; i++) {
+    const x = padL + (i / 4) * pw;
+    ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, padT + ph); ctx.stroke();
+  }
+
+  /* ---- 坐标轴 ---- */
+  ctx.strokeStyle = '#cbd5e1';
+  ctx.lineWidth = 1.3;
+  ctx.beginPath();
+  ctx.moveTo(padL, padT);
+  ctx.lineTo(padL, padT + ph);
+  ctx.lineTo(padL + pw, padT + ph);
+  ctx.stroke();
+
+  /* ---- 理论直线 v = v₀ + at ---- */
+  ctx.save();
+  ctx.setLineDash([7, 6]);
+  ctx.strokeStyle = 'rgba(79, 70, 229, 0.50)';
+  ctx.lineWidth = 1.8;
+  ctx.beginPath();
+  ctx.moveTo(X(0), Y(state.v0));
+  ctx.lineTo(X(tMax), Y(vTheoryMax));
+  ctx.stroke();
+  ctx.restore();
+
+  /* ---- 数据点（间隔中点） ---- */
+  const nVis = Math.min(
+    D.intervals.length,
+    Math.max(0, Math.floor(state.t / D.T - 0.5) + 1)
+  );
+
+  for (let i = 0; i < nVis; i++) {
+    const iv = D.intervals[i];
+    const px = X(iv.tMid);
+    const py = Y(iv.v);
+
+    ctx.save();
+    ctx.globalAlpha = 0.25;
+    ctx.fillStyle = '#10b981';
+    ctx.beginPath();
+    ctx.arc(px, py, 9, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.fillStyle = '#10b981';
+    ctx.beginPath();
+    ctx.arc(px, py, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(px, py, 5, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  /* ---- 标题 ---- */
+  ctx.fillStyle = '#4a5568';
+  ctx.font = 'bold 13px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText('速度 v — 时间 t', padL, padT - 18);
+
+  /* ---- 图例 ---- */
+  ctx.font = '600 11px -apple-system, sans-serif';
+  ctx.textBaseline = 'middle';
+  const lx = padL + pw - 132;
+  const ly = padT - 18;
+
+  ctx.fillStyle = '#10b981';
+  ctx.beginPath(); ctx.arc(lx, ly, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#4a5568';
+  ctx.textAlign = 'left';
+  ctx.fillText('实验数据点', lx + 10, ly);
+
+  ctx.save();
+  ctx.setLineDash([6, 5]);
+  ctx.strokeStyle = 'rgba(79, 70, 229, 0.60)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(lx + 84, ly);
+  ctx.lineTo(lx + 102, ly);
+  ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = '#4a5568';
+  ctx.fillText('理论直线', lx + 106, ly);
+
+  /* ---- 轴标签 ---- */
+  ctx.fillStyle = '#a0aac0';
+  ctx.font = '11.5px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('t / s', padL + pw / 2, padT + ph + 12);
+
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(vTop.toFixed(2), padL - 8, padT + 4);
+  ctx.fillText((vTop / 2).toFixed(2), padL - 8, padT + ph / 2);
+  ctx.fillText('0', padL - 8, padT + ph);
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('0', padL, padT + ph + 6);
+  ctx.textAlign = 'right';
+  ctx.fillText(tMax.toFixed(3), padL + pw, padT + ph + 6);
+}
+
+/* ============================================================
+   数据表 & 逐差法
+   ============================================================ */
+let lastTableHTML = '';
+
+function updateTable() {
+  const tbody = document.getElementById('data-body');
+  const nVis = Math.min(
+    D.intervals.length,
+    Math.max(0, Math.floor(state.t / D.T - 0.5) + 1)
+  );
+
+  let html = '';
+  for (let i = 0; i < D.intervals.length; i++) {
+    const iv = D.intervals[i];
+    const shown = i < nVis;
+    const cls = (nVis > 0 && i === nVis - 1) ? 'highlight' : '';
+    html += '<tr class="' + cls + '">' +
+      '<td>' + iv.idx + '</td>' +
+      '<td>' + (shown ? (iv.s * 100).toFixed(2) : '—') + '</td>' +
+      '<td>' + (shown ? iv.v.toFixed(3) : '—') + '</td>' +
+    '</tr>';
+  }
+
+  if (html !== lastTableHTML) {
+    tbody.innerHTML = html;
+    lastTableHTML = html;
+  }
+}
+
+function updateDiffBox() {
+  const box = document.getElementById('diff-box');
+
+  if (D.groups === null) {
+    box.innerHTML = '<div style="color:#8892a8;text-align:center;padding:20px 0;">' +
+                    '至少需要 2 个间隔才能使用逐差法</div>';
+    return;
+  }
+
+  const { s1, s2, k, skipped } = D.groups;
+  const T = D.T;
+  const a = D.aMeasured;
+
+  const idx1 = [];
+  const idx2 = [];
+  for (let i = 0; i < k; i++) idx1.push('s' + (skipped + i + 1));
+  for (let i = 0; i < k; i++) idx2.push('s' + (skipped + k + i + 1));
+
+  const s1Str = idx1.map((_, i) =>
+    (D.intervals[skipped + i].s * 100).toFixed(2)
+  ).join(' + ');
+  const s2Str = idx2.map((_, i) =>
+    (D.intervals[skipped + k + i].s * 100).toFixed(2)
+  ).join(' + ');
+
+  const skipNote = skipped
+    ? '<div style="font-size:.8rem;color:#8892a8;margin-bottom:8px;">' +
+      '（间隔数为奇数，舍去第 1 段 s₁，使用 ' + (D.intervals.length - 1) + ' 段）</div>'
+    : '';
+
+  box.innerHTML =
+    '<div class="title">逐差法分组</div>' +
+    skipNote +
+    '<div class="formula">' +
+      '第 1 组：' + idx1.join(' + ') + ' = ' + s1Str + ' cm' +
+      ' = ' + (s1 * 100).toFixed(2) + ' cm' +
+    '</div>' +
+    '<div class="formula">' +
+      '第 2 组：' + idx2.join(' + ') + ' = ' + s2Str + ' cm' +
+      ' = ' + (s2 * 100).toFixed(2) + ' cm' +
+    '</div>' +
+    '<div class="formula" style="margin-top:12px;">' +
+      'a = (第 2 组 − 第 1 组) / (k² T²) = ' +
+      '(' + (s2 * 100).toFixed(2) + ' − ' + (s1 * 100).toFixed(2) + ') cm ' +
+      '/ (' + k + '² × (' + T.toFixed(3) + ' s)²)' +
+    '</div>' +
+    '<div class="result">' +
+      '<span class="label">测得加速度</span>' +
+      '<span class="value">' + a.toFixed(3) + '<small> m/s²</small></span>' +
+    '</div>';
+}
+
+/* ============================================================
+   主循环
+   ============================================================ */
+function tick(now) {
+  if (!state.lastTime) state.lastTime = now;
+  const dt = Math.min((now - state.lastTime) / 1000, 0.05);
+  state.lastTime = now;
+
+  if (state.playing) {
+    // 整段实验固定用 3.5 秒播放完（再乘以速度倍率）
+    const rate = D.totalT / 3.5;
+    state.t += dt * state.speed * rate;
+
+    if (state.t >= D.totalT) {
+      state.t = D.totalT;
+      state.playing = false;
+      updatePlayButton();
+    }
+  }
+
+  drawScene();
+  drawVChart();
+  updateTable();
+
+  requestAnimationFrame(tick);
+}
+
+/* ============================================================
+   UI 交互
+   ============================================================ */
+const playBtn = document.getElementById('play-btn');
+const resetBtn = document.getElementById('reset-btn');
+
+function updatePlayButton() {
+  if (state.playing) {
+    playBtn.textContent = '⏸ 暂停';
+  } else if (state.t >= D.totalT - 1e-6 && D.totalT > 0) {
+    playBtn.textContent = '↻ 重播';
+  } else {
+    playBtn.textContent = '▶ 播放';
+  }
+}
+
+function resetSim() {
+  state.t = 0;
+  state.playing = false;
+  state.lastTime = 0;
+  lastTableHTML = '';
+  updatePlayButton();
+  updateDiffBox();
+}
+
+playBtn.addEventListener('click', () => {
+  if (state.t >= D.totalT - 1e-6) state.t = 0;
+  state.playing = !state.playing;
+  state.lastTime = 0;
+  updatePlayButton();
+});
+
+resetBtn.addEventListener('click', resetSim);
+
+/* ---- 滑块绑定 ---- */
+function bindSlider(id, key, fmt) {
+  const el = document.getElementById(id);
+  const out = document.getElementById(id + '-val');
+  el.addEventListener('input', () => {
+    state[key] = parseFloat(el.value);
+    out.textContent = fmt(state[key]);
+    D = computeData();
+    resetSim();
+  });
+}
+
+bindSlider('a',     'a',     v => v.toFixed(1) + ' m/s²');
+bindSlider('v0',    'v0',    v => v.toFixed(2) + ' m/s');
+bindSlider('f',     'freq',  v => v.toFixed(0) + ' Hz');
+bindSlider('n',     'N',     v => v.toFixed(0));
+bindSlider('speed', 'speed', v => v.toFixed(1) + '×');
+
+/* ---- 窗口尺寸变化 ---- */
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    drawScene();
+    drawVChart();
+  }, 120);
+});
+
+/* ============================================================
+   启动
+   ============================================================ */
+D = computeData();
+updatePlayButton();
+updateDiffBox();
+requestAnimationFrame(tick);
+</script>
+
+</body>
+</html>

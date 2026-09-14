@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>洛伦兹变换 · 时空图</title>
+<style>
+:root{
+  --bg:#f5f7fc;--card:#fff;--ink:#1a2238;--ink2:#4a5568;
+  --muted:#8892a8;--accent:#4f46e5;--accent2:#7c6cf5;--line:#e6eaf3;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",
+  "Microsoft YaHei",sans-serif;background:var(--bg);
+  background-image:radial-gradient(900px 500px at 10% -10%,#e7ebff 0,transparent 60%),
+  radial-gradient(700px 500px at 95% 0,#f1e9ff 0,transparent 55%);
+  background-attachment:fixed;color:var(--ink);min-height:100vh;
+  padding:26px 16px 54px;line-height:1.65}
+.wrap{max-width:1080px;margin:0 auto}
+header{text-align:center;margin-bottom:22px}
+header h1{font-size:clamp(1.4rem,3.2vw,1.9rem);font-weight:750;
+  color:#2b2e70;letter-spacing:-.02em}
+header p{color:var(--muted);font-size:.92rem}
+header .tag{display:inline-block;font-size:.74rem;letter-spacing:.14em;
+  color:var(--accent);background:#eef1ff;border:1px solid #dde3ff;
+  padding:.24rem .85rem;border-radius:999px;font-weight:600;margin-bottom:11px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:17px 20px;box-shadow:0 1px 2px rgba(22,33,58,.03),
+  0 10px 28px -20px rgba(22,33,58,.28);margin-bottom:15px}
+.controls{display:flex;flex-wrap:wrap;gap:16px 26px;align-items:flex-end}
+.grp{display:flex;flex-direction:column;gap:5px;min-width:170px;flex:1;max-width:300px}
+.grp label{font-size:.8rem;color:var(--muted);font-weight:600;
+  display:flex;justify-content:space-between}
+.grp label span{color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;
+  border-radius:3px;background:#e4e8f3;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;
+  border-radius:50%;background:linear-gradient(140deg,var(--accent),var(--accent2));
+  box-shadow:0 2px 6px -1px rgba(79,70,229,.6);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border:none;border-radius:50%;
+  background:linear-gradient(140deg,var(--accent),var(--accent2));cursor:pointer}
+.scene-panel{padding:0;overflow:hidden}
+canvas#cv{display:block;width:100%;height:520px;cursor:crosshair}
+.results{display:flex;flex-wrap:wrap;gap:12px}
+.rbox{flex:1;min-width:120px;background:#f8faff;border:1px solid var(--line);
+  border-radius:12px;padding:11px 15px}
+.rbox .t{font-size:.72rem;color:var(--muted);letter-spacing:.06em}
+.rbox .v{font-size:1.15rem;font-weight:750;color:var(--accent);
+  font-variant-numeric:tabular-nums}
+.notes{font-size:.88rem;color:var(--ink2);line-height:1.7}
+.notes b{color:var(--ink)}.notes .f{color:var(--accent);font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="tag">相对论 · RELATIVITY</div>
+    <h1>洛伦兹变换 · 时空图</h1>
+    <p>拖动事件点，观察它在不同惯性系 S（x, ct）与 S′（x′, ct′）中的坐标</p>
+  </header>
+
+  <div class="panel">
+    <div class="controls">
+      <div class="grp">
+        <label>S′ 系速度 β = v/c <span id="bEl">0.60</span></label>
+        <input type="range" id="beta" min="-0.9" max="0.9" step="0.01" value="0.6">
+      </div>
+    </div>
+  </div>
+
+  <div class="panel scene-panel"><canvas id="cv"></canvas></div>
+
+  <div class="panel">
+    <div class="results">
+      <div class="rbox"><div class="t">事件（S 系）</div><div class="v" id="rS">—</div></div>
+      <div class="rbox"><div class="t">事件（S′ 系）</div><div class="v" id="rT">—</div></div>
+      <div class="rbox"><div class="t">间隔（不变量）</div><div class="v" id="rI">—</div></div>
+    </div>
+  </div>
+
+  <div class="panel notes">
+    时空图纵轴为 ct、横轴为 x，光走 45° 斜线（光锥）。S′ 相对 S 以 β 运动时，
+    它的两根坐标轴同时向内旋转。坐标满足洛伦兹变换：
+    <span class="f">ct′ = γ(ct − βx)</span>，
+    <span class="f">x′ = γ(x − βct)</span>。
+    时空间隔 <b>Δs² = c²Δt² − Δx²</b> 在所有惯性系中保持不变。
+  </div>
+</div>
+
+<script>
+const cv=document.getElementById('cv'),cx=cv.getContext('2d');
+const W=900,H=520;cv.width=W;cv.height=H;
+const S=60,cx0=W/2,cy0=H/2,S2=S;
+const els={beta:document.getElementById('beta'),
+  bEl:document.getElementById('bEl'),
+  rS:document.getElementById('rS'),
+  rT:document.getElementById('rT'),
+  rI:document.getElementById('rI')};
+let ev={x:2,ct:3};    // event in (x,ct)
+let drag=false;
+
+function gamma(b){return 1/Math.sqrt(1-b*b);}
+function upd(){
+  els.bEl.textContent=(+els.beta.value).toFixed(2);
+}
+function toPx(x,ct){return [cx0+x*S, cy0-ct*S];}
+function toCoord(px,py){return [(px-cx0)/S,(cy0-py)/S];}
+function axisLen(){return S*4.2;}
+function drawAxes(label,color,x0,y0,x1,y1,force){
+  cx.strokeStyle=color;cx.lineWidth=2.6;
+  cx.lineCap='round';
+  cx.beginPath();cx.moveTo(x0,y0);cx.lineTo(x1,y1);cx.stroke();
+  cx.lineCap='butt';
+  cx.fillStyle=color;cx.font='700 15px sans-serif';cx.textAlign='left';
+  cx.fillText(label,(x1+x0)/2+4,(y1+y0)/2-6);
+}
+function grid(){
+  cx.strokeStyle='#eef1f8';cx.lineWidth=1;
+  for(let i=-6;i<=6;i++){
+    if(i===0)continue;
+    cx.beginPath();cx.moveTo(cx0+i*S,40);cx.lineTo(cx0+i*S,H-40);cx.stroke();
+    cx.beginPath();cx.moveTo(40,cy0+i*S);cx.lineTo(W-40,cy0+i*S);cx.stroke();
+  }
+}
+function lightcone(){
+  cx.strokeStyle='#f5cd8a';cx.lineWidth=2;
+  const l=axisLen();
+  cx.beginPath();cx.moveTo(cx0,cy0-l);cx.lineTo(cx0+l,cy0);cx.stroke();
+  cx.beginPath();cx.moveTo(cx0,cy0-l);cx.lineTo(cx0-l,cy0);cx.stroke();
+  cx.fillStyle='#d9a94f';cx.font='12px sans-serif';
+  cx.fillText('光锥（x = ±ct）',cx0+30,cy0-l+20);
+}
+function draw(){
+  const b=+els.beta.value,g=gamma(b);
+  // super simple: one worldline
+  cx.clearRect(0,0,W,H);
+  grid();
+  // S axes
+  // vertical ct
+  drawAxes('ct', '#5b6478', cx0,40,cx0,cy0+axisLen(),true);
+  // horizontal x
+  drawAxes('x', '#5b6478', 40,cy0,cx0+axisLen(),cy0,true);
+  // origin ticks
+  cx.fillStyle='#5b6478';cx.font='12px sans-serif';cx.textAlign='center';
+  cx.fillText('O',cx0-8,cy0+16);
+  // light cone
+  lightcone();
+  // S' axes (rotated)
+  // ct' axis: x = β·ct → direction (β,1)*t
+  const ctP=axisLen()/Math.sqrt(1+b*b); // scale so axis reaches to perp
+  const ax1={x:cx0+b*ctP*0.6*S, y:cy0-ctP*0.7*S};
+  const ax1b={x:cx0-b*ctP*0.6*S, y:cy0+ctP*0.7*S};
+  drawAxes("ct'", '#4f46e5', ax1b.x,ax1b.y,ax1.x,ax1.y,true);
+  // x' axis: ct = β·x → direction (1,β)
+  const ax2={x:cx0+ctP*0.7*S, y:cy0-b*ctP*0.6*S};
+  const ax2b={x:cx0-ctP*0.7*S, y:cy0+b*ctP*0.6*S};
+  drawAxes("x'", '#dc6a2f', ax2b.x,ax2b.y,ax2.x,ax2.y,true);
+  // event dot + dashed projections
+  const [px,py]=toPx(ev.x,ev.ct);
+  cx.strokeStyle='#db3d14';cx.setLineDash([4,4]);
+  cx.beginPath();cx.moveTo(px,cy0);cx.lineTo(px,py);cx.lineTo(cx0,py);cx.stroke();
+  cx.setLineDash([]);
+  // event point
+  cx.beginPath();cx.arc(px,py,6,0,6.29);cx.fillStyle='#db3d14';cx.fill();
+  cx.fillStyle='#db3d14';cx.font='600 12px sans-serif';
+  cx.fillText('事件',px+8,py-8);
+  // transform
+  const ct=ev.ct,x=ev.x;
+  const ct2=g*(ct-b*x), x2=g*(x-b*ct);
+  const S2inv=(ct*ct-x*x); // c=1 units, interval
+  els.rS.textContent=`(x, ct) = (${x.toFixed(1)}, ${ct.toFixed(1)})`;
+  els.rT.textContent=`(x′, ct′) = (${x2.toFixed(1)}, ${ct2.toFixed(1)})`;
+  els.rI.textContent='Δs² = '+(ct*ct-x*x).toFixed(1)+' (c=1)';
+  // projected point in S' (draw on S' axes)
+  const prx=cx0+(x2*0.7*S)/1, pry=cy0-(ct2*0.7*S)/1;
+  cx.fillStyle='rgba(79,70,229,.4)';
+  cx.beginPath();cx.arc(prx,pry,3,0,6.29);cx.fill();
+  requestAnimationFrame(draw);
+}
+const st=document.getElementById('cv');
+function evFrom(px,py){const[c,t]=toCoord(px,py);return {x:c,ct:t};}
+st.addEventListener('mousedown',e=>{
+  const r=st.getBoundingClientRect();
+  const px=(e.clientX-r.left)*W/r.width,py=(e.clientY-r.top)*H/r.height;
+  ev=evFrom(px,py);drag=true;
+});
+window.addEventListener('mousemove',e=>{
+  if(!drag)return;
+  const r=st.getBoundingClientRect();
+  const px=(e.clientX-r.left)*W/r.width,py=(e.clientY-r.top)*H/r.height;
+  ev=evFrom(px,py);
+});
+window.addEventListener('mouseup',()=>drag=false);
+els.beta.oninput=()=>{upd();};
+upd();draw();
+</script>
+</body>
+</html>

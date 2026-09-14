@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>氢原子能级跃迁 · 交互仿真</title>
+<style>
+:root{
+  --bg:#f5f7fc;--card:#fff;--ink:#1a2238;--ink2:#4a5568;
+  --muted:#8892a8;--accent:#4f46e5;--accent2:#7c6cf5;--line:#e6eaf3;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",
+  "Microsoft YaHei",sans-serif;background:var(--bg);
+  background-image:radial-gradient(900px 500px at 10% -10%,#e7ebff 0,transparent 60%),
+  radial-gradient(700px 500px at 95% 0,#f1e9ff 0,transparent 55%);
+  background-attachment:fixed;color:var(--ink);min-height:100vh;
+  padding:26px 16px 54px;line-height:1.65}
+.wrap{max-width:1080px;margin:0 auto}
+header{text-align:center;margin-bottom:22px}
+header h1{font-size:clamp(1.4rem,3.2vw,1.9rem);font-weight:750;
+  color:#2b2e70;letter-spacing:-.02em}
+header p{color:var(--muted);font-size:.92rem}
+header .tag{display:inline-block;font-size:.74rem;letter-spacing:.14em;
+  color:var(--accent);background:#eef1ff;border:1px solid #dde3ff;
+  padding:.24rem .85rem;border-radius:999px;font-weight:600;margin-bottom:11px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:17px 20px;box-shadow:0 1px 2px rgba(22,33,58,.03),
+  0 10px 28px -20px rgba(22,33,58,.28);margin-bottom:15px}
+.levels{display:flex;flex-direction:column;gap:7px}
+.lev{display:flex;align-items:center;gap:12px;padding:9px 14px;border-radius:12px;
+  border:1.5px solid var(--line);background:#fff;cursor:pointer;
+  transition:.18s;font-family:inherit}
+.lev:hover{border-color:var(--accent);transform:translateX(3px)}
+.lev.on{border-color:#f59e0b;background:#fff8e8}
+.lev.cur{border-color:var(--accent)}
+.lev .n{width:52px;font-weight:750;color:var(--accent);font-size:1.05rem}
+.lev .e{flex:1;color:var(--ink2);font-size:.9rem;
+  font-variant-numeric:tabular-nums}
+.lev .role{font-size:.72rem;color:var(--muted)}
+.btns{display:flex;gap:10px;flex-wrap:wrap}
+.btn{border:none;padding:9px 18px;font-family:inherit;font-size:.88rem;
+  font-weight:650;border-radius:10px;cursor:pointer;transition:all .18s}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;box-shadow:0 6px 16px -6px rgba(79,70,229,.8)}
+.btn-ghost{background:#f1f3fa;color:var(--ink2)}
+.btn:hover{transform:translateY(-1px)}
+.status{margin-top:10px;font-size:.88rem;color:var(--muted)}
+.status b{color:var(--accent)}
+.scene-panel{padding:0;overflow:hidden}
+canvas#cv{display:block;width:100%;height:600px;cursor:pointer}
+.formula{font-size:.9rem;color:var(--ink2);line-height:1.8;
+  background:#f8faff;border:1px solid var(--line);border-radius:12px;
+  padding:14px 16px}
+.formula .f{color:var(--accent);font-weight:650}
+.formula .hl{color:#059669;font-weight:750}
+.results{display:flex;flex-wrap:wrap;gap:12px}
+.rbox{flex:1;min-width:120px;background:#f8faff;border:1px solid var(--line);
+  border-radius:12px;padding:11px 15px}
+.rbox .t{font-size:.72rem;color:var(--muted);letter-spacing:.06em}
+.rbox .v{font-size:1.15rem;font-weight:750;color:var(--accent);
+  font-variant-numeric:tabular-nums}
+.rbox .c{display:inline-block;width:1.1em;height:1.1em;border-radius:50%;
+  vertical-align:-2px;margin-right:6px;box-shadow:0 0 8px rgba(0,0,0,.15)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="tag">原子物理 · ATOMIC</div>
+    <h1>氢原子能级跃迁</h1>
+    <p>点按左侧能级条选择「起始」与「目标」能级，观察跃迁、光子的发射/吸收与波长</p>
+  </header>
+
+  <div class="panel">
+    <div class="levels" id="levels"></div>
+    <div class="btns" style="margin-top:12px">
+      <button class="btn btn-ghost" id="demo">示例：可见跃迁 ▶</button>
+      <button class="btn btn-ghost" id="ground">跃迁回基态(n=1) ▼</button>
+      <button class="btn btn-ghost" id="reset">复位 ⏮</button>
+    </div>
+    <div class="status" id="status">点击左侧任意能级条，或点击右侧能级线，选择跃迁的「起始」能级。</div>
+  </div>
+
+  <div class="panel scene-panel"><canvas id="cv"></canvas></div>
+
+  <div class="panel">
+    <div class="formula" id="formula"></div>
+  </div>
+
+  <div class="panel">
+    <div class="results">
+      <div class="rbox"><div class="t">跃迁</div><div class="v" id="rTrans">—</div></div>
+      <div class="rbox"><div class="t">能量差 ΔE</div><div class="v" id="rE">—</div></div>
+      <div class="rbox"><div class="t">光子波长 λ</div><div class="v" id="rL">—</div></div>
+      <div class="rbox"><div class="t">谱线系</div><div class="v" id="rSer">—</div></div>
+      <div class="rbox"><div class="t">光子颜色</div><div class="v">
+        <span class="c" id="rDot"></span><span id="rReg">—</span></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const cv=document.getElementById('cv'),gx=cv.getContext('2d');
+const W=900,H=600,side=170;cv.width=W;cv.height=H;
+const EU=13.6,N=7;
+function E(n){return -EU/(n*n);}
+const levelY=n=>58+500/(n*n);
+const xL=side, xR=W-30;
+let elec=1,sel=0,anim=null,photons=[],runner=0;
+const statusEl=document.getElementById('status'),
+  rT=document.getElementById('rTrans'),rE=document.getElementById('rE'),
+  rL=document.getElementById('rL'),rSer=document.getElementById('rSer'),
+  rDot=document.getElementById('rDot'),rReg=document.getElementById('rReg'),
+  formula=document.getElementById('formula');
+
+function wlColor(nm){
+  if(nm<380)return {fl:'#a5b0c6',lab:'紫外','nm':nm};
+  if(nm>780)return {fl:'#a5b0c6',lab:'红外',nm:nm};
+  let r,g,b;
+  if(nm<440){r=-(nm-440)/60;g=0;b=1;}
+  else if(nm<490){r=0;g=(nm-440)/50;b=1;}
+  else if(nm<510){r=0;g=1;b=-(nm-510)/20;}
+  else if(nm<580){r=(nm-510)/70;g=1;b=0;}
+  else if(nm<645){r=1;g=-(nm-645)/65;b=0;}
+  else {r=1;g=(nm-700)/80;b=0;}
+  const c=x=>Math.max(0,Math.min(1,x)),to=v=>Math.round(c(v)*255);
+  return {fl:`rgb(${to(r)},${to(g)},${to(b)})`,lab:'可见光',nm:nm};
+}
+function seriesTo(n1){
+  if(n1===1)return '莱曼系·紫外';
+  if(n1===2)return '巴耳末系·可见';
+  if(n1===3)return '帕邢系·红外';
+  return '高能级系·红外';
+}
+function pick(from,to){
+  const E1=E(from),E2=E(to);
+  const abs=E2>E1,dE=Math.abs(E1-E2);
+  let nm=1240/dE;
+  photons.push({nm:nm,y:levelY(to)});
+  elec=to;
+  const col=wlColor(nm);
+  rT.textContent=from+' → '+to;
+  rE.textContent=(abs?'吸收 +':'辐射 −')+dE.toFixed(2)+' eV';
+  rL.textContent=(nm>1000?nm.toFixed(0):nm.toFixed(1))+' nm';
+  rSer.textContent=seriesTo(to);
+  rDot.style.background=col.fl;
+  rReg.textContent=col.lab;
+  anim={from:levelY(from),to:levelY(to),abs:abs,t0:performance.now()};
+  formula.innerHTML=fml(from,to,E1,E2,dE,nm,abs);
+  buildLevels();
+}
+function fml(from,to,E1,E2,dE,nm,abs){
+  return `<b>公式与计算：</b> 能级 E(n)=−13.6/n² eV ·
+  E(${from})=<span class="f">${E1.toFixed(2)} eV</span>，E(${to})=<span class="f">${E2.toFixed(2)} eV</span>；
+  ΔE=|E₂−E₁|=<span class="hl">${dE.toFixed(2)} eV</span><br>
+  光子波长 λ=hc/ΔE=1240 eV·nm ÷ ${dE.toFixed(2)} eV =
+  <span class="hl">${(nm>1000?nm.toFixed(0):nm.toFixed(1))} nm</span>（${abs?'吸收光子':'辐射光子'}）`;
+}
+function buildLevels(){
+  const box=document.getElementById('levels');
+  box.innerHTML='';
+  for(let n=1;n<=N;n++){
+    const b=document.createElement('button');
+    b.className='lev'+(sel===n?' on':(elec===n?' cur':''));
+    let role='';
+    if(sel===n)role='◆ 起始';
+    else if(elec===n)role='e⁻ 电子所在';
+    b.innerHTML=`<span class="n">n=${n}</span>
+      <span class="e">E=−${E(n).toFixed(2)} eV</span>
+      <span class="role">${role}</span>`;
+    b.onclick=()=>handle(n);
+    box.appendChild(b);
+  }
+}
+function handle(n){
+  if(sel===0){sel=n;
+    statusEl.innerHTML=`已选<b>起始能级 n=${n}</b>，请再点另一个能级作为「目标」：高出为吸收，低处为辐射。`;
+  }
+  else if(sel===n){sel=0;
+    statusEl.innerHTML='点击左侧任意能级条，或点击右侧能级线，选择跃迁的「起始」能级。';
+  }
+  else{pick(sel,n);sel=0;
+    statusEl.innerHTML=`跃迁完成：${elec} → 见上方光子波长与公式。`;
+  }
+  buildLevels();
+}
+cv.addEventListener('click',e=>{
+  const r=cv.getBoundingClientRect();
+  const x=(e.clientX-r.left)*W/r.width,y=(e.clientY-r.top)*H/r.height;
+  if(x<xL-30&&x>70){ // left energy axis area
+  }
+  if(x<70||x<xL-40)return;
+  let best=0,bd=34;
+  for(let n=1;n<=N;n++){const d=Math.abs(y-levelY(n));
+    if(d<bd){bd=d;best=n;}}
+  if(best)handle(best);
+});
+let demo=0;
+document.getElementById('demo').onclick=()=>{
+  const seq=[[4,2],[3,2],[5,2]];
+  seq.forEach((s,i)=>setTimeout(()=>pick(s[0],s[1]),i*1100));
+};
+document.getElementById('ground').onclick=()=>{if(elec!==1)pick(elec,1);
+  else statusEl.innerHTML='电子已在基态 n=1。';};
+document.getElementById('reset').onclick=()=>{elec=1;sel=0;photons=[];anim=null;
+  rT.textContent='—';rE.textContent='—';rL.textContent='—';rSer.textContent='—';
+  rReg.textContent='—';rDot.style.background='#fff';
+  formula.innerHTML='<b>公式与计算：</b> 能级 E(n)=−13.6/n² eV；ΔE=|E₂−E₁|；λ=hc/ΔE=1240 eV·nm ÷ ΔE。';
+  buildLevels(); };
+
+function draw(){
+  gx.clearRect(0,0,W,H);
+  // spectrum strip
+  const x0=W*0.06,sw=W*0.88,sy=16,sh=22;
+  const grad=gx.createLinearGradient(x0,0,x0+sw,0);
+  [['#3b1e8f'],['#0000ff'],[0.08,'#6600ff'],[0.25,'#00e0ff'],[0.42,'#00e88a'],
+   [0.55,'#ffee00'],[0.72,'#ff8800'],[0.88,'#ff3a00'],[1,'#a10000']].forEach(p=>{
+    if(p.length===1)return;
+    grad.addColorStop(p[0],p[1]);
+  });
+  gx.fillStyle=grad;gx.fillRect(x0,sy,sw,sh);
+  gx.strokeStyle='#c9d4ee';gx.strokeRect(x0,sy,sw,sh);
+  // photons
+  photons.forEach(p=>{
+    const cx2=(380<=p.nm&&p.nm<=780)?x0+sw*( (p.nm-380)/400 ):x0+sw*( (p.nm<380?150:900)/1000 );
+    const col=wlColor(p.nm);
+    gx.fillStyle=col.fl;gx.fillRect(cx2-2,sy+sh-5,4,10);
+  });
+  gx.fillStyle='#8892a8';gx.font='11px sans-serif';gx.textAlign='left';
+  gx.fillText('380nm',x0,sy+sh+12);gx.textAlign='right';
+  gx.fillText('780nm',x0+sw,sy+sh+12);gx.textAlign='left';
+
+  // energy axis
+  gx.strokeStyle='#2b2e70';gx.lineWidth=2;
+  gx.beginPath();gx.moveTo(xL-14,58);gx.lineTo(xL-14,58+500);gx.stroke();
+  gx.save();gx.translate(-4,(58+558)/2);gx.rotate(-Math.PI/2);
+  gx.fillStyle='#5b6478';gx.font='12px sans-serif';gx.textAlign='center';
+  gx.fillText('能量 E / eV (0 对应电离) ',0,0);gx.restore();
+  // levels
+  for(let n=1;n<=N;n++){
+    const y=levelY(n),isCur=n===elec,isSel=n===sel;
+    gx.strokeStyle=isCur?'#f59e0b':(isSel?'#db3d14':'#b9c3db');
+    gx.lineWidth=(isCur||isSel)?4:2;
+    gx.beginPath();gx.moveTo(xL,y);gx.lineTo(xR,y);gx.stroke();
+    // left label block
+    gx.fillStyle=isCur?'#d97706':(isSel?'#db3d14':'#5b6478');
+    gx.font='700 14px sans-serif';gx.textAlign='right';
+    gx.fillText('E='+E(n).toFixed(2),xL-22,y+4);
+    // n badge inside
+    gx.fillStyle='#fff';gx.strokeStyle=isCur?'#f59e0b':'#c9d4ee';
+    gx.beginPath();gx.roundRect(xL+6,y-9,40,18,5);gx.fill();gx.stroke();
+    gx.fillStyle=isCur?'#d97706':'#4a5568';gx.textAlign='center';
+    gx.fillText('n='+n,xL+26,y+4);
+    if(isSel){gx.textAlign='left';gx.fillStyle='#db3d14';
+      gx.font='700 12px sans-serif';gx.fillText('◆起始',xR+6,y+4);}
+  }
+  // electron + animation
+  const xx=xR-70;
+  if(anim){
+    const el=Math.min(1,(performance.now()-anim.t0)/700);
+    const y=anim.from+(anim.to-anim.from)*el;
+    gx.beginPath();gx.arc(xx,y,7,0,6.29);gx.fillStyle='#2563eb';gx.fill();
+    gx.lineWidth=1.5;gx.strokeStyle='#fff';gx.stroke();
+    gx.fillStyle='#2563eb';gx.font='11px sans-serif';gx.textAlign='center';
+    gx.fillText('e⁻',xx,y-12);
+    if(el>0.2&&el<1){
+      const d=(el-0.2)/0.8;
+      const c2=wlColor(1240/Math.abs(E(anim.from)-E(anim.to)));
+      gx.beginPath();gx.arc(xx- (xR-xL)*0.4*d,y-40*d,6,0,6.29);
+      gx.fillStyle=c2.fl;gx.globalAlpha=1-d;gx.fill();gx.globalAlpha=1;
+    }
+  }
+  else{
+    const y=levelY(elec);
+    gx.beginPath();gx.arc(xx,y,7,0,6.29);gx.fillStyle='#2563eb';gx.fill();
+    gx.lineWidth=1.5;gx.strokeStyle='#fff';gx.stroke();
+    gx.fillStyle='#2563eb';gx.font='11px sans-serif';gx.textAlign='center';
+    gx.fillText('e⁻',xx,y-12);
+  }
+  // legend
+  gx.textAlign='left';gx.fillStyle='#8892a8';gx.font='11px sans-serif';
+  gx.fillText('点击能级线交互；顶端为光谱，发射的光子落在对应波长处',
+    xL,H-8);
+  requestAnimationFrame(draw);
+}
+buildLevels();
+formula.innerHTML='<b>公式与计算：</b> 能级 E(n)=−13.6/n² eV；ΔE=|E₂−E₁|；λ=hc/ΔE=1240 eV·nm ÷ ΔE。';
+draw();
+</script>
+</body>
+</html>

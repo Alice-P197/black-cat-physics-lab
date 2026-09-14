@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>刚体纯滚动</title>
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#f5f7fc;--card:#fff;--ink:#1a2238;--ink2:#4a5568;--muted:#8892a8;
+  --accent:#4f46e5;--accent2:#7c6cf5;--line:#e6eaf3;
+  --green:#10b981;--red:#ef4444;--amber:#f59e0b;--blue:#3b82f6;
+}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--bg);
+  background-image:radial-gradient(900px 500px at 10% -10%,#e7ebff 0%,transparent 60%),
+                   radial-gradient(700px 500px at 95% 0%,#f1e9ff 0%,transparent 55%);
+  background-attachment:fixed;
+  color:var(--ink);line-height:1.65;padding:28px 16px 56px;min-height:100vh;
+}
+.wrap{max-width:1080px;margin:0 auto;}
+header{text-align:center;margin-bottom:26px;}
+header h1{font-size:clamp(1.5rem,3.4vw,2rem);font-weight:750;color:#2b2e70;margin-bottom:6px;letter-spacing:-.02em;}
+header p{color:var(--muted);font-size:.95rem;}
+.tag{display:inline-block;font-size:.75rem;letter-spacing:.14em;color:var(--accent);
+  background:#eef1ff;border:1px solid #dde3ff;padding:.25rem .85rem;border-radius:999px;
+  font-weight:600;margin-bottom:12px;}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:18px 20px;box-shadow:0 1px 2px rgba(22,33,58,.03),0 10px 28px -20px rgba(22,33,58,.28);
+  margin-bottom:16px;}
+.controls{display:flex;flex-wrap:wrap;gap:16px 24px;align-items:flex-end;}
+.seg-group{display:flex;flex-direction:column;gap:6px;}
+.seg-label{font-size:.76rem;color:var(--muted);font-weight:650;letter-spacing:.04em;}
+.seg{display:flex;gap:4px;background:#f1f3fa;padding:5px;border-radius:11px;}
+.seg-btn{border:none;background:transparent;padding:7px 14px;font-size:.85rem;
+  font-family:inherit;font-weight:600;color:var(--ink2);border-radius:8px;
+  cursor:pointer;transition:all .18s ease;white-space:nowrap;}
+.seg-btn:hover{color:var(--accent);}
+.seg-btn.active{background:#fff;color:var(--accent);
+  box-shadow:0 2px 8px -2px rgba(79,70,229,.35);}
+.slider-group{display:flex;flex-direction:column;gap:5px;min-width:150px;flex:1;max-width:200px;}
+.slider-group label{font-size:.78rem;color:var(--muted);font-weight:600;
+  display:flex;justify-content:space-between;align-items:baseline;}
+.slider-group label span{color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums;}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;
+  border-radius:3px;background:#e4e8f3;outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+  width:16px;height:16px;border-radius:50%;
+  background:linear-gradient(140deg,var(--accent),var(--accent2));
+  box-shadow:0 2px 6px -1px rgba(79,70,229,.6);cursor:pointer;transition:transform .15s;}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15);}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border:none;border-radius:50%;
+  background:linear-gradient(140deg,var(--accent),var(--accent2));
+  box-shadow:0 2px 6px -1px rgba(79,70,229,.6);cursor:pointer;}
+.btn-group{display:flex;gap:10px;}
+.btn{border:none;padding:10px 22px;font-family:inherit;font-size:.9rem;font-weight:650;
+  border-radius:10px;cursor:pointer;transition:all .18s ease;white-space:nowrap;}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;
+  box-shadow:0 6px 16px -6px rgba(79,70,229,.8);}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 10px 22px -8px rgba(79,70,229,.9);}
+.btn-ghost{background:#f1f3fa;color:var(--ink2);}
+.btn-ghost:hover{background:#e8ebf5;color:var(--accent);}
+.grid-main{display:grid;grid-template-columns:1.6fr 1fr;gap:16px;margin-bottom:16px;}
+@media(max-width:900px){.grid-main{grid-template-columns:1fr;}}
+.scene-panel{padding:14px;background:linear-gradient(180deg,#fbfcff,#f4f7fd);}
+#scene{display:block;width:100%;height:360px;border-radius:12px;}
+.readout{display:flex;flex-direction:column;}
+.readout h3{font-size:.85rem;font-weight:700;color:var(--muted);letter-spacing:.08em;
+  text-transform:uppercase;margin-bottom:14px;}
+.readout-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;flex:1;align-content:start;}
+.readout-item{background:#f8f9fe;border:1px solid #eef1f9;border-radius:11px;padding:10px 12px;}
+.readout-item .k{font-size:.7rem;color:var(--muted);font-weight:600;
+  letter-spacing:.03em;margin-bottom:3px;display:block;}
+.readout-item .v{font-size:1.05rem;font-weight:700;color:var(--ink);
+  font-variant-numeric:tabular-nums;font-family:"SF Mono","Consolas","Menlo",monospace;}
+.readout-item .v small{font-size:.68rem;font-weight:600;color:var(--muted);margin-left:2px;}
+.readout-item.accent .v{color:var(--accent);}
+.readout-item.green .v{color:var(--green);}
+.readout-item.amber .v{color:var(--amber);}
+.readout-item.blue .v{color:var(--blue);}
+.readout-item.red .v{color:var(--red);}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;background:#f1f3fa;
+  padding:5px;border-radius:11px;width:fit-content;}
+.tab-btn{border:none;background:transparent;padding:7px 14px;font-size:.85rem;
+  font-family:inherit;font-weight:600;color:var(--ink2);border-radius:8px;
+  cursor:pointer;transition:all .18s ease;white-space:nowrap;}
+.tab-btn:hover{color:var(--accent);}
+.tab-btn.active{background:#fff;color:var(--accent);
+  box-shadow:0 2px 8px -2px rgba(79,70,229,.35);}
+#chart{display:block;width:100%;height:260px;}
+.formula-row{background:linear-gradient(180deg,#fbfcff,#f5f7ff);border:1px solid #e8ecfb;
+  border-radius:12px;padding:14px 18px;margin:12px 0;text-align:center;overflow-x:auto;}
+.formula-row.hl{border-left:4px solid var(--accent);
+  background:linear-gradient(180deg,#f8f9ff,#eef1ff);}
+.formula-row.final{border:1px solid #d9d3ff;
+  background:linear-gradient(140deg,#f6f4ff,#eef2ff 60%,#f4f7ff);
+  box-shadow:0 10px 30px -20px rgba(79,70,229,.9);
+  padding:18px;}
+h3.sec{font-size:1rem;font-weight:700;margin-bottom:12px;display:flex;
+  align-items:center;gap:8px;color:var(--ink);}
+h3.sec::before{content:"";width:4px;height:17px;border-radius:2px;
+  background:linear-gradient(180deg,var(--accent),var(--accent2));}
+.note{background:linear-gradient(90deg,#fffbf2,#fffdfa);border-left:3px solid var(--amber);
+  padding:12px 16px;border-radius:0 12px 12px 0;color:var(--ink2);margin:12px 0;font-size:.92rem;}
+.note strong{color:#b3761a;}
+.compare-table{width:100%;border-collapse:collapse;font-size:.9rem;margin-top:10px;}
+.compare-table th{text-align:left;font-weight:650;color:var(--muted);font-size:.74rem;
+  letter-spacing:.06em;padding:.55rem .7rem;border-bottom:2px solid var(--line);}
+.compare-table td{padding:.6rem .7rem;border-bottom:1px solid var(--line);
+  color:var(--ink2);font-size:.88rem;}
+.compare-table td:first-child{font-weight:650;color:var(--accent);}
+.compare-table tr:last-child td{border-bottom:none;}
+footer{text-align:center;color:var(--muted);font-size:.82rem;margin-top:26px;}
+footer .dot{display:inline-block;width:4px;height:4px;border-radius:50%;
+  background:#cbd5e1;margin:0 .55rem;vertical-align:middle;}
+mjx-container{overflow-x:auto;overflow-y:hidden;max-width:100%;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="tag">刚体动力学 · 滚动</div>
+    <h1>刚体纯滚动</h1>
+    <p>平动与转动耦合 · v = ωR · 接触点瞬时静止</p>
+  </header>
+
+  <div class="panel controls">
+    <div class="seg-group">
+      <span class="seg-label">滚动物体</span>
+      <div class="seg" id="shape-seg">
+        <button class="seg-btn" data-val="sphere">实心球</button>
+        <button class="seg-btn active" data-val="cylinder">实心圆柱</button>
+        <button class="seg-btn" data-val="hoop">圆环</button>
+      </div>
+    </div>
+    <div class="slider-group">
+      <label>质量 m <span id="m-val">1.00 kg</span></label>
+      <input type="range" id="m" min="0.2" max="3" value="1" step="0.05">
+    </div>
+    <div class="slider-group">
+      <label>半径 R <span id="R-val">10.0 cm</span></label>
+      <input type="range" id="R" min="0.04" max="0.18" value="0.1" step="0.005">
+    </div>
+    <div class="slider-group">
+      <label>斜面倾角 α <span id="theta-val">30°</span></label>
+      <input type="range" id="theta" min="10" max="60" value="30" step="1">
+    </div>
+    <div class="slider-group">
+      <label>斜面长度 L <span id="L-val">1.50 m</span></label>
+      <input type="range" id="L" min="0.8" max="2.5" value="1.5" step="0.05">
+    </div>
+    <div class="slider-group">
+      <label>动画速度 <span id="speed-val">1.00×</span></label>
+      <input type="range" id="speed" min="0.2" max="2" value="1" step="0.05">
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-primary" id="play-btn">⏸ 暂停</button>
+      <button class="btn btn-ghost" id="reset-btn">↺ 重置</button>
+    </div>
+  </div>
+
+  <div class="grid-main">
+    <div class="panel scene-panel">
+      <canvas id="scene"></canvas>
+    </div>
+    <div class="panel readout">
+      <h3>实时数据</h3>
+      <div class="readout-grid">
+        <div class="readout-item accent">
+          <span class="k">时间 t</span>
+          <span class="v" id="r-t">0.00<small>s</small></span>
+        </div>
+        <div class="readout-item blue">
+          <span class="k">沿斜面位移 s</span>
+          <span class="v" id="r-s">0.00<small>m</small></span>
+        </div>
+        <div class="readout-item green">
+          <span class="k">速度 v</span>
+          <span class="v" id="r-v">0.00<small>m/s</small></span>
+        </div>
+        <div class="readout-item amber">
+          <span class="k">加速度 a</span>
+          <span class="v" id="r-a">0.00<small>m/s²</small></span>
+        </div>
+        <div class="readout-item red">
+          <span class="k">角速度 ω</span>
+          <span class="v" id="r-om">0.00<small>rad/s</small></span>
+        </div>
+        <div class="readout-item accent">
+          <span class="k">纯滚动验证</span>
+          <span class="v" id="r-check">✓ v = ωR</span>
+        </div>
+        <div class="readout-item green">
+          <span class="k">平动动能</span>
+          <span class="v" id="r-Ekt">0.00<small>J</small></span>
+        </div>
+        <div class="readout-item amber">
+          <span class="k">转动动能</span>
+          <span class="v" id="r-Ekr">0.00<small>J</small></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="tabs">
+      <button class="tab-btn active" data-q="s">位移 s</button>
+      <button class="tab-btn" data-q="v">速度 v</button>
+      <button class="tab-btn" data-q="a">加速度 a</button>
+      <button class="tab-btn" data-q="omega">角速度 ω</button>
+      <button class="tab-btn" data-q="Ekt">平动动能</button>
+      <button class="tab-btn" data-q="Ekr">转动动能</button>
+      <button class="tab-btn" data-q="Ep">势能 Ep</button>
+      <button class="tab-btn" data-q="E">总机械能</button>
+    </div>
+    <canvas id="chart"></canvas>
+  </div>
+
+  <div class="panel">
+    <h3 class="sec">纯滚动的物理条件</h3>
+    <p style="color:var(--ink2);font-size:.94rem;">
+      纯滚动指物体与接触面之间<strong>无相对滑动</strong>，接触点瞬时速度为零。
+      对半径为 $R$、角速度为 $\omega$ 的滚动物体，满足
+    </p>
+    <div class="formula-row hl">
+      $$v = \omega R \qquad (\text{纯滚动条件})$$
+    </div>
+    <p style="color:var(--ink2);font-size:.94rem;">
+      沿斜面滚下的运动中，重力提供驱动力矩，静摩擦力提供约束力（不做功）。
+      对质心用牛顿第二定律，对质心用转动定律：
+    </p>
+    <div class="formula-row">
+      $$mg\sin\alpha - f = ma,\qquad f R = I\alpha = I\,\frac{a}{R}$$
+    </div>
+    <p style="color:var(--ink2);font-size:.94rem;">
+      联立消去摩擦力 $f$，得到
+    </p>
+    <div class="formula-row final">
+      $$a = \frac{g\sin\alpha}{1 + \dfrac{I}{mR^2}},\qquad
+      v = \sqrt{\frac{2 g h}{1 + I/(mR^2)}}$$
+    </div>
+    <div class="note">
+      <strong>关键：</strong>加速度由形状决定——转动惯量越小，越多能量转化为平动动能，加速度越大。
+      这就是为什么球比圆环滚得快。
+    </div>
+
+    <h3 class="sec" style="margin-top:18px;">常见刚体的转动惯量与加速度</h3>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>物体</th>
+          <th>I</th>
+          <th>I/(mR²)</th>
+          <th>a / (g sinα)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>实心球</td>
+          <td>$\frac{2}{5}mR^2$</td>
+          <td>0.400</td>
+          <td>0.714</td>
+        </tr>
+        <tr>
+          <td>实心圆柱</td>
+          <td>$\frac{1}{2}mR^2$</td>
+          <td>0.500</td>
+          <td>0.667</td>
+        </tr>
+        <tr>
+          <td>薄圆环</td>
+          <td>$mR^2$</td>
+          <td>1.000</td>
+          <td>0.500</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 class="sec" style="margin-top:18px;">能量分配</h3>
+    <div class="formula-row">
+      $$E = \tfrac{1}{2}mv^2 + \tfrac{1}{2}I\omega^2 + mgy
+      = \tfrac{1}{2}mv^2\left(1 + \frac{I}{mR^2}\right) + mgy$$
+    </div>
+    <p style="color:var(--ink2);font-size:.94rem;">
+      由能量守恒可知，势能减少量按固定比例分配给平动动能和转动动能，比例由 $I/(mR^2)$ 决定。
+    </p>
+  </div>
+
+  <footer>纯滚动仿真<span class="dot"></span>球 · 圆柱 · 圆环<span class="dot"></span>Rigid Body Lab</footer>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  const state = {
+    shape: 'cylinder',
+    m: 1, R: 0.1,
+    theta: 30,          // 斜面倾角（度）
+    L: 1.5,             // 斜面长度
+    speed: 1, t: 0, playing: true,
+    tMax: 5, dt: 0.001,
+    q: 's'
+  };
+
+  const g = 9.8;
+
+  let data = [];
+  let Params = null;
+
+  /* ================= 物理 ================= */
+  function getShapeFactor() {
+    switch (state.shape) {
+      case 'sphere':   return 2/5;
+      case 'cylinder': return 1/2;
+      case 'hoop':     return 1;
+    }
+    return 0.5;
+  }
+
+  function computeParams() {
+    const alpha = state.theta * Math.PI / 180;
+    const c = getShapeFactor();
+    const I = c * state.m * state.R * state.R;
+
+    const a = g * Math.sin(alpha) / (1 + c);
+
+    /* 停止条件：走完斜面长度 L */
+    const tMax = Math.sqrt(2 * state.L / a);
+
+    return { alpha, c, I, a, tMax };
+  }
+
+  function computeData() {
+    Params = computeParams();
+    state.tMax = Params.tMax;
+    state.dt = Math.max(0.001, state.tMax / 2000);
+
+    const N = Math.round(state.tMax / state.dt);
+    data = new Array(N + 1);
+
+    const a = Params.a;
+    const R = state.R;
+    const m = state.m;
+    const I = Params.I;
+    const alpha = Params.alpha;
+    const hMax = state.L * Math.sin(alpha);
+
+    for (let i = 0; i <= N; i++) {
+      const t = i * state.dt;
+      const s = 0.5 * a * t * t;
+      const v = a * t;
+      const omega = v / R;
+      const Ekt = 0.5 * m * v * v;
+      const Ekr = 0.5 * I * omega * omega;
+      const h = hMax - s * Math.sin(alpha);
+      const Ep = m * g * h;
+      data[i] = { t, s, v, a, omega, Ekt, Ekr, Ep, E: Ekt + Ekr + Ep };
+    }
+  }
+
+  function stateAt(t) {
+    let idx = Math.round(t / state.dt);
+    if (idx < 0) idx = 0;
+    if (idx >= data.length) idx = data.length - 1;
+    return data[idx];
+  }
+
+  /* ================= 工具 ================= */
+  function fitCanvas(canvas) {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    const W = Math.max(1, Math.round(rect.width));
+    const H = Math.max(1, Math.round(rect.height));
+    if (canvas.width !== W*dpr || canvas.height !== H*dpr) {
+      canvas.width = W*dpr; canvas.height = H*dpr;
+    }
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx, W, H };
+  }
+
+  function drawArrow(ctx, x1, y1, x2, y2, color, width) {
+    const dx = x2-x1, dy = y2-y1;
+    const len = Math.hypot(dx, dy);
+    if (len < 1.5) return;
+    const ux = dx/len, uy = dy/len;
+    const headLen = Math.min(12, len*0.42);
+    const headW = headLen*0.5;
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2 - ux*headLen*0.85, y2 - uy*headLen*0.85);
+    ctx.stroke();
+
+    const px = -uy, py = ux;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - ux*headLen + px*headW, y2 - uy*headLen + py*headW);
+    ctx.lineTo(x2 - ux*headLen - px*headW, y2 - uy*headLen - py*headW);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  /* ================= 场景 ================= */
+  const sceneCanvas = document.getElementById('scene');
+
+  function drawScene() {
+    const { ctx, W, H } = fitCanvas(sceneCanvas);
+    ctx.clearRect(0, 0, W, H);
+
+    /* 背景 */
+    const bg = ctx.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, '#fbfcff');
+    bg.addColorStop(1, '#f2f5fc');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    const alpha = Params.alpha;
+    const s = stateAt(state.t);
+
+    /* 斜面几何 */
+    const padL = 70, padR = 70, padT = 60, padB = 60;
+    const availW = W - padL - padR;
+    const availH = H - padT - padB;
+
+    /* 斜面投影：底边 = L·cosα，高度 = L·sinα */
+    const Lx = state.L * Math.cos(alpha);
+    const Ly = state.L * Math.sin(alpha);
+
+    const scale = Math.min(availW / Lx, availH / Ly, 200);
+
+    /* 斜面三角形 */
+    const ptTop    = { x: padL, y: padT };                              // 斜面顶端
+    const ptBottom = { x: padL + Lx * scale, y: padT + Ly * scale };    // 斜面底端
+    const ptCorner = { x: padL + Lx * scale, y: padT };                 // 直角角
+
+    /* 地面填充 */
+    ctx.fillStyle = '#eef1f8';
+    ctx.fillRect(0, ptBottom.y, W, H - ptBottom.y);
+
+    /* 斜面三角形 */
+    ctx.fillStyle = '#e8ecf6';
+    ctx.beginPath();
+    ctx.moveTo(ptTop.x, ptTop.y);
+    ctx.lineTo(ptCorner.x, ptCorner.y);
+    ctx.lineTo(ptBottom.x, ptBottom.y);
+    ctx.closePath();
+    ctx.fill();
+
+    /* 斜面边框 */
+    ctx.strokeStyle = '#c7cfe4';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(ptTop.x, ptTop.y);
+    ctx.lineTo(ptBottom.x, ptBottom.y);
+    ctx.stroke();
+
+    ctx.strokeStyle = '#dde3ee';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(ptTop.x, ptTop.y);
+    ctx.lineTo(ptCorner.x, ptCorner.y);
+    ctx.lineTo(ptBottom.x, ptBottom.y);
+    ctx.stroke();
+
+    /* 倾角标注 */
+    const arcR = 58;
+    ctx.strokeStyle = 'rgba(124,108,245,0.7)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(ptBottom.x, ptBottom.y, arcR, Math.PI + Math.PI/2 - alpha, Math.PI + Math.PI/2);
+    ctx.stroke();
+
+    ctx.fillStyle = '#6d28d9';
+    ctx.font = 'italic 14px "Times New Roman", Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('α',
+      ptBottom.x - (arcR + 16) * Math.cos(alpha/2),
+      ptBottom.y - (arcR + 16) * Math.sin(alpha/2)
+    );
+
+    /* 斜面方向单位向量 */
+    const ux = Math.cos(alpha);
+    const uy = Math.sin(alpha);
+
+    /* 法向单位向量（指向物体外侧） */
+    const nx = Math.sin(alpha);
+    const ny = -Math.cos(alpha);
+
+    /* 物体在斜面上的位置：沿斜面方向 s */
+    const sPx = s.s * scale;
+
+    /* 物体中心沿法线偏移 R */
+    const RPx = state.R * scale;
+
+    const cx = ptTop.x + ux * sPx + nx * RPx;
+    const cy = ptTop.y + uy * sPx + ny * RPx;
+
+    /* 接触点 */
+    const cpX = ptTop.x + ux * sPx;
+    const cpY = ptTop.y + uy * sPx;
+
+    /* 物体着色 */
+    let shapeColor1, shapeColor2, shapeStroke;
+    if (state.shape === 'sphere') {
+      shapeColor1 = '#67e8f9'; shapeColor2 = '#0891b2'; shapeStroke = '#155e75';
+    } else if (state.shape === 'cylinder') {
+      shapeColor1 = '#a5b4fc'; shapeColor2 = '#4f46e5'; shapeStroke = '#312e81';
+    } else {
+      shapeColor1 = '#fbbf24'; shapeColor2 = '#d97706'; shapeStroke = '#92400e';
+    }
+
+    /* 物体阴影 */
+    ctx.save();
+    ctx.shadowColor = 'rgba(22,33,58,0.30)';
+    ctx.shadowBlur = 16;
+    ctx.shadowOffsetY = 3;
+
+    const grad = ctx.createRadialGradient(
+      cx - RPx*0.35, cy - RPx*0.35, 0,
+      cx, cy, RPx
+    );
+    grad.addColorStop(0, shapeColor1);
+    grad.addColorStop(1, shapeColor2);
+
+    ctx.fillStyle = grad;
+
+    if (state.shape === 'sphere') {
+      ctx.beginPath();
+      ctx.arc(cx, cy, RPx, 0, Math.PI*2);
+      ctx.fill();
+    } else if (state.shape === 'cylinder') {
+      /* 圆柱：圆形侧面 + 内接矩形 */
+      ctx.beginPath();
+      ctx.arc(cx, cy, RPx, 0, Math.PI*2);
+      ctx.fill();
+    } else {
+      /* 圆环：外圆 + 内圆镂空 */
+      ctx.beginPath();
+      ctx.arc(cx, cy, RPx, 0, Math.PI*2);
+      ctx.fill();
+
+      /* 环内高光 */
+      ctx.restore();
+      ctx.save();
+      ctx.fillStyle = '#fef3c7';
+      ctx.beginPath();
+      ctx.arc(cx, cy, RPx * 0.55, 0, Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+      ctx.save();
+    }
+    ctx.restore();
+
+    /* 物体描边 */
+    ctx.strokeStyle = shapeStroke;
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    ctx.arc(cx, cy, RPx, 0, Math.PI*2);
+    ctx.stroke();
+
+    /* 圆柱的内部阴影线，表示旋转 */
+    if (state.shape === 'cylinder') {
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(cx, cy, RPx * 0.55, 0, Math.PI*2);
+      ctx.stroke();
+    }
+
+    if (state.shape === 'hoop') {
+      ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(cx, cy, RPx * 0.55, 0, Math.PI*2);
+      ctx.stroke();
+    }
+
+    /* 旋转标记：绕中心转的点 */
+    const phi = s.omega ? s.omega * state.t : 0;
+    const markerR = state.shape === 'hoop' ? RPx * 0.78 : RPx * 0.68;
+
+    /* 保存变换（旋转后画标记） */
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(phi);
+
+    /* 十字标记 */
+    ctx.strokeStyle = 'rgba(255,255,255,0.75)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-markerR, 0);
+    ctx.lineTo(markerR, 0);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, -markerR);
+    ctx.lineTo(0, markerR);
+    ctx.stroke();
+
+    /* 端点小球 */
+    ctx.fillStyle = '#fbbf24';
+    ctx.beginPath();
+    ctx.arc(markerR, 0, 3.5, 0, Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.arc(markerR, 0, 3.5, 0, Math.PI*2);
+    ctx.stroke();
+
+    ctx.restore();
+
+    /* 接触点标注 */
+    ctx.fillStyle = 'rgba(239,68,68,0.85)';
+    ctx.beginPath();
+    ctx.arc(cpX, cpY, 4.5, 0, Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(cpX, cpY, 4.5, 0, Math.PI*2);
+    ctx.stroke();
+
+    /* 速度矢量（沿斜面方向） */
+    if (s.v > 0.02) {
+      const vPx = Math.min(80, s.v * 40);
+      drawArrow(ctx,
+        cx, cy,
+        cx + ux * vPx, cy + uy * vPx,
+        '#10b981', 3.2
+      );
+
+      ctx.fillStyle = '#047857';
+      ctx.font = 'bold 13px "Times New Roman", Georgia, serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('v',
+        cx + ux * (vPx + 12) + nx * 12,
+        cy + uy * (vPx + 12) + ny * 12
+      );
+    }
+
+    /* 重力矢量 */
+    const gPx = 50;
+    drawArrow(ctx,
+      cx - nx * (RPx + 8), cy - ny * (RPx + 8),
+      cx - nx * (RPx + 8), cy - ny * (RPx + 8) + gPx,
+      '#ef4444', 2.4
+    );
+
+    ctx.fillStyle = '#b91c1c';
+    ctx.font = 'bold 13px "Times New Roman", Georgia, serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('mg',
+      cx - nx * (RPx + 8) + 8,
+      cy - ny * (RPx + 8) + gPx * 0.5
+    );
+
+    /* 状态文字 */
+    ctx.fillStyle = '#4a5568';
+    ctx.font = 'bold 13px "Times New Roman", Georgia, serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText('t = ' + state.t.toFixed(3) + ' s', 16, 14);
+
+    ctx.fillStyle = '#8892a8';
+    ctx.font = '600 11.5px -apple-system, sans-serif';
+    ctx.fillText(
+      'v = ' + s.v.toFixed(3) + ' m/s   ω = ' + s.omega.toFixed(2) + ' rad/s   v/ω = ' + (s.omega > 0 ? (s.v/s.omega).toFixed(4) : '—') + ' m  (R = ' + state.R.toFixed(3) + ' m)',
+      16, 34
+    );
+  }
+
+  /* ================= 图表 ================= */
+  const chartCanvas = document.getElementById('chart');
+
+  const QINFO = {
+    s:     { color:'#4f46e5', fill:'rgba(79,70,229,0.16)', label:'位移 s',       unit:'m'    },
+    v:     { color:'#10b981', fill:'rgba(16,185,129,0.16)', label:'速度 v',       unit:'m/s'  },
+    a:     { color:'#ef4444', fill:'rgba(239,68,68,0.16)',  label:'加速度 a',     unit:'m/s²' },
+    omega: { color:'#ec4899', fill:'rgba(236,72,153,0.16)', label:'角速度 ω',     unit:'rad/s'},
+    Ekt:   { color:'#3b82f6', fill:'rgba(59,130,246,0.16)', label:'平动动能',     unit:'J'    },
+    Ekr:   { color:'#f59e0b', fill:'rgba(245,158,11,0.16)', label:'转动动能',     unit:'J'    },
+    Ep:    { color:'#8b5cf6', fill:'rgba(139,92,246,0.16)', label:'势能 Ep',      unit:'J'    },
+    E:     { color:'#0ea5e9', fill:'rgba(14,165,233,0.16)', label:'总机械能 E',   unit:'J'    }
+  };
+
+  function drawChart() {
+    const { ctx, W, H } = fitCanvas(chartCanvas);
+    ctx.clearRect(0, 0, W, H);
+
+    const padL = 64, padR = 22, padT = 28, padB = 40;
+    const pw = W - padL - padR;
+    const ph = H - padT - padB;
+
+    const q = state.q;
+    const info = QINFO[q];
+
+    let yMin = Infinity, yMax = -Infinity;
+    for (const d of data) {
+      const y = d[q];
+      if (y < yMin) yMin = y;
+      if (y > yMax) yMax = y;
+    }
+    if (!isFinite(yMin)) { yMin = -1; yMax = 1; }
+    if (yMax - yMin < 1e-6) { yMin -= 0.5; yMax += 0.5; }
+    const range = yMax - yMin;
+    yMin -= range*0.10;
+    yMax += range*0.10;
+
+    const tMax = state.tMax;
+    const X = t => padL + (t/tMax)*pw;
+    const Y = y => padT + ph - ((y - yMin)/(yMax - yMin))*ph;
+
+    ctx.fillStyle = '#fafbff';
+    ctx.fillRect(padL, padT, pw, ph);
+
+    ctx.strokeStyle = '#f1f4fa';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = padT + (i/4)*ph;
+      ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(padL+pw,y); ctx.stroke();
+    }
+    for (let i = 0; i <= 5; i++) {
+      const x = padL + (i/5)*pw;
+      ctx.beginPath(); ctx.moveTo(x,padT); ctx.lineTo(x,padT+ph); ctx.stroke();
+    }
+
+    if (yMin < 0 && yMax > 0) {
+      const yZ = Y(0);
+      ctx.strokeStyle = '#dde4f0';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(padL, yZ);
+      ctx.lineTo(padL+pw, yZ);
+      ctx.stroke();
+    }
+
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 1.3;
+    ctx.beginPath();
+    ctx.moveTo(padL, padT);
+    ctx.lineTo(padL, padT+ph);
+    ctx.lineTo(padL+pw, padT+ph);
+    ctx.stroke();
+
+    /* 填充 */
+    ctx.beginPath();
+    ctx.moveTo(padL, Y(yMin));
+    for (let i = 0; i < data.length; i++) {
+      ctx.lineTo(X(data[i].t), Y(data[i][q]));
+    }
+    ctx.lineTo(padL+pw, Y(yMin));
+    ctx.closePath();
+    const grad = ctx.createLinearGradient(0, padT, 0, padT+ph);
+    grad.addColorStop(0, info.fill);
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    /* 曲线 */
+    ctx.strokeStyle = info.color;
+    ctx.lineWidth = 2.2;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    for (let i = 0; i < data.length; i++) {
+      const px = X(data[i].t), py = Y(data[i][q]);
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+
+    /* 当前点 */
+    const curT = Math.min(state.t, tMax);
+    const curS = stateAt(curT);
+    const cx = X(curT), cy = Y(curS[q]);
+
+    ctx.save();
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = 'rgba(239,68,68,0.42)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx, padT+ph); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(padL, cy); ctx.stroke();
+    ctx.restore();
+
+    ctx.fillStyle = '#ef4444';
+    ctx.beginPath(); ctx.arc(cx, cy, 5, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(cx, cy, 5, 0, Math.PI*2); ctx.stroke();
+
+    /* 标题 */
+    ctx.fillStyle = '#4a5568';
+    ctx.font = 'bold 13px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText(info.label + ' — t', padL, padT - 10);
+
+    /* 轴 */
+    ctx.fillStyle = '#a0aac0';
+    ctx.font = '11.5px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('t / s', padL+pw/2, padT+ph+9);
+
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(yMax.toFixed(2), padL-7, padT+4);
+    ctx.fillText(((yMax+yMin)/2).toFixed(2), padL-7, padT+ph/2);
+    ctx.fillText(yMin.toFixed(2), padL-7, padT+ph);
+
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText('0', padL, padT+ph+6);
+    ctx.textAlign = 'right';
+    ctx.fillText(tMax.toFixed(2), padL+pw, padT+ph+6);
+  }
+
+  /* ================= 主循环 ================= */
+  let lastTime = 0;
+  function tick(now) {
+    if (!lastTime) lastTime = now;
+    let dt = (now - lastTime)/1000;
+    lastTime = now;
+    if (dt > 0.1) dt = 0.1;
+
+    if (state.playing) {
+      state.t += dt * state.speed;
+      if (state.t >= state.tMax) {
+        state.t = state.tMax;
+        state.playing = false;
+        updatePlayBtn();
+      }
+    }
+
+    drawScene();
+    drawChart();
+
+    /* 更新数据面板 */
+    const s = stateAt(state.t);
+    document.getElementById('r-t').innerHTML = state.t.toFixed(3) + '<small>s</small>';
+    document.getElementById('r-s').innerHTML = s.s.toFixed(3) + '<small>m</small>';
+    document.getElementById('r-v').innerHTML = s.v.toFixed(3) + '<small>m/s</small>';
+    document.getElementById('r-a').innerHTML = s.a.toFixed(3) + '<small>m/s²</small>';
+    document.getElementById('r-om').innerHTML = s.omega.toFixed(3) + '<small>rad/s</small>';
+    document.getElementById('r-Ekt').innerHTML = s.Ekt.toFixed(4) + '<small>J</small>';
+    document.getElementById('r-Ekr').innerHTML = s.Ekr.toFixed(4) + '<small>J</small>';
+
+    /* 纯滚动验证 */
+    const vOverOmega = s.omega > 0 ? s.v / s.omega : 0;
+    const err = Math.abs(vOverOmega - state.R) / state.R;
+    const checkEl = document.getElementById('r-check');
+    if (s.omega > 0.01) {
+      if (err < 1e-3) {
+        checkEl.innerHTML = '✓ v = ωR';
+        checkEl.style.color = '#10b981';
+      } else {
+        checkEl.innerHTML = '误差 ' + (err*100).toFixed(2) + '%';
+        checkEl.style.color = '#f59e0b';
+      }
+    } else {
+      checkEl.innerHTML = '—';
+    }
+
+    requestAnimationFrame(tick);
+  }
+
+  /* ================= UI ================= */
+  const playBtn = document.getElementById('play-btn');
+  const resetBtn = document.getElementById('reset-btn');
+
+  function updatePlayBtn() {
+    playBtn.textContent = state.playing ? '⏸ 暂停' : '▶ 播放';
+  }
+
+  playBtn.addEventListener('click', () => {
+    if (state.t >= state.tMax - 1e-6) state.t = 0;
+    state.playing = !state.playing;
+    updatePlayBtn();
+  });
+
+  resetBtn.addEventListener('click', () => {
+    state.t = 0;
+    state.playing = true;
+    updatePlayBtn();
+  });
+
+  /* 形状切换 */
+  document.querySelectorAll('#shape-seg .seg-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#shape-seg .seg-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.shape = btn.dataset.val;
+      computeData();
+      state.t = 0;
+      state.playing = true;
+      updatePlayBtn();
+    });
+  });
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.q = btn.dataset.q;
+    });
+  });
+
+  function bindSlider(id, key, fmt, recompute) {
+    const el = document.getElementById(id);
+    const out = document.getElementById(id + '-val');
+    el.addEventListener('input', () => {
+      state[key] = parseFloat(el.value);
+      out.textContent = fmt(state[key]);
+      if (recompute) {
+        computeData();
+        state.t = 0;
+        state.playing = true;
+        updatePlayBtn();
+      }
+    });
+  }
+
+  bindSlider('m', 'm', v => v.toFixed(2) + ' kg', true);
+  bindSlider('R', 'R', v => (v*100).toFixed(1) + ' cm', true);
+  bindSlider('theta', 'theta', v => v.toFixed(0) + '°', true);
+  bindSlider('L', 'L', v => v.toFixed(2) + ' m', true);
+  bindSlider('speed', 'speed', v => v.toFixed(2) + '×', false);
+
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => { drawScene(); drawChart(); }, 100);
+  });
+
+  computeData();
+  updatePlayBtn();
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

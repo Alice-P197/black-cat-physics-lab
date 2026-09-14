@@ -1,0 +1,2361 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>磁场 · 交互仿真</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<style>
+  :root{
+    --bg:#f4f6fb; --card:#ffffff; --border:#e5e9f2;
+    --primary:#6c5ce7; --primary-hover:#5b4cdb;
+    --green:#00b894; --red:#ff7675; --blue:#0984e3; --orange:#e17055;
+    --mag:#4c9aff; --mag2:#7fc4ff;
+    --text:#2d3436; --text-sub:#636e72; --text-light:#b2bec3;
+    --shadow:0 4px 16px rgba(0,0,0,0.04);
+    --radius:16px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    min-height:100vh;
+  }
+  .wrap{max-width:1400px;margin:0 auto;padding:26px 20px 60px}
+  .header{text-align:center;margin-bottom:22px}
+  .badge{display:inline-block;background:rgba(76,154,255,.12);color:var(--mag);
+    padding:4px 14px;border-radius:20px;font-size:12px;font-weight:600;letter-spacing:.5px;margin-bottom:12px}
+  .title{font-size:clamp(22px,3vw,30px);font-weight:700;margin:0 0 8px;color:#1e272e}
+  .subtitle{color:var(--text-sub);font-size:14px;margin:0}
+  .control-bar{
+    background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:14px 20px;display:flex;flex-wrap:wrap;align-items:center;gap:12px 18px;
+    margin-bottom:16px;border:1px solid var(--border);
+  }
+  .control-bar.secondary{margin-bottom:20px;padding:12px 20px}
+  .btn-group{display:flex;gap:6px;background:#f8f9fc;padding:4px;border-radius:10px;flex-wrap:wrap}
+  .btn-group button{
+    border:none;background:transparent;padding:8px 14px;border-radius:7px;
+    font-size:13.5px;font-weight:600;color:var(--text-sub);cursor:pointer;transition:all .2s;
+  }
+  .btn-group button.active{background:var(--mag);color:#fff;box-shadow:0 2px 8px rgba(76,154,255,.3)}
+  .slider-group{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-sub)}
+  .slider-group label{display:flex;align-items:center;gap:8px;white-space:nowrap}
+  .slider-group input[type=range]{
+    -webkit-appearance:none;appearance:none;width:82px;height:4px;border-radius:2px;
+    background:#e5e9f2;outline:none;
+  }
+  .slider-group input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;width:14px;height:14px;border-radius:50%;
+    background:var(--mag);cursor:pointer;box-shadow:0 0 0 3px rgba(76,154,255,.18);
+  }
+  .slider-group .val{color:var(--mag);font-weight:600;font-variant-numeric:tabular-nums;min-width:34px;font-size:13px}
+  .action-btns{display:flex;gap:10px;margin-left:auto}
+  .action-btns button{
+    border:none;padding:8px 18px;border-radius:10px;font-size:13.5px;font-weight:600;
+    cursor:pointer;transition:all .2s;
+  }
+  .btn-ghost{background:#f8f9fc;color:var(--text-sub);border:1px solid var(--border)}
+  .btn-ghost:hover{background:#eef1f8}
+  .btn-ghost.on{background:var(--green);color:#fff;border-color:transparent}
+  .main-grid{display:grid;grid-template-columns:1fr 380px;gap:20px;margin-bottom:20px}
+  @media(max-width:960px){.main-grid{grid-template-columns:1fr}}
+  .canvas-card{
+    background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:16px;border:1px solid var(--border);display:flex;flex-direction:column;
+  }
+  .canvas-card h3{margin:0 0 12px;font-size:14px;color:var(--text-sub);font-weight:600;
+    display:flex;justify-content:space-between;align-items:center}
+  .canvas-card h3 .tag{
+    background:#f8f9fc;padding:3px 10px;border-radius:6px;font-size:11.5px;color:var(--text-light);
+    font-weight:500;
+  }
+  .stagebox{position:relative;width:100%;display:flex;justify-content:center}
+  #cv2d{width:100%;max-width:1000px;aspect-ratio:1/1;border-radius:12px;background:#fafbfe;
+    display:block;cursor:crosshair;touch-action:none}
+  .canvas-foot{display:flex;justify-content:space-between;padding:8px 4px 0;color:var(--text-light);
+    font-size:11.5px}
+  .legend{display:flex;gap:14px;flex-wrap:wrap}
+  .lg{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-sub)}
+  .lg .sw-c{width:12px;height:12px;border-radius:50%;display:inline-block;border:1px solid rgba(0,0,0,.1)}
+  .lg .sw-l{width:14px;height:2px;background:var(--mag);display:inline-block}
+  .side{display:flex;flex-direction:column;gap:16px}
+  .card{
+    background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+    border:1px solid var(--border);overflow:hidden;
+  }
+  .card h3{
+    margin:0;padding:12px 16px 10px;font-size:13px;font-weight:600;color:var(--text-sub);
+    letter-spacing:.3px;border-bottom:1px solid var(--border);
+  }
+  .row{display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid rgba(229,233,242,.6)}
+  .row:last-child{border-bottom:none}
+  .row .tx{flex:1;color:var(--text-sub);font-size:13px}
+  .sw{position:relative;width:44px;height:24px;flex:none;border-radius:24px;cursor:pointer;
+    background:#dfe4ee;transition:.18s;border:none;padding:0}
+  .sw::after{content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;border-radius:50%;
+    background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.15);transition:.18s}
+  .sw.on{background:var(--mag)}
+  .sw.on::after{transform:translateX(20px)}
+  .data-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border)}
+  .data-item{background:var(--card);padding:11px 14px}
+  .data-item small{display:block;color:var(--text-light);font-size:11px;margin-bottom:4px;letter-spacing:.3px}
+  .data-item .v{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text)}
+  .data-item .v.mag{color:var(--mag)}
+  .data-item.wide{grid-column:1/3}
+  .pos-inputs{display:flex;gap:6px;margin-top:4px}
+  .pos-inputs input{
+    width:100%;background:#f8f9fc;border:1px solid var(--border);color:var(--text);
+    border-radius:6px;padding:6px 8px;font-size:13px;text-align:center;
+    font-family:"Times New Roman",serif;font-variant-numeric:tabular-nums;
+    outline:none;transition:.15s;
+  }
+  .pos-inputs input:focus{border-color:var(--mag);background:#fff}
+  .pos-inputs .sep{align-self:center;color:var(--text-light);font-size:13px}
+
+  /* 圆环管理 */
+  .ring-tab-bar{display:flex;gap:4px;padding:8px 12px;background:#f8f9fc;border-bottom:1px solid var(--border)}
+  .ring-tab{
+    border:none;background:transparent;padding:6px 14px;border-radius:6px;
+    font-size:12.5px;font-weight:600;color:var(--text-sub);cursor:pointer;transition:.15s;
+  }
+  .ring-tab.active{background:var(--mag);color:#fff;box-shadow:0 2px 6px rgba(76,154,255,.3)}
+  .ring-list{padding:6px 10px;max-height:260px;overflow-y:auto}
+  .ring-row{
+    display:grid;grid-template-columns:22px 1fr 1fr 1fr 1fr 30px 24px;
+    gap:4px;align-items:center;padding:6px 4px;margin-bottom:4px;
+    border-radius:8px;transition:background .15s;
+  }
+  .ring-row:hover{background:rgba(76,154,255,.04)}
+  .ring-row .ring-tag{font-family:"Times New Roman",serif;font-weight:700;font-size:16px;text-align:center}
+  .ring-row input{
+    width:100%;background:#f8f9fc;border:1px solid var(--border);color:var(--text);
+    border-radius:5px;padding:4px 3px;font-size:11.5px;text-align:center;
+    font-variant-numeric:tabular-nums;outline:none;transition:.15s;
+  }
+  .ring-row input:focus{border-color:var(--mag);background:#fff}
+  .ring-row .ring-dir{
+    width:24px;height:22px;border-radius:6px;border:1px solid var(--border);
+    background:#f8f9fc;cursor:pointer;font-size:14px;font-weight:700;
+    padding:0;display:flex;align-items:center;justify-content:center;transition:.15s;
+  }
+  .ring-row .ring-dir:hover{background:#eef1f8}
+  .ring-row .ring-del{
+    background:none;border:none;color:var(--text-light);cursor:pointer;
+    font-size:13px;padding:2px;border-radius:4px;transition:.15s;
+  }
+  .ring-row .ring-del:hover{color:var(--red);background:rgba(255,118,117,.1)}
+  .ring-addbar{
+    padding:10px 14px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;
+    border-top:1px solid var(--border);
+  }
+  .ring-addbar button{
+    background:var(--mag);color:#fff;border:none;border-radius:7px;padding:6px 12px;
+    font-size:12px;font-weight:600;cursor:pointer;transition:.15s;
+  }
+  .ring-addbar button:hover{filter:brightness(1.1)}
+  .ring-addbar button.ghost{background:#f8f9fc;color:var(--text-sub);border:1px solid var(--border)}
+  .ring-addbar button.green{background:var(--green)}
+  .ring-addbar button.gray{background:#636e72}
+
+  /* 代码编辑器 */
+  .code-pane{padding:10px 12px}
+  .code-area{
+    width:100%;min-height:180px;
+    font-family:"Menlo","Consolas","Courier New",monospace;
+    font-size:11.5px;line-height:1.65;
+    padding:10px 12px;
+    border:1px solid var(--border);border-radius:8px;
+    outline:none;resize:vertical;
+    background:#f8f9fc;color:var(--text);
+    tab-size:2;
+  }
+  .code-area:focus{border-color:var(--mag);background:#fff}
+  .code-bar{display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap}
+  .code-bar button{
+    background:var(--green);color:#fff;border:none;border-radius:7px;
+    padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;transition:.15s;
+  }
+  .code-bar button:hover{filter:brightness(1.1)}
+  .code-bar button.ghost{background:#f8f9fc;color:var(--text-sub);border:1px solid var(--border)}
+  .code-hint{
+    font-size:11px;color:var(--text-light);line-height:1.6;margin-top:8px;
+    padding:8px 10px;background:rgba(76,154,255,.05);border-radius:6px;
+  }
+  .code-hint b{color:var(--mag)}
+
+  /* 粒子控制栏 */
+  .particle-bar{
+    background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:12px 18px;margin-top:16px;border:1px solid var(--border);
+    display:none;flex-wrap:wrap;gap:12px 20px;align-items:center;
+  }
+  .particle-bar.show{display:flex}
+  .particle-bar .label{font-size:12.5px;font-weight:600;color:var(--text-sub)}
+  .particle-bar button{
+    border:none;padding:6px 14px;border-radius:8px;font-size:12.5px;font-weight:600;
+    cursor:pointer;transition:.15s;
+  }
+  .btn-emit{background:linear-gradient(120deg,#ff7675,#e17055);color:#fff;
+    box-shadow:0 2px 8px rgba(255,118,117,.3)}
+  .btn-play{background:var(--mag);color:#fff;box-shadow:0 2px 8px rgba(76,154,255,.3)}
+  .btn-clear{background:#f8f9fc;color:var(--text-sub);border:1px solid var(--border)}
+  .btn-emit:hover,.btn-play:hover{filter:brightness(1.08)}
+  .btn-clear:hover{background:#eef1f8}
+  .particle-bar .p-group{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-sub)}
+  .particle-bar .p-group input[type=range]{
+    -webkit-appearance:none;appearance:none;width:76px;height:4px;border-radius:2px;
+    background:#e5e9f2;outline:none;
+  }
+  .particle-bar .p-group input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;width:13px;height:13px;border-radius:50%;
+    background:var(--mag);cursor:pointer;box-shadow:0 0 0 3px rgba(76,154,255,.18);
+  }
+  .particle-bar .p-val{color:var(--mag);font-weight:600;font-variant-numeric:tabular-nums;
+    min-width:34px;font-size:12px}
+
+  .measure-card{
+    background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+    border:1px solid var(--border);padding:14px 20px;margin-bottom:20px;
+    display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  }
+  .measure-card .label{font-size:13px;color:var(--text-sub);font-weight:600}
+  .measure-card .coords{
+    font-family:"Times New Roman",serif;font-size:14px;color:var(--text);
+    background:#f8f9fc;padding:6px 12px;border-radius:8px;border:1px solid var(--border);
+  }
+  .measure-card .hint{font-size:12px;color:var(--text-light);margin-left:auto}
+  .charts-grid{display:grid;grid-template-columns:1fr;gap:20px;margin-bottom:20px}
+  .chart-card{
+    background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+    border:1px solid var(--border);padding:14px 16px;
+  }
+  .chart-card h3{margin:0 0 10px;font-size:13px;color:var(--text-sub);font-weight:600;
+    display:flex;justify-content:space-between;align-items:center}
+  .chart-card h3 .unit{font-size:11.5px;color:var(--text-light);font-weight:500}
+  .chart-canvas{width:100%;height:220px;display:block;background:#fafbfe;border-radius:8px}
+  .formula-card{
+    background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+    border:1px solid var(--border);padding:14px 20px;
+  }
+  .formula-card h3{margin:0 0 12px;font-size:13px;color:var(--text-sub);font-weight:600}
+  .formula-list{display:flex;flex-wrap:wrap;gap:12px}
+  .formula-item{
+    background:#fafbfe;padding:8px 14px;border-radius:8px;border:1px solid var(--border);
+    font-size:14px;flex-shrink:0;
+  }
+  .formula-note{
+    margin-top:10px;padding:10px 14px;
+    background:linear-gradient(135deg, rgba(76,154,255,.07), rgba(108,92,231,.04));
+    border-left:3px solid var(--mag);border-radius:6px;
+    font-size:12.5px;line-height:1.7;color:var(--text-sub);
+  }
+  .formula-note b{color:var(--mag);font-weight:700}
+  .earth-info{
+    display:none;background:linear-gradient(135deg, rgba(76,154,255,.08), rgba(108,92,231,.06));
+    border:1px solid rgba(76,154,255,.25);border-radius:12px;padding:14px 18px;
+    margin-bottom:20px;font-size:13px;line-height:1.75;color:var(--text-sub);
+  }
+  .earth-info.show{display:block}
+  .earth-info b{color:var(--mag);font-weight:700}
+  .earth-info .kbd{
+    display:inline-block;background:#fff;border:1px solid var(--border);border-radius:4px;
+    padding:0 6px;font-family:"Times New Roman",serif;color:var(--mag);font-weight:600;
+  }
+  .earth-info .warn{
+    display:inline-block;background:rgba(232,69,69,.1);color:#e84545;
+    padding:1px 8px;border-radius:4px;font-weight:700;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="header">
+    <div class="badge">电磁学 · 磁场仿真</div>
+    <h1 class="title">电流与磁体的磁场分布</h1>
+    <p class="subtitle">毕奥-萨伐尔定律 · 磁感线 · 带电粒子在磁场中的运动</p>
+  </header>
+
+  <div class="control-bar">
+    <div class="btn-group" id="tabs">
+      <button data-mode="wire" class="active">通电直导线</button>
+      <button data-mode="ring">通电圆环</button>
+      <button data-mode="solenoid">通电螺线管</button>
+      <button data-mode="magnet">永磁体</button>
+      <button data-mode="earth">地球磁场</button>
+    </div>
+    <div class="slider-group" id="dirGroup">
+      <label>电流方向 <input type="range" id="dirSlider" min="0" max="1" step="1" value="0"><span class="val" id="dirVal">外</span></label>
+    </div>
+    <div class="slider-group">
+      <label>电流 / 场强 <input type="range" id="currSlider" min="0.2" max="3" step="0.05" value="1"><span class="val" id="currVal">1.00</span></label>
+    </div>
+    <div class="action-btns">
+      <button id="btnMeasure" class="btn-ghost">绘制测量线</button>
+      <button id="btnReset" class="btn-ghost">↺ 重置</button>
+    </div>
+  </div>
+
+  <div class="control-bar secondary" id="geoBar">
+    <div class="slider-group" id="solParamsGroup" style="display:none">
+      <label>管半径 <input type="range" id="solRSlider" min="0.25" max="1.20" step="0.02" value="0.55"><span class="val" id="solRVal">0.55</span></label>
+      <label>管长度 <input type="range" id="solLSlider" min="1.00" max="4.20" step="0.05" value="2.40"><span class="val" id="solLVal">2.40</span></label>
+      <label>匝数 <input type="range" id="solNSlider" min="4" max="24" step="1" value="10"><span class="val" id="solNVal">10</span></label>
+    </div>
+    <div style="font-size:12px;color:var(--text-light);margin-left:auto" id="geoHint">
+      拖动参数可实时改变几何与磁场分布
+    </div>
+  </div>
+
+  <div class="main-grid">
+    <div>
+      <div class="canvas-card">
+        <h3>
+          <span id="canvasTitle">磁场分布 · 2D 截面</span>
+          <span class="tag" id="canvasFoot">场区 8 m × 8 m</span>
+        </h3>
+        <div class="stagebox">
+          <canvas id="cv2d"></canvas>
+        </div>
+        <div class="canvas-foot">
+          <div class="legend">
+            <span class="lg"><span class="sw-l"></span>磁感线</span>
+            <span class="lg"><span class="sw-c" style="background:#e84545"></span>逆时针电流 / 磁北</span>
+            <span class="lg"><span class="sw-c" style="background:#4c9aff"></span>顺时针电流 / 磁南</span>
+            <span class="lg"><span class="sw-c" style="background:#ffffff;border-color:#333"></span>指南针</span>
+          </div>
+          <span id="footR">点击/拖拽查看场点 · 靠近轴自动吸附</span>
+        </div>
+      </div>
+
+      <!-- 粒子模拟控制栏（ring 模式显示） -->
+      <div class="particle-bar" id="particleBar">
+        <span class="label">带电粒子：</span>
+        <button id="btnEmit" class="btn-emit">⊕ 发射粒子</button>
+        <button id="btnParticlePlay" class="btn-play">▶ 播放</button>
+        <button id="btnParticleClear" class="btn-clear">✕ 清空</button>
+        <div class="p-group">
+          <label>v₀ <input type="range" id="emitVSlider" min="0.5" max="5" step="0.1" value="2"><span class="p-val" id="emitVVal">2.0</span></label>
+        </div>
+        <div class="p-group">
+          <label>角度 <input type="range" id="emitASlider" min="-90" max="90" step="1" value="0"><span class="p-val" id="emitAVal">0°</span></label>
+        </div>
+        <div class="p-group">
+          <label>q/m <input type="range" id="qmSlider" min="0.2" max="3" step="0.05" value="1"><span class="p-val" id="qmVal">1.00</span></label>
+        </div>
+        <span style="font-size:11px;color:var(--text-light);margin-left:auto">
+          轨迹颜色 = z 坐标（蓝 → 红）
+        </span>
+      </div>
+    </div>
+
+    <div class="side">
+      <div class="card">
+        <h3>显示控制</h3>
+        <div class="row"><span class="tx">磁感线</span><button class="sw on" id="swLine"></button></div>
+        <div class="row"><span class="tx">方向箭头</span><button class="sw on" id="swArrow"></button></div>
+        <div class="row"><span class="tx">指南针</span><button class="sw on" id="swCompass"></button></div>
+        <div class="row"><span class="tx">测量线</span><button class="sw on" id="swMeasure"></button></div>
+        <div class="row" id="rowSolar" style="display:none"><span class="tx">太阳风动画</span><button class="sw on" id="swSolar"></button></div>
+        <div class="row" id="row3D" style="display:none"><span class="tx">3D 磁感线视图</span><button class="sw" id="sw3D"></button></div>
+      </div>
+
+      <div class="card" id="ringCard" style="display:none">
+        <h3>圆环管理</h3>
+        <div class="ring-tab-bar">
+          <button class="ring-tab active" data-rtab="list">列表</button>
+          <button class="ring-tab" data-rtab="code">编程</button>
+        </div>
+        <div id="ringListPane">
+          <div class="ring-list" id="ringList"></div>
+          <div class="ring-addbar">
+            <button id="addRingBtn">＋ 添加</button>
+            <button id="exportRingsBtn" class="green">↓ 导出</button>
+            <button id="importRingsBtn" class="gray">↑ 导入</button>
+          </div>
+        </div>
+        <div id="ringCodePane" style="display:none">
+          <div class="code-pane">
+            <textarea class="code-area" id="ringCode" spellcheck="false">// 亥姆霍兹线圈
+ring(-0.6, 0, 1, 2, 1);
+ring( 0.6, 0, 1, 2, 1);</textarea>
+            <div class="code-bar">
+              <button id="runCodeBtn">▶ 运行</button>
+              <button id="clearCodeBtn" class="ghost">清空</button>
+            </div>
+            <div class="code-hint">
+              <b>ring(x, y, R, I, dir)</b> — 添加圆环<br>
+              x, y: 中心位置 (m)　R: 半径 (m)　I: 电流大小 (a.u.)　dir: 1 逆时针 (红) / -1 顺时针 (蓝)<br>
+              可用：<b>Math.*</b>、<b>PI</b>、<b>range(a,b,step)</b>、<b>linspace(a,b,n)</b>、for 循环、变量等
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>场点探测数据</h3>
+        <div class="data-grid">
+          <div class="data-item wide">
+            <small>位置 (x , y) / m</small>
+            <div class="pos-inputs">
+              <input type="number" id="probeX" step="0.05" value="1.00">
+              <span class="sep">,</span>
+              <input type="number" id="probeY" step="0.05" value="0.00">
+            </div>
+          </div>
+          <div class="data-item">
+            <small>磁感应强度 |B|</small>
+            <div class="v mag" id="dpB">0</div>
+          </div>
+          <div class="data-item">
+            <small>B 方向（相对 +x）</small>
+            <div class="v" id="dpAng">—</div>
+          </div>
+          <div class="data-item wide">
+            <small>场源信息</small>
+            <div class="v" id="dpInfo" style="font-size:13px">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="earth-info" id="earthInfo">
+    <b>重要纠正</b>：地理北极附近是 <span class="warn">地磁南极（S 极）</span>，
+    地理南极附近才是 <span class="warn">地磁北极（N 极）</span>。所以指南针红色 N 极指向北方。<br>
+    <b>地磁偏角</b>：地磁轴与自转轴约夹 <span class="kbd">11.5°</span>，磁北与真北的夹角叫磁偏角 D。<br>
+    <b>磁层防御</b>：地球偶极场向太空延伸形成"磁层"，向阳侧被太阳风压缩到约 <span class="kbd">10 R⊕</span>，
+    背阳侧拖出长长的磁尾。太阳风粒子沿磁层顶绕过地球，只有少量从极区漏斗进入形成极光。
+  </div>
+
+  <div class="measure-card" id="measureCard">
+    <span class="label">测量线</span>
+    <span class="coords" id="measureCoords">A(-2.00, 0.00) → B(2.00, 0.00)</span>
+    <span class="hint" id="measureHint">点击「绘制测量线」后依次点击画布上两点；靠近轴会自动吸附</span>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-card">
+      <h3>磁感应强度 |B| — 距离 <span class="unit">a.u.</span></h3>
+      <canvas id="chartB" class="chart-canvas"></canvas>
+    </div>
+  </div>
+
+  <div class="formula-card">
+    <h3>核心公式</h3>
+    <div class="formula-list" id="formulaBox"></div>
+    <div class="formula-note" id="formulaNote" style="display:none"></div>
+  </div>
+
+</div>
+
+<script>
+"use strict";
+
+const WL = 4.0;
+const EARTH_R = 0.55;
+const EARTH_TILT_DEG = 11.5;
+const EARTH_TILT = EARTH_TILT_DEG * Math.PI / 180;
+let nextRingId = 2;
+
+const state = {
+  mode: 'wire',
+  direction: 1,
+  currentScale: 1.0,
+  solRadius: 0.55,
+  solLength: 2.40,
+  solTurns: 10,
+  rings: [
+    { id: 0, x: -1.0, y: 0.0, R: 1.0, I: 1.0, dir: +1 },
+    { id: 1, x:  1.0, y: 0.0, R: 1.0, I: 1.0, dir: +1 }
+  ],
+  probe: { x: 1.0, y: 0.0, has: true },
+  probeSnap: null,
+  showLine: true,
+  showArrow: true,
+  showCompass: true,
+  showMeasure: true,
+  showSolar: true,
+  view3D: false,
+  measure: { x1: -2.0, y1: 0.0, x2: 2.0, y2: 0.0 },
+  measureMode: false,
+  firstPointSet: false,
+  pendingX1: 0, pendingY1: 0,
+  drag: null
+};
+
+/* 粒子模拟状态 */
+const sim = {
+  particles: [],
+  running: false,
+  qm: 1.0,
+  dt: 0.006,
+  emit: { x: -3.0, y: 0.0, z: 0.0, v: 2.0, angle: 0 },
+  maxTrail: 320,
+  maxParticles: 20
+};
+
+const TRIG_CACHE = {};
+function getTrig(N) {
+  if (!TRIG_CACHE[N]) {
+    const c = new Float64Array(N), s = new Float64Array(N);
+    for (let i = 0; i < N; i++) {
+      const th = (i + 0.5) * 2 * Math.PI / N;
+      c[i] = Math.cos(th); s[i] = Math.sin(th);
+    }
+    TRIG_CACHE[N] = { c, s };
+  }
+  return TRIG_CACHE[N];
+}
+
+/* ============================================================
+   3D 磁场计算（返回 bx, by, bz）
+   ============================================================ */
+function fieldMultiRing3D(x, y, z, rings) {
+  const N = 32;
+  const trig = getTrig(N);
+  const dTheta = 2 * Math.PI / N;
+  let bx = 0, by = 0, bz = 0;
+  for (const ring of rings) {
+    if (ring.I === 0) continue;
+    const R = ring.R;
+    const signedI = ring.I * ring.dir;
+    for (let i = 0; i < N; i++) {
+      const c = trig.c[i], s = trig.s[i];
+      const dLy = -R * s * dTheta;
+      const dLz =  R * c * dTheta;
+      const rx = x - ring.x;
+      const ry = y - ring.y - R * c;
+      const rz = z - R * s;
+      const r2 = rx*rx + ry*ry + rz*rz + 1e-8;
+      const rMag = Math.sqrt(r2);
+      const rMag3 = r2 * rMag;
+      const inv = signedI / rMag3;
+      bx += inv * (dLy * rz - dLz * ry);
+      by += inv * (dLz * rx);
+      bz += inv * (-dLy * rx);
+    }
+  }
+  return { bx, by, bz };
+}
+
+function fieldMultiRing(x, y) {
+  const B = fieldMultiRing3D(x, y, 0, state.rings);
+  return { bx: B.bx, by: B.by };
+}
+
+function fieldWire(x, y, dir) {
+  const r2 = x*x + y*y + 1e-4;
+  return { bx: dir * (-2 * y / r2), by: dir * ( 2 * x / r2) };
+}
+
+function fieldSolenoid(x, y, R, L, nTurns, dir) {
+  const N_ring = 18;
+  const trig = getTrig(N_ring);
+  const dTheta = 2 * Math.PI / N_ring;
+  let bx = 0, by = 0;
+  const nSim = Math.min(nTurns, 12);
+  const dL = L / nSim;
+  for (let k = 0; k < nSim; k++) {
+    const xi = -L/2 + dL * (k + 0.5);
+    for (let i = 0; i < N_ring; i++) {
+      const c = trig.c[i], s = trig.s[i];
+      const dLy = -R * s * dTheta, dLz = R * c * dTheta;
+      const rx = x - xi, ry = y - R * c, rz = -R * s;
+      const r2 = rx*rx + ry*ry + rz*rz + 1e-8;
+      const rMag = Math.sqrt(r2);
+      const rMag3 = r2 * rMag;
+      const factor = 1 / rMag3;
+      bx += dir * (dLy * rz - dLz * ry) * factor;
+      by += dir * (dLz * rx) * factor;
+    }
+  }
+  return { bx, by };
+}
+
+function fieldMagnet(x, y, dir) { return fieldSolenoid(x, y, 0.5, 2.0, 8, dir); }
+
+function fieldEarth(x, y) {
+  const alpha = EARTH_TILT;
+  const mx = Math.sin(alpha);
+  const my = -Math.cos(alpha);
+  const r2 = x*x + y*y + 0.02;
+  if (r2 < EARTH_R * EARTH_R) return { bx: 0, by: 0 };
+  const r = Math.sqrt(r2);
+  const r3 = r2 * r;
+  const r5 = r2 * r3;
+  const mdotr = mx * x + my * y;
+  return { bx: 3 * mdotr * x / r5 - mx / r3, by: 3 * mdotr * y / r5 - my / r3 };
+}
+
+function getB(x, y) {
+  const d = state.direction;
+  const s = state.currentScale;
+  switch (state.mode) {
+    case 'wire':     { const b = fieldWire(x, y, d); return { bx: b.bx * s, by: b.by * s }; }
+    case 'ring':     { const b = fieldMultiRing(x, y); return { bx: b.bx * s, by: b.by * s }; }
+    case 'solenoid': { const b = fieldSolenoid(x, y, state.solRadius, state.solLength, state.solTurns, d); return { bx: b.bx * s, by: b.by * s }; }
+    case 'magnet':   { const b = fieldMagnet(x, y, d); return { bx: b.bx * s, by: b.by * s }; }
+    case 'earth':    { const b = fieldEarth(x, y); return { bx: b.bx * s, by: b.by * s }; }
+  }
+  return { bx: 0, by: 0 };
+}
+
+function allRingsOnSameY() {
+  if (state.rings.length === 0) return false;
+  const y0 = state.rings[0].y;
+  for (const r of state.rings) if (Math.abs(r.y - y0) > 0.15) return false;
+  return Math.abs(state.measure.y1 - y0) < 0.15 && Math.abs(state.measure.y2 - y0) < 0.15;
+}
+
+function analyticAxisB(x) {
+  if (state.mode === 'ring') {
+    let sum = 0;
+    for (const ring of state.rings) {
+      const dx = x - ring.x;
+      const denom = Math.pow(ring.R*ring.R + dx*dx, 1.5);
+      sum += ring.I * ring.dir * 2 * Math.PI * ring.R * ring.R / denom;
+    }
+    return sum * state.currentScale;
+  } else if (state.mode === 'solenoid') {
+    const R = state.solRadius, L = state.solLength, N = Math.min(state.solTurns, 12);
+    let sum = 0;
+    const dL = L / N;
+    for (let k = 0; k < N; k++) {
+      const xi = -L/2 + dL * (k + 0.5);
+      const dx = x - xi;
+      const denom = Math.pow(R*R + dx*dx, 1.5);
+      sum += state.currentScale * 2 * Math.PI * R * R / denom;
+    }
+    return sum;
+  } else if (state.mode === 'wire') {
+    return state.currentScale * 2 / Math.max(1e-3, Math.abs(x));
+  }
+  return 0;
+}
+
+/* ============================================================
+   2D 画布
+   ============================================================ */
+const cv2d = document.getElementById('cv2d');
+const ctx = cv2d.getContext('2d');
+let W = 0, H = 0, S = 1, CX = 0, CY = 0;
+
+const px = x => CX + x * S;
+const py = y => CY - y * S;
+const mx = pv => (pv - CX) / S;
+const my = pv => (CY - pv) / S;
+
+function resize2D() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const rect = cv2d.getBoundingClientRect();
+  const w = Math.max(2, rect.width);
+  const h = Math.max(2, rect.height);
+  const pw = Math.round(w*dpr), ph = Math.round(h*dpr);
+  if (cv2d.width !== pw || cv2d.height !== ph) {
+    cv2d.width = pw; cv2d.height = ph;
+  }
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  W = w; H = h; CX = w/2; CY = h/2;
+  S = Math.min(w, h) / (2 * WL) * 0.94;
+}
+
+function drawGrid() {
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = '#fafbfe';
+  ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle = '#eef1f8';
+  ctx.lineWidth = 1;
+  for (let x = -WL; x <= WL + 1e-9; x += 0.5) {
+    ctx.beginPath(); ctx.moveTo(px(x), 0); ctx.lineTo(px(x), H); ctx.stroke();
+  }
+  for (let y = -WL; y <= WL + 1e-9; y += 0.5) {
+    ctx.beginPath(); ctx.moveTo(0, py(y)); ctx.lineTo(W, py(y)); ctx.stroke();
+  }
+  ctx.strokeStyle = '#dde3ee';
+  ctx.beginPath(); ctx.moveTo(px(0), 0); ctx.lineTo(px(0), H); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, py(0)); ctx.lineTo(W, py(0)); ctx.stroke();
+}
+
+function unitB(x, y) {
+  const B = getB(x, y);
+  const m = Math.hypot(B.bx, B.by);
+  if (m < 1e-12) return null;
+  return [B.bx / m, B.by / m];
+}
+
+function traceLine(x0, y0, maxSteps = 900, ds = 0.045, bound = 5) {
+  const path = [[x0, y0]];
+  let x = x0, y = y0;
+  for (let i = 0; i < maxSteps; i++) {
+    const k1 = unitB(x, y);
+    if (!k1) break;
+    const k2 = unitB(x + k1[0]*ds*0.5, y + k1[1]*ds*0.5);
+    if (!k2) break;
+    x += k2[0] * ds;
+    y += k2[1] * ds;
+    path.push([x, y]);
+    if (Math.abs(x) > bound || Math.abs(y) > bound) break;
+    if (i > 40 && Math.hypot(x - x0, y - y0) < ds * 0.85) {
+      path.push([x0, y0]); break;
+    }
+  }
+  return path;
+}
+
+function getSeeds() {
+  const seeds = [];
+  if (state.mode === 'wire' || state.mode === 'earth') return seeds;
+  if (state.mode === 'ring') {
+    for (const ring of state.rings) {
+      if (ring.R < 0.1) continue;
+      const R = ring.R;
+      [0.18, 0.48, 0.78].forEach(f => {
+        seeds.push([ring.x, ring.y + R*f]);
+        seeds.push([ring.x, ring.y - R*f]);
+      });
+      [1.35, 1.9, 2.6].forEach(f => {
+        seeds.push([ring.x, ring.y + R*f]);
+        seeds.push([ring.x, ring.y - R*f]);
+      });
+    }
+  } else if (state.mode === 'solenoid') {
+    const R = state.solRadius;
+    [0.15, 0.45, 0.75].forEach(f => {
+      seeds.push([0.0,  R * f]); seeds.push([0.0, -R * f]);
+    });
+    [1.40, 2.00, 2.75, 3.50].forEach(f => {
+      seeds.push([0.0,  R * f]); seeds.push([0.0, -R * f]);
+    });
+  } else if (state.mode === 'magnet') {
+    const R = 0.5;
+    [0.15, 0.45, 0.75].forEach(f => {
+      seeds.push([0.0,  R * f]); seeds.push([0.0, -R * f]);
+    });
+    [1.40, 2.00, 2.75].forEach(f => {
+      seeds.push([0.0,  R * f]); seeds.push([0.0, -R * f]);
+    });
+  }
+  return seeds;
+}
+
+function drawWireCircles() {
+  const dir = state.direction;
+  const radii = [0.30, 0.55, 0.85, 1.20, 1.60, 2.05, 2.55, 3.10];
+  ctx.strokeStyle = 'rgba(76,154,255,0.55)';
+  ctx.lineWidth = 1.3;
+  for (const r of radii) {
+    ctx.beginPath();
+    ctx.arc(CX, CY, r * S, 0, Math.PI * 2);
+    ctx.stroke();
+    for (let k = 0; k < 4; k++) {
+      const ang = k * Math.PI * 2 / 4;
+      const ax = r * Math.cos(ang), ay = r * Math.sin(ang);
+      const cx = px(ax), cy = py(ay);
+      const tx = -Math.sin(ang) * dir;
+      const ty = Math.cos(ang) * dir;
+      const a = Math.atan2(-ty, tx);
+      ctx.fillStyle = 'rgba(76,154,255,0.9)';
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx - 7*Math.cos(a-0.5), cy - 7*Math.sin(a-0.5));
+      ctx.lineTo(cx - 7*Math.cos(a+0.5), cy - 7*Math.sin(a+0.5));
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+}
+
+let lineCache = [];
+let lineSig = '';
+
+function ringsSig() {
+  return state.rings.map(r =>
+    `${r.x.toFixed(2)},${r.y.toFixed(2)},${r.R.toFixed(2)},${r.I.toFixed(2)},${r.dir}`
+  ).join('|');
+}
+
+function buildFieldLines() {
+  if (state.mode === 'wire' || state.mode === 'earth') return [];
+  const seeds = getSeeds();
+  const lines = [];
+  for (const [sx, sy] of seeds) {
+    const p1 = traceLine(sx, sy, 900, 0.045, 5);
+    const p2 = traceLine(sx, sy, 900, -0.045, 5);
+    const rev = p2.slice().reverse();
+    const merged = rev.concat(p1.slice(1));
+    if (merged.length > 8) lines.push(merged);
+  }
+  return lines;
+}
+
+function drawFieldLines() {
+  const sig = state.mode + '|' + state.direction + '|' + state.currentScale
+            + '|R' + ringsSig()
+            + '|Sr' + state.solRadius.toFixed(2)
+            + '|Sl' + state.solLength.toFixed(2)
+            + '|Sn' + state.solTurns;
+  if (sig !== lineSig) {
+    lineCache = buildFieldLines();
+    lineSig = sig;
+  }
+  ctx.strokeStyle = 'rgba(76,154,255,0.6)';
+  ctx.lineWidth = 1.25;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  for (const path of lineCache) {
+    if (path.length < 2) continue;
+    ctx.beginPath();
+    ctx.moveTo(px(path[0][0]), py(path[0][1]));
+    for (let i = 1; i < path.length; i++) {
+      ctx.lineTo(px(path[i][0]), py(path[i][1]));
+    }
+    ctx.stroke();
+    if (state.showArrow) {
+      const gap = Math.max(60, Math.round(path.length / 10));
+      for (let i = gap; i < path.length - 2; i += gap) {
+        const x = path[i][0], y = path[i][1];
+        const xPrev = path[i-1][0], yPrev = path[i-1][1];
+        const cx = px(x), cy = py(y);
+        const a = Math.atan2(cy - py(yPrev), cx - px(xPrev));
+        ctx.fillStyle = 'rgba(76,154,255,0.9)';
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx - 7*Math.cos(a-0.5), cy - 7*Math.sin(a-0.5));
+        ctx.lineTo(cx - 7*Math.cos(a+0.5), cy - 7*Math.sin(a+0.5));
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+  }
+}
+
+/* 磁层 */
+function drawMagnetosphere() {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(76,154,255,0.35)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([7, 5]);
+  ctx.beginPath();
+  ctx.moveTo(px(-3.6), py(3.4));
+  ctx.bezierCurveTo(px(-3.0), py(1.6), px(-2.55), py(0.6), px(-2.55), py(0));
+  ctx.bezierCurveTo(px(-2.55), py(-0.6), px(-3.0), py(-1.6), px(-3.6), py(-3.4));
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(px(-3.6), py(3.4));
+  ctx.bezierCurveTo(px(-2.0), py(3.5), px(1.2), py(3.5), px(4.6), py(3.0));
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(px(-3.6), py(-3.4));
+  ctx.bezierCurveTo(px(-2.0), py(-3.5), px(1.2), py(-3.5), px(4.6), py(-3.0));
+  ctx.stroke();
+  ctx.restore();
+  ctx.save();
+  ctx.strokeStyle = 'rgba(76,154,255,0.42)';
+  ctx.lineWidth = 1.3;
+  ctx.lineCap = 'round';
+  const tailLevels = [0.55, 1.05, 1.55, 2.05];
+  for (const lv of tailLevels) {
+    ctx.beginPath();
+    ctx.moveTo(px(-1.8), py(lv * 0.55));
+    ctx.bezierCurveTo(px(-0.3), py(lv * 1.35), px(1.8), py(lv * 1.75), px(4.4), py(lv * 2.05));
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(px(-1.8), py(-lv * 0.55));
+    ctx.bezierCurveTo(px(-0.3), py(-lv * 1.35), px(1.8), py(-lv * 1.75), px(4.4), py(-lv * 2.05));
+    ctx.stroke();
+  }
+  ctx.restore();
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,180,90,0.35)';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([4, 5]);
+  ctx.beginPath();
+  ctx.moveTo(px(1.2), py(0));
+  ctx.lineTo(px(4.6), py(0));
+  ctx.stroke();
+  ctx.restore();
+}
+
+/* 地球磁感线 */
+function buildEarthLines() {
+  const lines = [];
+  const cosA = Math.cos(EARTH_TILT), sinA = Math.sin(EARTH_TILT);
+  const axisU = [sinA, -cosA];
+  const perpU = [cosA, sinA];
+  const r0List = [EARTH_R * 1.15, EARTH_R * 1.8, EARTH_R * 2.8, EARTH_R * 4.2, EARTH_R * 6.0, EARTH_R * 8.5];
+  for (const r0 of r0List) {
+    for (const side of [1, -1]) {
+      const path = [];
+      const N = 140;
+      for (let i = 0; i <= N; i++) {
+        const theta = Math.PI * i / N;
+        const r = r0 * Math.pow(Math.sin(theta), 2);
+        if (r < EARTH_R * 1.02) continue;
+        const xp = side * r * Math.sin(theta);
+        const zp = r * Math.cos(theta);
+        const wx = xp * perpU[0] + zp * axisU[0];
+        const wy = xp * perpU[1] + zp * axisU[1];
+        path.push([wx, wy]);
+      }
+      if (path.length > 4) lines.push(path);
+    }
+  }
+  return lines;
+}
+
+function drawEarthLines() {
+  const lines = buildEarthLines();
+  ctx.strokeStyle = 'rgba(76,154,255,0.62)';
+  ctx.lineWidth = 1.35;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  for (const path of lines) {
+    if (path.length < 2) continue;
+    ctx.beginPath();
+    ctx.moveTo(px(path[0][0]), py(path[0][1]));
+    for (let i = 1; i < path.length; i++) {
+      ctx.lineTo(px(path[i][0]), py(path[i][1]));
+    }
+    ctx.stroke();
+    if (state.showArrow && path.length > 12) {
+      const gap = Math.max(50, Math.round(path.length / 6));
+      for (let i = gap; i < path.length - 2; i += gap) {
+        const x = path[i][0], y = path[i][1];
+        const xPrev = path[i-1][0], yPrev = path[i-1][1];
+        const cx = px(x), cy = py(y);
+        const a = Math.atan2(cy - py(yPrev), cx - px(xPrev));
+        ctx.fillStyle = 'rgba(76,154,255,0.92)';
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx - 7*Math.cos(a-0.5), cy - 7*Math.sin(a-0.5));
+        ctx.lineTo(cx - 7*Math.cos(a+0.5), cy - 7*Math.sin(a+0.5));
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+  }
+}
+
+function proj3D(x3, y3, z3) {
+  const perspective = 1 / (1 + z3 * 0.15);
+  return [CX + x3 * S * perspective, CY - y3 * S * perspective];
+}
+
+function drawEarthLines3D() {
+  const cosT = Math.cos(EARTH_TILT);
+  const sinT = Math.sin(EARTH_TILT);
+  const u2x = sinT, u2y = -cosT;
+  const v2x = cosT, v2y = sinT;
+  const r0List = [EARTH_R * 1.15, EARTH_R * 1.6, EARTH_R * 2.2, EARTH_R * 3.2, EARTH_R * 4.6, EARTH_R * 6.5];
+  const nAzimuth = 10;
+  const allLines = [];
+  for (let a = 0; a < nAzimuth; a++) {
+    const phi = 2 * Math.PI * a / nAzimuth;
+    const cosPhi = Math.cos(phi), sinPhi = Math.sin(phi);
+    for (const r0 of r0List) {
+      for (const side of [1, -1]) {
+        const pts = [];
+        let zAvg = 0;
+        const N = 90;
+        for (let i = 0; i <= N; i++) {
+          const theta = Math.PI * i / N;
+          const r = r0 * Math.pow(Math.sin(theta), 2);
+          if (r < EARTH_R * 1.05) continue;
+          const sinT2 = side * Math.sin(theta);
+          const cosT2 = Math.cos(theta);
+          const x3 = r * (sinT2 * cosPhi * v2x + cosT2 * u2x);
+          const y3 = r * (sinT2 * cosPhi * v2y + cosT2 * u2y);
+          const z3 = r * sinT2 * sinPhi;
+          pts.push([x3, y3, z3]);
+          zAvg += z3;
+        }
+        if (pts.length > 4) allLines.push({ pts, zAvg: zAvg / pts.length });
+      }
+    }
+  }
+  allLines.sort((a, b) => b.zAvg - a.zAvg);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  for (const item of allLines) {
+    const { pts, zAvg } = item;
+    const depthNorm = Math.max(-1, Math.min(1, zAvg / (EARTH_R * 5)));
+    const alpha = 0.75 - 0.35 * depthNorm;
+    const lw = 1.4 - 0.4 * depthNorm;
+    ctx.strokeStyle = `rgba(76,154,255,${Math.max(0.15, alpha).toFixed(3)})`;
+    ctx.lineWidth = Math.max(0.6, lw);
+    ctx.beginPath();
+    for (let i = 0; i < pts.length; i++) {
+      const p = pts[i];
+      const [sx, sy] = proj3D(p[0], p[1], p[2]);
+      if (i === 0) ctx.moveTo(sx, sy);
+      else ctx.lineTo(sx, sy);
+    }
+    ctx.stroke();
+  }
+  ctx.save();
+  ctx.strokeStyle = 'rgba(76,154,255,0.18)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.ellipse(CX, CY, EARTH_R * S * 1.05, EARTH_R * S * 0.32, 0, 0, 7);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawBlob(cx, cy, rx, ry) {
+  ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, 7); ctx.fill();
+}
+
+function drawEarthDevice() {
+  const g = ctx.createRadialGradient(px(-0.2), py(0.2), 0, px(0), py(0), EARTH_R * S);
+  g.addColorStop(0, '#7fc4ff'); g.addColorStop(0.6, '#3a7cd8'); g.addColorStop(1, '#1e4788');
+  ctx.beginPath(); ctx.arc(CX, CY, EARTH_R * S, 0, 7); ctx.fillStyle = g; ctx.fill();
+  ctx.fillStyle = 'rgba(110,200,140,0.55)';
+  drawBlob(CX - 0.15*S, CY - 0.12*S, 0.22*S, 0.18*S);
+  drawBlob(CX + 0.10*S, CY + 0.05*S, 0.20*S, 0.15*S);
+  drawBlob(CX - 0.05*S, CY + 0.20*S, 0.16*S, 0.12*S);
+  ctx.beginPath(); ctx.arc(CX, CY, EARTH_R * S, 0, 7);
+  ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.65)'; ctx.lineWidth = 1.6; ctx.setLineDash([5, 4]);
+  ctx.beginPath(); ctx.moveTo(CX, CY - 1.35*S); ctx.lineTo(CX, CY + 1.35*S); ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = 'rgba(60,80,120,0.85)';
+  ctx.font = 'bold 12px "Times New Roman",serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('地理北', CX, CY - 1.4*S);
+  ctx.textBaseline = 'top';
+  ctx.fillText('地理南', CX, CY + 1.4*S);
+  const mLen = 1.35 * S;
+  const mxDir = Math.sin(EARTH_TILT);
+  const myDir = Math.cos(EARTH_TILT);
+  const northEndX = CX - mxDir * mLen;
+  const northEndY = CY - myDir * mLen;
+  const southEndX = CX + mxDir * mLen;
+  const southEndY = CY + myDir * mLen;
+  ctx.save();
+  ctx.strokeStyle = '#e17055'; ctx.lineWidth = 1.8; ctx.setLineDash([6, 4]);
+  ctx.beginPath(); ctx.moveTo(northEndX, northEndY); ctx.lineTo(southEndX, southEndY); ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = '#2f6fd9';
+  ctx.font = 'bold 13px "Times New Roman",serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('地磁南极', northEndX + 4, northEndY - 12);
+  ctx.fillStyle = '#e84545';
+  ctx.fillText('地磁北极', southEndX + 4, southEndY + 14);
+  ctx.beginPath(); ctx.arc(northEndX, northEndY, 4, 0, 7);
+  ctx.fillStyle = '#2f6fd9'; ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.2; ctx.stroke();
+  ctx.beginPath(); ctx.arc(southEndX, southEndY, 4, 0, 7);
+  ctx.fillStyle = '#e84545'; ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.stroke();
+  ctx.save();
+  ctx.strokeStyle = 'rgba(225,112,85,0.7)'; ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  const arcR = 0.55 * S;
+  const startAng = -Math.PI/2;
+  const endAng = -Math.PI/2 - EARTH_TILT;
+  ctx.arc(CX, CY, arcR, startAng, endAng, true);
+  ctx.stroke();
+  const midAng = (startAng + endAng) / 2;
+  const tx = CX + Math.cos(midAng) * (arcR + 20);
+  const ty = CY + Math.sin(midAng) * (arcR + 20);
+  ctx.fillStyle = '#e17055';
+  ctx.font = 'bold 11px "Times New Roman",serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('11.5°', tx, ty);
+  ctx.restore();
+}
+
+function drawCurrentSymbolScreen(cx, cy, type, color) {
+  const r = 8;
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7);
+  ctx.fillStyle = '#fff'; ctx.fill();
+  ctx.lineWidth = 1.8; ctx.strokeStyle = color; ctx.stroke();
+  if (type === 'out') {
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(cx, cy, 2.5, 0, 7); ctx.fill();
+  } else {
+    ctx.strokeStyle = color; ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.moveTo(cx - 3.5, cy - 3.5); ctx.lineTo(cx + 3.5, cy + 3.5);
+    ctx.moveTo(cx + 3.5, cy - 3.5); ctx.lineTo(cx - 3.5, cy + 3.5);
+    ctx.stroke();
+  }
+}
+
+function drawDevice() {
+  const dir = state.direction;
+  if (state.mode === 'wire') {
+    const r = 12;
+    ctx.beginPath(); ctx.arc(CX, CY, r, 0, 7);
+    ctx.fillStyle = '#fff'; ctx.fill();
+    ctx.lineWidth = 2.5; ctx.strokeStyle = '#e17055'; ctx.stroke();
+    if (dir > 0) {
+      ctx.fillStyle = '#e17055';
+      ctx.beginPath(); ctx.arc(CX, CY, 4, 0, 7); ctx.fill();
+    } else {
+      ctx.strokeStyle = '#e17055'; ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(CX - 5, CY - 5); ctx.lineTo(CX + 5, CY + 5);
+      ctx.moveTo(CX + 5, CY - 5); ctx.lineTo(CX - 5, CY + 5);
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#e17055';
+    ctx.font = 'bold 11px sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('I', CX, CY + 16);
+  } else if (state.mode === 'ring') {
+    for (const ring of state.rings) {
+      const isCCW = ring.dir > 0;
+      const color = isCCW ? '#e84545' : '#4c9aff';
+      const cx = px(ring.x), cy = py(ring.y);
+      const rx = ring.R * S * 0.32, ry = ring.R * S;
+      const lw = 1.5 + 1.2 * Math.min(ring.I, 3);
+      ctx.strokeStyle = color + '33';
+      ctx.lineWidth = lw * 3;
+      ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, 7); ctx.stroke();
+      ctx.strokeStyle = color; ctx.lineWidth = lw;
+      ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, 7); ctx.stroke();
+      const topSign = isCCW ? 'out' : 'in';
+      const botSign = isCCW ? 'in' : 'out';
+      drawCurrentSymbolScreen(cx, cy - ry, topSign, color);
+      drawCurrentSymbolScreen(cx, cy + ry, botSign, color);
+      ctx.beginPath(); ctx.arc(cx, cy, 2.5, 0, 7);
+      ctx.fillStyle = color; ctx.fill();
+    }
+  } else if (state.mode === 'solenoid') {
+    const R = state.solRadius, L = state.solLength, N = state.solTurns;
+    ctx.strokeStyle = 'rgba(225,112,85,0.5)'; ctx.lineWidth = 2;
+    ctx.strokeRect(px(-L/2), py(R), L * S, 2 * R * S);
+    const nDraw = Math.min(N, 24);
+    for (let i = 0; i <= nDraw; i++) {
+      const x = -L/2 + L * i / nDraw;
+      ctx.strokeStyle = 'rgba(225,112,85,0.5)'; ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.moveTo(px(x), py(R)); ctx.lineTo(px(x), py(-R)); ctx.stroke();
+    }
+    for (let i = 0; i < nDraw; i += 3) {
+      const x = -L/2 + L * (i + 0.5) / nDraw;
+      const dx = dir > 0 ? 1 : -1;
+      const cx2 = px(x), cy2 = py(R);
+      ctx.fillStyle = '#e17055';
+      ctx.beginPath();
+      ctx.moveTo(cx2 + dx * 6, cy2);
+      ctx.lineTo(cx2 - dx * 2, cy2 - 4);
+      ctx.lineTo(cx2 - dx * 2, cy2 + 4);
+      ctx.closePath(); ctx.fill();
+    }
+  } else if (state.mode === 'magnet') {
+    const R = 0.5, L = 2.0;
+    const x0 = px(-L/2), y0 = py(R);
+    const w = L * S, h = 2 * R * S;
+    ctx.fillStyle = 'rgba(255,118,117,0.35)'; ctx.fillRect(x0, y0, w/2, h);
+    ctx.fillStyle = 'rgba(9,132,227,0.35)'; ctx.fillRect(x0 + w/2, y0, w/2, h);
+    ctx.strokeStyle = 'rgba(60,60,80,0.6)'; ctx.lineWidth = 2; ctx.strokeRect(x0, y0, w, h);
+    ctx.fillStyle = '#e84545';
+    ctx.font = 'bold 22px "Times New Roman",serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('N', x0 + w*0.25, y0 + h/2);
+    ctx.fillStyle = '#2f6fd9';
+    ctx.fillText('S', x0 + w*0.75, y0 + h/2);
+  } else if (state.mode === 'earth') {
+    drawEarthDevice();
+  }
+}
+
+function drawCompass(cx, cy, B) {
+  const m = Math.hypot(B.bx, B.by);
+  const R = 14;
+  const g = ctx.createRadialGradient(cx - 3, cy - 3, 2, cx, cy, R);
+  g.addColorStop(0, 'rgba(255,255,255,0.98)');
+  g.addColorStop(1, 'rgba(235,242,255,0.95)');
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, 7);
+  ctx.fillStyle = g; ctx.fill();
+  ctx.lineWidth = 1.8; ctx.strokeStyle = '#3d4a60'; ctx.stroke();
+  ctx.strokeStyle = 'rgba(120,140,180,0.35)'; ctx.lineWidth = 1;
+  for (let i = 0; i < 8; i++) {
+    const a = i * Math.PI / 4;
+    const r1 = R - 2, r2 = R - (i % 2 === 0 ? 6 : 4);
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1);
+    ctx.lineTo(cx + Math.cos(a) * r2, cy + Math.sin(a) * r2);
+    ctx.stroke();
+  }
+  if (m > 1e-4) {
+    const angle = Math.atan2(B.by, B.bx);
+    const nx = Math.cos(angle), ny = -Math.sin(angle);
+    const L = 9;
+    ctx.beginPath();
+    ctx.moveTo(cx + nx * L, cy + ny * L);
+    ctx.lineTo(cx - ny * 4.2, cy + nx * 4.2);
+    ctx.lineTo(cx + ny * 4.2, cy - nx * 4.2);
+    ctx.closePath(); ctx.fillStyle = '#e84545'; ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(cx - nx * L, cy - ny * L);
+    ctx.lineTo(cx - ny * 4.2, cy + nx * 4.2);
+    ctx.lineTo(cx + ny * 4.2, cy - nx * 4.2);
+    ctx.closePath(); ctx.fillStyle = '#f5f8ff'; ctx.fill();
+    ctx.strokeStyle = '#3d4a60'; ctx.lineWidth = 0.8; ctx.stroke();
+  } else {
+    ctx.fillStyle = '#b2bec3';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('?', cx, cy);
+  }
+  ctx.beginPath(); ctx.arc(cx, cy, 2.2, 0, 7);
+  ctx.fillStyle = '#3d4a60'; ctx.fill();
+  if (m > 1e-4) {
+    const angle = Math.atan2(B.by, B.bx);
+    const nx = Math.cos(angle), ny = -Math.sin(angle);
+    ctx.fillStyle = '#e84545';
+    ctx.font = 'bold 8px sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('N', cx + nx * (R - 2), cy + ny * (R - 2));
+  }
+}
+
+function drawProbe() {
+  if (!state.probe.has) return;
+  const cx = px(state.probe.x), cy = py(state.probe.y);
+  ctx.beginPath(); ctx.arc(cx, cy, 18, 0, 7);
+  ctx.fillStyle = 'rgba(76,154,255,0.06)'; ctx.fill();
+  ctx.beginPath(); ctx.arc(cx, cy, 4.5, 0, 7);
+  ctx.fillStyle = '#fff'; ctx.fill();
+  ctx.lineWidth = 2; ctx.strokeStyle = '#2d3436'; ctx.stroke();
+  if (state.showCompass) {
+    const B = getB(state.probe.x, state.probe.y);
+    drawCompass(cx, cy, B);
+  } else {
+    const B = getB(state.probe.x, state.probe.y);
+    const m = Math.hypot(B.bx, B.by);
+    if (m > 1e-4) {
+      const L = Math.min(50, 10 + Math.log10(m + 1) * 9);
+      const a = Math.atan2(B.by, B.bx);
+      const x2 = cx + Math.cos(a) * L, y2 = cy - Math.sin(a) * L;
+      ctx.strokeStyle = '#4c9aff'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x2, y2); ctx.stroke();
+      ctx.fillStyle = '#4c9aff';
+      ctx.beginPath();
+      ctx.moveTo(x2, y2);
+      ctx.lineTo(x2 - 9*Math.cos(a-0.4), y2 + 9*Math.sin(a-0.4));
+      ctx.lineTo(x2 - 9*Math.cos(a+0.4), y2 + 9*Math.sin(a+0.4));
+      ctx.closePath(); ctx.fill();
+    }
+  }
+}
+
+function drawMeasureLine() {
+  if (!state.showMeasure) return;
+  const { x1, y1, x2, y2 } = state.measure;
+  const px1 = px(x1), py1 = py(y1);
+  const px2 = px(x2), py2 = py(y2);
+  ctx.save();
+  ctx.strokeStyle = '#00b894'; ctx.lineWidth = 2; ctx.setLineDash([8, 5]);
+  ctx.beginPath(); ctx.moveTo(px1, py1); ctx.lineTo(px2, py2); ctx.stroke();
+  ctx.restore();
+  drawEndpoint(px1, py1, 'A');
+  drawEndpoint(px2, py2, 'B');
+}
+
+function drawEndpoint(cx, cy, label) {
+  ctx.beginPath(); ctx.arc(cx, cy, 7, 0, 7);
+  ctx.fillStyle = '#00b894'; ctx.fill();
+  ctx.lineWidth = 2; ctx.strokeStyle = '#fff'; ctx.stroke();
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 10px sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(label, cx, cy+0.5);
+}
+
+/* ============================================================
+   带电粒子模拟
+   ============================================================ */
+function emitParticle() {
+  if (sim.particles.length >= sim.maxParticles) sim.particles.shift();
+  const ang = sim.emit.angle * Math.PI / 180;
+  sim.particles.push({
+    x: sim.emit.x, y: sim.emit.y, z: sim.emit.z,
+    vx: sim.emit.v * Math.cos(ang),
+    vy: sim.emit.v * Math.sin(ang),
+    vz: 0,
+    trail: [{ x: sim.emit.x, y: sim.emit.y, z: sim.emit.z }]
+  });
+}
+
+function stepParticles(dt) {
+  const scale = state.currentScale;
+  const rings = state.rings;
+  for (const p of sim.particles) {
+    // RK2 中点法
+    const B1 = fieldMultiRing3D(p.x, p.y, p.z, rings);
+    const ax1 = sim.qm * (p.vy * B1.bz - p.vz * B1.by) * scale;
+    const ay1 = sim.qm * (p.vz * B1.bx - p.vx * B1.bz) * scale;
+    const az1 = sim.qm * (p.vx * B1.by - p.vy * B1.bx) * scale;
+
+    const h = dt * 0.5;
+    const xh = p.x + p.vx * h, yh = p.y + p.vy * h, zh = p.z + p.vz * h;
+    const vxh = p.vx + ax1 * h, vyh = p.vy + ay1 * h, vzh = p.vz + az1 * h;
+
+    const B2 = fieldMultiRing3D(xh, yh, zh, rings);
+    const ax2 = sim.qm * (vyh * B2.bz - vzh * B2.by) * scale;
+    const ay2 = sim.qm * (vzh * B2.bx - vxh * B2.bz) * scale;
+    const az2 = sim.qm * (vxh * B2.by - vyh * B2.bx) * scale;
+
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.z += p.vz * dt;
+    p.vx += ax2 * dt;
+    p.vy += ay2 * dt;
+    p.vz += az2 * dt;
+
+    p.trail.push({ x: p.x, y: p.y, z: p.z });
+    if (p.trail.length > sim.maxTrail) p.trail.shift();
+  }
+
+  sim.particles = sim.particles.filter(p => {
+    const r = Math.hypot(p.x, p.y, p.z);
+    return r < 9.5;
+  });
+}
+
+function drawParticles() {
+  if (sim.particles.length === 0) return;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  for (const p of sim.particles) {
+    const N = p.trail.length;
+    if (N < 2) continue;
+    for (let i = 1; i < N; i++) {
+      const a = p.trail[i-1];
+      const b = p.trail[i];
+      const zNorm = Math.max(0, Math.min(1, (b.z + 2) / 4));
+      const hue = 220 - zNorm * 220;
+      const alpha = (i / N) * 0.85 + 0.15;
+      ctx.strokeStyle = `hsla(${hue}, 90%, 55%, ${alpha})`;
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(px(a.x), py(a.y));
+      ctx.lineTo(px(b.x), py(b.y));
+      ctx.stroke();
+    }
+    const head = p.trail[N-1];
+    const cx = px(head.x), cy = py(head.y);
+    const zNorm = Math.max(0, Math.min(1, (head.z + 2) / 4));
+    const hue = 220 - zNorm * 220;
+    const gr = ctx.createRadialGradient(cx, cy, 0, cx, cy, 10);
+    gr.addColorStop(0, `hsla(${hue}, 100%, 80%, 1)`);
+    gr.addColorStop(0.4, `hsla(${hue}, 95%, 60%, 0.7)`);
+    gr.addColorStop(1, `hsla(${hue}, 95%, 50%, 0)`);
+    ctx.fillStyle = gr;
+    ctx.beginPath(); ctx.arc(cx, cy, 10, 0, 7); ctx.fill();
+    ctx.fillStyle = `hsl(${hue}, 100%, 58%)`;
+    ctx.beginPath(); ctx.arc(cx, cy, 3.2, 0, 7); ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+}
+
+/* 太阳风 */
+let solarParticles = [];
+function initSolarParticles() {
+  solarParticles = [];
+  for (let i = 0; i < 130; i++) {
+    solarParticles.push({
+      x: -5 - Math.random() * 4,
+      y: (Math.random() - 0.5) * 8,
+      vx: 1.8 + Math.random() * 1.2,
+      vy: (Math.random() - 0.5) * 0.3,
+      size: 1.4 + Math.random() * 1.4,
+      alpha: 0.5 + Math.random() * 0.5
+    });
+  }
+}
+
+function updateSolarParticles(dt) {
+  if (!state.showSolar) return;
+  const mpRadius = 2.3 * Math.sqrt(Math.max(0.4, state.currentScale));
+  for (const p of solarParticles) {
+    const dx = p.x, dy = p.y;
+    const r = Math.hypot(dx, dy) + 1e-6;
+    if (r < mpRadius) {
+      const factor = (mpRadius - r) / mpRadius;
+      const nx = dx / r, ny = dy / r;
+      const push = 9 * factor;
+      p.vx += nx * push * dt; p.vy += ny * push * dt;
+      const tan = 4.5 * factor;
+      p.vx += -ny * tan * dt; p.vy += nx * tan * dt;
+    }
+    const sp = Math.hypot(p.vx, p.vy);
+    if (sp > 5.5) { p.vx *= 5.5/sp; p.vy *= 5.5/sp; }
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    if (p.x > 5.8 || Math.abs(p.y) > 5.8 || r < EARTH_R * 0.85) {
+      p.x = -5 - Math.random() * 4;
+      p.y = (Math.random() - 0.5) * 8;
+      p.vx = 1.8 + Math.random() * 1.2;
+      p.vy = (Math.random() - 0.5) * 0.3;
+    }
+  }
+}
+
+function drawSolarParticles() {
+  if (!state.showSolar) return;
+  for (const p of solarParticles) {
+    const cx = px(p.x), cy = py(p.y);
+    const gr = ctx.createRadialGradient(cx, cy, 0, cx, cy, p.size * 3.2);
+    gr.addColorStop(0, `rgba(255,200,80,${p.alpha})`);
+    gr.addColorStop(0.4, `rgba(255,150,60,${p.alpha * 0.5})`);
+    gr.addColorStop(1, 'rgba(255,150,60,0)');
+    ctx.fillStyle = gr;
+    ctx.beginPath(); ctx.arc(cx, cy, p.size * 3.2, 0, 7); ctx.fill();
+    ctx.fillStyle = `rgba(255,230,140,${p.alpha})`;
+    ctx.beginPath(); ctx.arc(cx, cy, p.size, 0, 7); ctx.fill();
+  }
+}
+
+/* ============================================================
+   完整渲染
+   ============================================================ */
+function draw2D() {
+  if (W === 0) resize2D();
+  drawGrid();
+
+  if (state.mode === 'earth') {
+    if (state.showSolar) drawSolarParticles();
+    if (state.showLine) {
+      if (state.view3D) drawEarthLines3D();
+      else drawEarthLines();
+    }
+    if (!state.view3D) drawMagnetosphere();
+    drawEarthDevice();
+  } else {
+    if (state.showLine) {
+      if (state.mode === 'wire') drawWireCircles();
+      else drawFieldLines();
+    }
+    drawDevice();
+    if (state.mode === 'ring' && sim.particles.length > 0) {
+      drawParticles();
+    }
+  }
+
+  drawMeasureLine();
+  drawProbe();
+}
+
+/* ============================================================
+   数据
+   ============================================================ */
+function computeLineData() {
+  const { x1, y1, x2, y2 } = state.measure;
+  const dx = x2 - x1, dy = y2 - y1;
+  const L = Math.hypot(dx, dy);
+  if (L < 1e-9) return [];
+  const N = 200;
+  const data = [];
+  for (let i = 0; i <= N; i++) {
+    const t = i / N;
+    const x = x1 + dx * t;
+    const y = y1 + dy * t;
+    const B = getB(x, y);
+    let mag = Math.hypot(B.bx, B.by);
+    if (!isFinite(mag)) mag = 0;
+    data.push({ d: L * t, B: mag, x, y });
+  }
+  return data;
+}
+
+function setupChart(canvas) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const rect = canvas.getBoundingClientRect();
+  const w = Math.max(2, rect.width);
+  const h = Math.max(2, rect.height);
+  const pw = Math.round(w*dpr), ph = Math.round(h*dpr);
+  if (canvas.width !== pw || canvas.height !== ph) {
+    canvas.width = pw; canvas.height = ph;
+  }
+  const c = canvas.getContext('2d');
+  c.setTransform(dpr,0,0,dpr,0,0);
+  return { ctx: c, w, h };
+}
+
+function drawChartB(data) {
+  const el = document.getElementById('chartB');
+  const { ctx: c, w, h } = setupChart(el);
+  const color = '#4c9aff';
+  const unit = 'a.u.';
+  c.clearRect(0, 0, w, h);
+  c.fillStyle = '#fafbfe'; c.fillRect(0, 0, w, h);
+  const pad = { l: 68, r: 16, t: 18, b: 30 };
+  const cw = w - pad.l - pad.r;
+  const ch = h - pad.t - pad.b;
+  let minV = 0, maxV = 0;
+  for (const d of data) if (d.B > maxV) maxV = d.B;
+  if (maxV <= 0) maxV = 1;
+  maxV *= 1.08;
+  const N_GRID = 5;
+  c.strokeStyle = '#eef1f8'; c.lineWidth = 1;
+  c.setLineDash([4, 4]);
+  for (let i = 0; i <= N_GRID; i++) {
+    const y = pad.t + ch * i / N_GRID;
+    c.beginPath(); c.moveTo(pad.l, y); c.lineTo(pad.l + cw, y); c.stroke();
+  }
+  c.setLineDash([]);
+  for (let i = 1; i < 4; i++) {
+    const x = pad.l + cw * i / 4;
+    c.strokeStyle = '#f3f5fa';
+    c.beginPath(); c.moveTo(x, pad.t); c.lineTo(x, pad.t + ch); c.stroke();
+  }
+  c.strokeStyle = '#b2bec3'; c.lineWidth = 1.2;
+  c.beginPath();
+  c.moveTo(pad.l, pad.t); c.lineTo(pad.l, pad.t + ch); c.lineTo(pad.l + cw, pad.t + ch);
+  c.stroke();
+  c.fillStyle = '#8fa3c4';
+  c.font = '10px "Times New Roman",serif';
+  c.textAlign = 'right'; c.textBaseline = 'middle';
+  for (let i = 0; i <= N_GRID; i++) {
+    const v = maxV - maxV * i / N_GRID;
+    const y = pad.t + ch * i / N_GRID;
+    c.fillText(formatSci(v), pad.l - 8, y);
+  }
+  c.textAlign = 'center'; c.textBaseline = 'top';
+  const totalD = data[data.length-1]?.d || 0;
+  for (let i = 0; i <= 4; i++) {
+    const v = totalD * i / 4;
+    const x = pad.l + cw * i / 4;
+    c.fillText(v.toFixed(2), x, pad.t + ch + 8);
+  }
+  c.beginPath();
+  c.strokeStyle = color; c.lineWidth = 2;
+  let started = false;
+  const pts = [];
+  for (let i = 0; i < data.length; i++) {
+    const v = data[i].B;
+    if (!isFinite(v)) continue;
+    const x = pad.l + cw * (data[i].d / (totalD || 1));
+    const y = pad.t + ch * (1 - v / maxV);
+    pts.push([x, y]);
+    if (!started) { c.moveTo(x, y); started = true; }
+    else c.lineTo(x, y);
+  }
+  c.stroke();
+  if (pts.length > 0) {
+    c.lineTo(pts[pts.length-1][0], pad.t + ch);
+    c.lineTo(pts[0][0], pad.t + ch);
+    c.closePath();
+    const fill = c.createLinearGradient(0, pad.t, 0, pad.t + ch);
+    fill.addColorStop(0, hexA(color, 0.18));
+    fill.addColorStop(1, hexA(color, 0.02));
+    c.fillStyle = fill; c.fill();
+  }
+  const onAxis = (state.mode === 'ring' && allRingsOnSameY())
+              || (state.mode === 'solenoid' && Math.abs(state.measure.y1) < 0.15 && Math.abs(state.measure.y2) < 0.15);
+  if (onAxis) {
+    c.beginPath();
+    c.strokeStyle = 'rgba(225,112,85,0.85)';
+    c.lineWidth = 1.8; c.setLineDash([6, 4]);
+    let startedT = false;
+    for (let i = 0; i < data.length; i++) {
+      const v = analyticAxisB(data[i].x);
+      if (!isFinite(v)) continue;
+      const x = pad.l + cw * (data[i].d / (totalD || 1));
+      const y = pad.t + ch * (1 - v / maxV);
+      if (!startedT) { c.moveTo(x, y); startedT = true; }
+      else c.lineTo(x, y);
+    }
+    c.stroke();
+    c.setLineDash([]);
+    c.font = '10px "Times New Roman",serif';
+    c.textAlign = 'right'; c.textBaseline = 'top';
+    c.fillStyle = 'rgba(225,112,85,0.95)';
+    c.fillText('— — 轴线解析解', pad.l + cw - 4, pad.t + 2);
+  }
+  const probeX = state.probe.x, probeY = state.probe.y;
+  const A = { x: state.measure.x1, y: state.measure.y1 };
+  const B = { x: state.measure.x2, y: state.measure.y2 };
+  const ABx = B.x - A.x, ABy = B.y - A.y;
+  const ab2 = ABx*ABx + ABy*ABy;
+  if (ab2 > 1e-9) {
+    const t = Math.max(0, Math.min(1, ((probeX-A.x)*ABx + (probeY-A.y)*ABy) / ab2));
+    const pd = Math.sqrt(ab2) * t;
+    const px2 = A.x + ABx*t, py2 = A.y + ABy*t;
+    const pv = Math.hypot(getB(px2, py2).bx, getB(px2, py2).by);
+    const x = pad.l + cw * (pd / (totalD || 1));
+    const y = pad.t + ch * (1 - pv / maxV);
+    if (isFinite(pv) && y > pad.t && y < pad.t + ch) {
+      c.strokeStyle = hexA(color, 0.35);
+      c.lineWidth = 1; c.setLineDash([3, 3]);
+      c.beginPath(); c.moveTo(x, pad.t); c.lineTo(x, pad.t + ch); c.stroke();
+      c.setLineDash([]);
+      c.fillStyle = color;
+      c.beginPath(); c.arc(x, y, 4, 0, 7); c.fill();
+      c.strokeStyle = '#fff'; c.lineWidth = 1.5; c.stroke();
+      const label = formatSci(pv) + ' ' + unit;
+      c.font = 'bold 10px "Times New Roman",serif';
+      const tw = c.measureText(label).width + 8;
+      let lx = x + 6;
+      if (lx + tw > pad.l + cw) lx = x - tw - 6;
+      let ly = y - 8;
+      if (ly - 8 < pad.t) ly = y + 16;
+      c.fillStyle = hexA(color, 0.92);
+      c.beginPath();
+      if (c.roundRect) c.roundRect(lx, ly - 8, tw, 15, 4);
+      else c.rect(lx, ly - 8, tw, 15);
+      c.fill();
+      c.fillStyle = '#fff';
+      c.textAlign = 'left'; c.textBaseline = 'middle';
+      c.fillText(label, lx + 4, ly);
+    }
+  }
+}
+
+function hexA(hex, a) {
+  const r = parseInt(hex.slice(1,3), 16);
+  const g = parseInt(hex.slice(3,5), 16);
+  const b = parseInt(hex.slice(5,7), 16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+function formatSci(v) {
+  if (v === 0) return '0';
+  const a = Math.abs(v);
+  if (a >= 10000 || a < 0.01) {
+    const s = v.toExponential(1).split('e');
+    const mant = s[0];
+    const exp = parseInt(s[1], 10);
+    const sup = { '0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','-':'⁻' };
+    const expStr = String(exp).split('').map(ch => sup[ch] || ch).join('');
+    return `${mant}×10${expStr}`;
+  }
+  return v.toPrecision(3);
+}
+
+function updateSidebar() {
+  const B = getB(state.probe.x, state.probe.y);
+  const m = Math.hypot(B.bx, B.by);
+  const inputX = document.getElementById('probeX');
+  const inputY = document.getElementById('probeY');
+  if (document.activeElement !== inputX) inputX.value = state.probe.x.toFixed(2);
+  if (document.activeElement !== inputY) inputY.value = state.probe.y.toFixed(2);
+  document.getElementById('dpB').textContent = fmtSci(m) + ' a.u.';
+  document.getElementById('dpAng').textContent =
+    m < 1e-4 ? '—' : (Math.atan2(B.by, B.bx) * 180 / Math.PI).toFixed(1) + '°';
+  let info = '';
+  switch (state.mode) {
+    case 'wire': info = 'B 绕电流方向右旋'; break;
+    case 'ring': info = `${state.rings.length} 个圆环 · 粒子 ${sim.particles.length}`; break;
+    case 'solenoid': info = '内部近似均匀，B ≈ μ₀nI'; break;
+    case 'magnet': info = '外部 N→S，内部 S→N'; break;
+    case 'earth': info = '偶极场：地理北≈磁南，地理南≈磁北'; break;
+  }
+  document.getElementById('dpInfo').textContent = info;
+}
+
+function fmtSci(v) {
+  if (!isFinite(v)) return '0';
+  const a = Math.abs(v);
+  if (a < 1e-4) return '0';
+  if (a >= 1e5 || a < 0.01) {
+    const s = v.toExponential(2).split('e');
+    const mant = s[0];
+    const exp = s[1].replace('+', '');
+    const sup = { '0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','-':'⁻' };
+    const expStr = exp.split('').map(ch => sup[ch] || ch).join('');
+    return `${mant}×10${expStr}`;
+  }
+  return String(Number(v.toPrecision(4)));
+}
+
+/* ============================================================
+   圆环列表 UI
+   ============================================================ */
+function renderRingList() {
+  const box = document.getElementById('ringList');
+  if (!box) return;
+  if (state.rings.length === 0) {
+    box.innerHTML = '<div style="padding:20px;text-align:center;color:#b2bec3;font-size:13px">还没有圆环，点击下方添加</div>';
+    return;
+  }
+  box.innerHTML = state.rings.map(r => {
+    const isCCW = r.dir > 0;
+    const color = isCCW ? '#e84545' : '#4c9aff';
+    const sym = isCCW ? '↺' : '↻';
+    const bg = isCCW ? 'rgba(232,69,69,0.06)' : 'rgba(76,154,255,0.06)';
+    return `<div class="ring-row" style="background:${bg}">
+      <span class="ring-tag" style="color:${color}">${sym}</span>
+      <input type="number" step="0.1" value="${r.I.toFixed(2)}" data-field="I" data-id="${r.id}" title="电流大小">
+      <input type="number" step="0.1" value="${r.x.toFixed(2)}" data-field="x" data-id="${r.id}" title="x 位置 (m)">
+      <input type="number" step="0.1" value="${r.y.toFixed(2)}" data-field="y" data-id="${r.id}" title="y 位置 (m)">
+      <input type="number" step="0.1" value="${r.R.toFixed(2)}" data-field="R" data-id="${r.id}" title="半径 (m)">
+      <button class="ring-dir" data-id="${r.id}" style="color:${color}" title="切换电流方向">${sym}</button>
+      <button class="ring-del" data-id="${r.id}" title="删除">✕</button>
+    </div>`;
+  }).join('');
+
+  box.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('change', () => {
+      const ring = state.rings.find(x => x.id === +inp.dataset.id);
+      if (!ring) return;
+      let v = parseFloat(inp.value);
+      if (isNaN(v)) { inp.value = ring[inp.dataset.field].toFixed(2); return; }
+      const f = inp.dataset.field;
+      if (f === 'I') { ring.I = Math.max(0.05, Math.min(5, Math.abs(v))); inp.value = ring.I.toFixed(2); }
+      else if (f === 'R') { ring.R = Math.max(0.20, Math.min(2.5, v)); inp.value = ring.R.toFixed(2); }
+      else { ring[f] = Math.max(-WL, Math.min(WL, v)); inp.value = ring[f].toFixed(2); }
+      lineSig = ''; refreshAll();
+    });
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') inp.blur(); });
+  });
+
+  box.querySelectorAll('.ring-dir').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const ring = state.rings.find(x => x.id === +btn.dataset.id);
+      if (!ring) return;
+      ring.dir = -ring.dir;
+      lineSig = ''; refreshAll();
+    });
+  });
+
+  box.querySelectorAll('.ring-del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.rings = state.rings.filter(r => r.id !== +btn.dataset.id);
+      lineSig = ''; refreshAll();
+    });
+  });
+}
+
+/* ============================================================
+   导入 / 导出
+   ============================================================ */
+function exportRings() {
+  const data = {
+    version: 1,
+    rings: state.rings.map(r => ({
+      x: +r.x.toFixed(3),
+      y: +r.y.toFixed(3),
+      R: +r.R.toFixed(3),
+      I: +r.I.toFixed(3),
+      dir: r.dir
+    }))
+  };
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'rings.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function importRings() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json,application/json';
+  input.onchange = async () => {
+    const file = input.files[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      const arr = Array.isArray(data) ? data : data.rings;
+      if (!Array.isArray(arr)) throw new Error('JSON 格式错误：需要 rings 数组');
+      state.rings = arr.map(r => ({
+        id: nextRingId++,
+        x: +r.x || 0,
+        y: +r.y || 0,
+        R: Math.max(0.1, Math.min(3, +r.R || 1)),
+        I: Math.max(0.05, Math.min(5, Math.abs(+r.I || 1))),
+        dir: +r.dir === -1 ? -1 : 1
+      }));
+      lineSig = ''; refreshAll();
+    } catch (err) {
+      alert('导入失败：' + err.message);
+    }
+  };
+  input.click();
+}
+
+/* ============================================================
+   编程模式
+   ============================================================ */
+function runRingCode() {
+  const code = document.getElementById('ringCode').value;
+  const newRings = [];
+  const ringFn = (x, y, R, I, dir) => {
+    x = typeof x === 'number' && isFinite(x) ? x : 0;
+    y = typeof y === 'number' && isFinite(y) ? y : 0;
+    R = typeof R === 'number' && isFinite(R) ? Math.max(0.1, Math.min(3, R)) : 1;
+    I = typeof I === 'number' && isFinite(I) ? Math.max(0.05, Math.min(5, Math.abs(I))) : 1;
+    dir = dir === -1 ? -1 : 1;
+    newRings.push({ id: nextRingId++, x, y, R, I, dir });
+  };
+
+  const range = (a, b, step = 1) => {
+    const arr = [];
+    if (step === 0) return arr;
+    if (step > 0) for (let i = a; i <= b + 1e-9; i += step) arr.push(i);
+    else for (let i = a; i >= b - 1e-9; i += step) arr.push(i);
+    return arr;
+  };
+  const linspace = (a, b, n) => {
+    const arr = [];
+    if (n <= 1) return [a];
+    for (let i = 0; i < n; i++) arr.push(a + (b - a) * i / (n - 1));
+    return arr;
+  };
+
+  try {
+    const fn = new Function('ring', 'Math', 'PI', 'range', 'linspace', code);
+    fn(ringFn, Math, Math.PI, range, linspace);
+    if (newRings.length === 0) {
+      alert('代码执行完成，但没有添加圆环。\n请使用 ring(x, y, R, I, dir) 添加圆环。');
+      return;
+    }
+    state.rings = newRings;
+    lineSig = ''; refreshAll();
+  } catch (err) {
+    alert('代码执行错误：\n' + err.message);
+  }
+}
+
+/* ============================================================
+   全局刷新
+   ============================================================ */
+function updateMeasureCoords() {
+  const { x1, y1, x2, y2 } = state.measure;
+  document.getElementById('measureCoords').textContent =
+    `A(${x1.toFixed(2)}, ${y1.toFixed(2)}) → B(${x2.toFixed(2)}, ${y2.toFixed(2)})`;
+}
+
+function refreshAll() {
+  updateSidebar();
+  updateMeasureCoords();
+  drawCharts();
+  draw2D();
+  renderRingList();
+}
+
+function drawCharts() {
+  const data = computeLineData();
+  drawChartB(data);
+}
+
+/* ============================================================
+   模式切换
+   ============================================================ */
+function loadMode(mode) {
+  state.mode = mode;
+  state.probeSnap = null;
+  state.measureMode = false;
+  state.firstPointSet = false;
+  lineCache = []; lineSig = '';
+
+  const dirGroup = document.getElementById('dirGroup');
+  const rowSolar = document.getElementById('rowSolar');
+  const row3D = document.getElementById('row3D');
+  const earthInfo = document.getElementById('earthInfo');
+  const solParamsGroup = document.getElementById('solParamsGroup');
+  const ringCard = document.getElementById('ringCard');
+  const geoBar = document.getElementById('geoBar');
+  const particleBar = document.getElementById('particleBar');
+
+  solParamsGroup.style.display = 'none';
+  ringCard.style.display = 'none';
+  particleBar.classList.remove('show');
+  geoBar.style.display = 'flex';
+
+  // 清空粒子
+  sim.particles = [];
+  sim.running = false;
+  document.getElementById('btnParticlePlay').textContent = '▶ 播放';
+
+  if (mode === 'earth') {
+    dirGroup.style.display = 'none';
+    rowSolar.style.display = 'flex';
+    row3D.style.display = 'flex';
+    earthInfo.classList.add('show');
+    geoBar.style.display = 'none';
+    state.probe = { x: 1.6, y: 0.0, has: true };
+    state.measure = { x1: -3.0, y1: 0.0, x2: 3.0, y2: 0.0 };
+    initSolarParticles();
+  } else {
+    dirGroup.style.display = 'flex';
+    rowSolar.style.display = 'none';
+    row3D.style.display = 'none';
+    earthInfo.classList.remove('show');
+    if (mode === 'wire') {
+      state.probe = { x: 1.0, y: 0.0, has: true };
+      state.measure = { x1: -2.0, y1: 0.0, x2: 2.0, y2: 0.0 };
+    } else if (mode === 'ring') {
+      ringCard.style.display = 'block';
+      particleBar.classList.add('show');
+      state.probe = { x: 0.0, y: 0.0, has: true };
+      state.measure = { x1: -3.0, y1: 0.0, x2: 3.0, y2: 0.0 };
+    } else if (mode === 'solenoid') {
+      solParamsGroup.style.display = 'flex';
+      state.probe = { x: 0.0, y: 0.0, has: true };
+      state.measure = { x1: -3.0, y1: 0.0, x2: 3.0, y2: 0.0 };
+    } else if (mode === 'magnet') {
+      state.probe = { x: 0.0, y: 0.0, has: true };
+      state.measure = { x1: -2.5, y1: 0.0, x2: 2.5, y2: 0.0 };
+    }
+  }
+
+  const measureBtn = document.getElementById('btnMeasure');
+  measureBtn.classList.remove('on');
+  measureBtn.textContent = '绘制测量线';
+  document.getElementById('measureHint').textContent =
+    '点击「绘制测量线」后依次点击画布上两点；靠近轴会自动吸附';
+
+  const titleMap = {
+    'wire': '通电直导线 · 磁场分布',
+    'ring': '通电圆环 · 多环叠加 · 粒子模拟',
+    'solenoid': '通电螺线管 · 磁场分布',
+    'magnet': '永磁体 · 磁场分布',
+    'earth': '地球磁场 · 磁层与太阳风'
+  };
+  document.getElementById('canvasTitle').textContent = titleMap[mode] || '磁场分布';
+
+  updateFormula();
+  refreshAll();
+}
+
+/* ============================================================
+   公式
+   ============================================================ */
+function updateFormula() {
+  const box = document.getElementById('formulaBox');
+  const noteBox = document.getElementById('formulaNote');
+  const katex = window.katex;
+  function r(tex) {
+    if (katex) {
+      try { return katex.renderToString(tex, { throwOnError: false }); } catch(e) {}
+    }
+    return '<code>' + tex + '</code>';
+  }
+  let items = '';
+  let note = '';
+  if (state.mode === 'wire') {
+    items = `<div class="formula-item">${r('B=\\dfrac{\\mu_0 I}{2\\pi r}')}</div>` +
+            `<div class="formula-item">${r('\\vec{B}=\\dfrac{\\mu_0 I}{2\\pi r}\\hat{\\varphi}')}</div>`;
+    note = '直导线的磁感线为同心圆，磁场强度与到导线距离成反比。';
+  } else if (state.mode === 'ring') {
+    items =
+      `<div class="formula-item">${r('B_{中心}=\\dfrac{\\mu_0 I}{2R}')}</div>` +
+      `<div class="formula-item">${r('B_{轴线}(x)=\\dfrac{\\mu_0 I R^2}{2(R^2+x^2)^{3/2}}')}</div>` +
+      `<div class="formula-item">${r('\\vec{F}=q\\vec{v}\\times\\vec{B}')}</div>` +
+      `<div class="formula-item">${r('r_c=\\dfrac{mv}{qB}')}</div>`;
+    note = `<b>多环叠加</b>：共 <b>${state.rings.length}</b> 个圆环，磁场矢量叠加。
+            <b>红色 ↺</b> 逆时针电流（磁场沿 +x），<b>蓝色 ↻</b> 顺时针（磁场沿 -x）。<br>
+            <b>带电粒子</b>：受洛伦兹力 F = qv×B 作用，在磁场中做螺旋/回旋运动。
+            粒子轨迹颜色反映 z 坐标（蓝 → 红），因为环的磁场在 xy 平面外还有 bz 分量，
+            粒子会离开平面做三维运动。`;
+  } else if (state.mode === 'solenoid') {
+    const R = state.solRadius, L = state.solLength, N = state.solTurns;
+    items =
+      `<div class="formula-item">${r('B_{内部}=\\mu_0 n I=\\mu_0\\dfrac{N}{L}I')}</div>` +
+      `<div class="formula-item">${r('d\\vec{B}=\\dfrac{\\mu_0 I}{4\\pi}\\dfrac{d\\vec{l}\\times\\hat{r}}{r^2}')}</div>`;
+    note = `<b>螺线管</b>：半径 R = ${R.toFixed(2)} m，长 L = ${L.toFixed(2)} m，匝数 N = ${N}，匝密度 n = ${(N/L).toFixed(2)} 匝/m。`;
+  } else if (state.mode === 'magnet') {
+    items = `<div class="formula-item">${r('\\vec{B}=\\mu_0(\\vec{H}+\\vec{M})')}</div>` +
+            `<div class="formula-item">${r('\\nabla\\cdot\\vec{B}=0')}</div>`;
+    note = '永磁体外磁感线从 N 极指向 S 极，内部从 S 极回到 N 极，形成闭合回路。';
+  } else if (state.mode === 'earth') {
+    items =
+      `<div class="formula-item">${r('\\vec{B}=\\dfrac{\\mu_0}{4\\pi}\\dfrac{3(\\vec{m}\\cdot\\hat{r})\\hat{r}-\\vec{m}}{r^3}')}</div>` +
+      `<div class="formula-item">${r('\\theta_{磁轴}\\approx 11.5°')}</div>`;
+    note = `<b>关键概念</b>：地理北极附近是 <b>地磁南极（S 极）</b>，地理南极附近是 <b>地磁北极（N 极）</b>。
+            指南针红色 N 极被地磁南极吸引，指向北方。磁偏角 D 由磁轴倾斜 11.5° 引起。`;
+  }
+  box.innerHTML = items;
+  if (note) { noteBox.innerHTML = note; noteBox.style.display = 'block'; }
+  else noteBox.style.display = 'none';
+}
+
+/* ============================================================
+   吸附 / 环命中
+   ============================================================ */
+function snapPoint(x, y) {
+  const AXIS_TH = 0.22;
+  let sx = x, sy = y, type = null;
+  if (Math.abs(sx) < AXIS_TH) { sx = 0; type = 'y-axis'; }
+  if (Math.abs(sy) < AXIS_TH) { sy = 0; type = type ? 'origin' : 'x-axis'; }
+  return { x: sx, y: sy, type };
+}
+
+function hitRing(worldX, worldY) {
+  const sx = px(worldX), sy = py(worldY);
+  for (let i = state.rings.length - 1; i >= 0; i--) {
+    const ring = state.rings[i];
+    const cx = px(ring.x), cy = py(ring.y);
+    const rx = ring.R * S * 0.32, ry = ring.R * S;
+    const dC = Math.hypot(sx - cx, sy - cy);
+    if (dC < 11) return { ring, type: 'center' };
+    const dx = sx - cx, dy = sy - cy;
+    const angle = Math.atan2(dy, dx);
+    const ex = cx + rx * Math.cos(angle);
+    const ey = cy + ry * Math.sin(angle);
+    const dist = Math.hypot(sx - ex, sy - ey);
+    if (dist < 12) return { ring, type: 'edge' };
+  }
+  return null;
+}
+
+/* ============================================================
+   交互
+   ============================================================ */
+function canvasToWorld(e) {
+  const r = cv2d.getBoundingClientRect();
+  return { x: mx(e.clientX - r.left), y: my(e.clientY - r.top) };
+}
+
+cv2d.addEventListener('pointerdown', e => {
+  const p = canvasToWorld(e);
+  if (state.mode === 'ring') {
+    const hit = hitRing(p.x, p.y);
+    if (hit) {
+      const ring = hit.ring;
+      if (hit.type === 'center') {
+        state.drag = { type: 'ring-move', id: ring.id };
+      } else {
+        const dx0 = p.x - ring.x, dy0 = p.y - ring.y;
+        const startEst = Math.sqrt(Math.pow(dx0/0.32, 2) + dy0*dy0);
+        state.drag = { type: 'ring-resize', id: ring.id, startR: ring.R, startEst };
+      }
+      cv2d.setPointerCapture(e.pointerId);
+      return;
+    }
+  }
+  if (state.showMeasure) {
+    const { x1, y1, x2, y2 } = state.measure;
+    const dA = Math.hypot(px(p.x) - px(x1), py(p.y) - py(y1));
+    const dB = Math.hypot(px(p.x) - px(x2), py(p.y) - py(y2));
+    if (dA < 16) { state.drag = { type: 'measureA' }; cv2d.setPointerCapture(e.pointerId); return; }
+    if (dB < 16) { state.drag = { type: 'measureB' }; cv2d.setPointerCapture(e.pointerId); return; }
+  }
+  if (state.measureMode) {
+    const sp = snapPoint(p.x, p.y);
+    if (!state.firstPointSet) {
+      state.pendingX1 = sp.x; state.pendingY1 = sp.y;
+      state.firstPointSet = true;
+    } else {
+      state.measure.x1 = state.pendingX1; state.measure.y1 = state.pendingY1;
+      state.measure.x2 = sp.x; state.measure.y2 = sp.y;
+      state.firstPointSet = false; state.measureMode = false;
+      const btn = document.getElementById('btnMeasure');
+      btn.classList.remove('on');
+      btn.textContent = '绘制测量线';
+      refreshAll();
+    }
+    return;
+  }
+  const sp = snapPoint(p.x, p.y);
+  state.probe.x = Math.max(-WL, Math.min(WL, sp.x));
+  state.probe.y = Math.max(-WL, Math.min(WL, sp.y));
+  state.probeSnap = sp.type;
+  state.probe.has = true;
+  state.drag = { type: 'probe' };
+  cv2d.setPointerCapture(e.pointerId);
+  refreshAll();
+});
+
+cv2d.addEventListener('pointermove', e => {
+  if (!state.drag) return;
+  const p = canvasToWorld(e);
+  const cx = Math.max(-WL, Math.min(WL, p.x));
+  const cy = Math.max(-WL, Math.min(WL, p.y));
+  if (state.drag.type === 'ring-move') {
+    const ring = state.rings.find(r => r.id === state.drag.id);
+    if (ring) { ring.x = cx; ring.y = cy; }
+    lineSig = '';
+  } else if (state.drag.type === 'ring-resize') {
+    const ring = state.rings.find(r => r.id === state.drag.id);
+    if (ring) {
+      const dx = cx - ring.x, dy = cy - ring.y;
+      const est = Math.sqrt(Math.pow(dx/0.32, 2) + dy*dy);
+      const scale = est / Math.max(1e-3, state.drag.startEst);
+      ring.R = Math.max(0.20, Math.min(2.5, state.drag.startR * scale));
+    }
+    lineSig = '';
+  } else if (state.drag.type === 'measureA') {
+    const sp = snapPoint(cx, cy);
+    state.measure.x1 = sp.x; state.measure.y1 = sp.y;
+  } else if (state.drag.type === 'measureB') {
+    const sp = snapPoint(cx, cy);
+    state.measure.x2 = sp.x; state.measure.y2 = sp.y;
+  } else if (state.drag.type === 'probe') {
+    const sp = snapPoint(cx, cy);
+    state.probe.x = sp.x; state.probe.y = sp.y;
+    state.probeSnap = sp.type;
+  }
+  refreshAll();
+});
+
+cv2d.addEventListener('pointerup', () => { state.drag = null; });
+
+cv2d.addEventListener('dblclick', e => {
+  if (state.mode !== 'ring') return;
+  const p = canvasToWorld(e);
+  const hit = hitRing(p.x, p.y);
+  if (hit) {
+    hit.ring.dir = -hit.ring.dir;
+    lineSig = ''; refreshAll();
+  }
+});
+
+/* ============================================================
+   UI 事件
+   ============================================================ */
+document.querySelectorAll('#tabs button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#tabs button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    ctx.clearRect(0, 0, cv2d.width, cv2d.height);
+    loadMode(b.dataset.mode);
+  });
+});
+
+document.getElementById('dirSlider').addEventListener('input', e => {
+  state.direction = +e.target.value === 0 ? 1 : -1;
+  document.getElementById('dirVal').textContent = +e.target.value === 0 ? '外' : '内';
+  lineCache = []; lineSig = ''; refreshAll();
+});
+
+document.getElementById('currSlider').addEventListener('input', e => {
+  state.currentScale = parseFloat(e.target.value);
+  document.getElementById('currVal').textContent = state.currentScale.toFixed(2);
+  lineCache = []; lineSig = ''; refreshAll();
+});
+
+document.getElementById('solRSlider').addEventListener('input', e => {
+  state.solRadius = parseFloat(e.target.value);
+  document.getElementById('solRVal').textContent = state.solRadius.toFixed(2);
+  lineCache = []; lineSig = ''; refreshAll();
+});
+document.getElementById('solLSlider').addEventListener('input', e => {
+  state.solLength = parseFloat(e.target.value);
+  document.getElementById('solLVal').textContent = state.solLength.toFixed(2);
+  lineCache = []; lineSig = ''; refreshAll();
+});
+document.getElementById('solNSlider').addEventListener('input', e => {
+  state.solTurns = parseInt(e.target.value, 10);
+  document.getElementById('solNVal').textContent = state.solTurns;
+  lineCache = []; lineSig = ''; refreshAll();
+});
+
+document.getElementById('swLine').addEventListener('click', e => {
+  state.showLine = !state.showLine;
+  e.target.classList.toggle('on', state.showLine);
+  refreshAll();
+});
+document.getElementById('swArrow').addEventListener('click', e => {
+  state.showArrow = !state.showArrow;
+  e.target.classList.toggle('on', state.showArrow);
+  refreshAll();
+});
+document.getElementById('swCompass').addEventListener('click', e => {
+  state.showCompass = !state.showCompass;
+  e.target.classList.toggle('on', state.showCompass);
+  refreshAll();
+});
+document.getElementById('swMeasure').addEventListener('click', e => {
+  state.showMeasure = !state.showMeasure;
+  e.target.classList.toggle('on', state.showMeasure);
+  refreshAll();
+});
+document.getElementById('swSolar').addEventListener('click', e => {
+  state.showSolar = !state.showSolar;
+  e.target.classList.toggle('on', state.showSolar);
+  if (!state.showSolar) solarParticles = [];
+  else if (state.mode === 'earth') initSolarParticles();
+  refreshAll();
+});
+document.getElementById('sw3D').addEventListener('click', e => {
+  state.view3D = !state.view3D;
+  e.target.classList.toggle('on', state.view3D);
+  refreshAll();
+});
+
+document.getElementById('btnMeasure').addEventListener('click', e => {
+  state.measureMode = !state.measureMode;
+  state.firstPointSet = false;
+  e.target.classList.toggle('on', state.measureMode);
+  e.target.textContent = state.measureMode ? '点击画布选择 A 点…' : '绘制测量线';
+  document.getElementById('measureHint').textContent =
+    state.measureMode ? '依次点击画布上两点确定测量线 A、B（靠近轴自动吸附）' :
+    '直接拖拽端点圆点可调整测量线；靠近轴会自动吸附';
+});
+
+document.getElementById('addRingBtn').addEventListener('click', () => {
+  if (state.mode !== 'ring') return;
+  const n = state.rings.length;
+  state.rings.push({
+    id: nextRingId++,
+    x: (n % 2 === 0 ? -1 : 1) * (0.5 + 0.3 * Math.floor(n/2)),
+    y: (n >= 2) ? (Math.random() - 0.5) * 1.5 : 0,
+    R: 0.85, I: 1.0, dir: +1
+  });
+  lineSig = ''; refreshAll();
+});
+
+/* 编程模式标签切换 */
+document.querySelectorAll('.ring-tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.ring-tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    const which = t.dataset.rtab;
+    document.getElementById('ringListPane').style.display = which === 'list' ? 'block' : 'none';
+    document.getElementById('ringCodePane').style.display = which === 'code' ? 'block' : 'none';
+  });
+});
+
+/* 代码执行 */
+document.getElementById('runCodeBtn').addEventListener('click', runRingCode);
+document.getElementById('clearCodeBtn').addEventListener('click', () => {
+  document.getElementById('ringCode').value = '';
+});
+
+/* 导入 / 导出 */
+document.getElementById('exportRingsBtn').addEventListener('click', exportRings);
+document.getElementById('importRingsBtn').addEventListener('click', importRings);
+
+/* 粒子控制 */
+document.getElementById('btnEmit').addEventListener('click', () => {
+  emitParticle();
+  if (!sim.running) {
+    sim.running = true;
+    document.getElementById('btnParticlePlay').textContent = '⏸ 暂停';
+  }
+  refreshAll();
+});
+
+document.getElementById('btnParticlePlay').addEventListener('click', e => {
+  sim.running = !sim.running;
+  e.target.textContent = sim.running ? '⏸ 暂停' : '▶ 播放';
+});
+
+document.getElementById('btnParticleClear').addEventListener('click', () => {
+  sim.particles = [];
+  sim.running = false;
+  document.getElementById('btnParticlePlay').textContent = '▶ 播放';
+  refreshAll();
+});
+
+document.getElementById('emitVSlider').addEventListener('input', e => {
+  sim.emit.v = parseFloat(e.target.value);
+  document.getElementById('emitVVal').textContent = sim.emit.v.toFixed(1);
+});
+document.getElementById('emitASlider').addEventListener('input', e => {
+  sim.emit.angle = parseFloat(e.target.value);
+  document.getElementById('emitAVal').textContent = sim.emit.angle + '°';
+});
+document.getElementById('qmSlider').addEventListener('input', e => {
+  sim.qm = parseFloat(e.target.value);
+  document.getElementById('qmVal').textContent = sim.qm.toFixed(2);
+});
+
+document.getElementById('btnReset').addEventListener('click', () => {
+  lineCache = []; lineSig = '';
+  ctx.clearRect(0, 0, cv2d.width, cv2d.height);
+  document.getElementById('currSlider').value = 1;
+  state.currentScale = 1;
+  document.getElementById('currVal').textContent = '1.00';
+  document.getElementById('dirSlider').value = 0;
+  state.direction = 1;
+  document.getElementById('dirVal').textContent = '外';
+  state.view3D = false;
+  document.getElementById('sw3D').classList.remove('on');
+  state.solRadius = 0.55; document.getElementById('solRSlider').value = 0.55;
+  document.getElementById('solRVal').textContent = '0.55';
+  state.solLength = 2.40; document.getElementById('solLSlider').value = 2.40;
+  document.getElementById('solLVal').textContent = '2.40';
+  state.solTurns = 10; document.getElementById('solNSlider').value = 10;
+  document.getElementById('solNVal').textContent = '10';
+  nextRingId = 2;
+  state.rings = [
+    { id: 0, x: -1.0, y: 0.0, R: 1.0, I: 1.0, dir: +1 },
+    { id: 1, x:  1.0, y: 0.0, R: 1.0, I: 1.0, dir: +1 }
+  ];
+  sim.particles = []; sim.running = false;
+  document.getElementById('btnParticlePlay').textContent = '▶ 播放';
+  sim.emit.v = 2.0; document.getElementById('emitVSlider').value = 2;
+  document.getElementById('emitVVal').textContent = '2.0';
+  sim.emit.angle = 0; document.getElementById('emitASlider').value = 0;
+  document.getElementById('emitAVal').textContent = '0°';
+  sim.qm = 1.0; document.getElementById('qmSlider').value = 1;
+  document.getElementById('qmVal').textContent = '1.00';
+  loadMode(state.mode);
+});
+
+document.getElementById('probeX').addEventListener('change', e => {
+  let v = parseFloat(e.target.value);
+  if (isNaN(v)) { e.target.value = state.probe.x.toFixed(2); return; }
+  v = Math.max(-WL, Math.min(WL, v));
+  state.probe.x = v; state.probeSnap = null;
+  e.target.value = v.toFixed(2);
+  refreshAll();
+});
+document.getElementById('probeY').addEventListener('change', e => {
+  let v = parseFloat(e.target.value);
+  if (isNaN(v)) { e.target.value = state.probe.y.toFixed(2); return; }
+  v = Math.max(-WL, Math.min(WL, v));
+  state.probe.y = v; state.probeSnap = null;
+  e.target.value = v.toFixed(2);
+  refreshAll();
+});
+document.getElementById('probeX').addEventListener('keydown', e => { if (e.key === 'Enter') e.target.blur(); });
+document.getElementById('probeY').addEventListener('keydown', e => { if (e.key === 'Enter') e.target.blur(); });
+
+window.addEventListener('resize', () => {
+  resize2D(); draw2D(); drawCharts();
+});
+
+/* ============================================================
+   主循环
+   ============================================================ */
+let lastFrame = 0;
+function masterLoop(now) {
+  requestAnimationFrame(masterLoop);
+  const dt = lastFrame ? Math.min((now - lastFrame) / 1000, 0.05) : 0.016;
+  lastFrame = now;
+
+  // 太阳风
+  if (state.mode === 'earth' && state.showSolar) {
+    updateSolarParticles(dt);
+    draw2D();
+    return;
+  }
+
+  // 粒子物理
+  if (state.mode === 'ring' && sim.running && sim.particles.length > 0) {
+    const totalDt = dt * 1.2;
+    const sub = 4;
+    const sdt = totalDt / sub;
+    for (let k = 0; k < sub; k++) stepParticles(sdt);
+    // 若粒子全部飞出则自动暂停
+    if (sim.particles.length === 0) {
+      sim.running = false;
+      document.getElementById('btnParticlePlay').textContent = '▶ 播放';
+    }
+    draw2D();
+  }
+}
+
+requestAnimationFrame(() => {
+  resize2D();
+  loadMode('wire');
+  setTimeout(drawCharts, 60);
+  requestAnimationFrame(masterLoop);
+});
+
+if (window.katex) updateFormula();
+else window.addEventListener('load', updateFormula);
+
+</script>
+</body>
+</html>

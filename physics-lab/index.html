@@ -2,227 +2,235 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport"
-      content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>小黑喵智慧物理实验室</title>
-<link rel="preconnect"
-      href="https://fonts.googleapis.com">
-<link rel="preconnect"
-      href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap"
-      rel="stylesheet">
+
 <style>
 :root{
-  --bg:#050a18;
-  --panel:rgba(13,28,60,.62);
-  --panel2:rgba(16,36,80,.78);
-  --line:rgba(86,170,255,.22);
-  --ink:#e8f2ff;
-  --mut:#8fb3df;
-  --cy:#37c8ff;
-  --cy2:#2b8cff;
-  --glow:0 0 26px rgba(55,200,255,.35);
-  --rad:18px;
-  --sh:0 18px 48px rgba(0,10,35,.55);
+  --bg:#f5f7fc;
+  --card:#ffffff;
+  --ink:#1a2238;
+  --ink2:#4a5568;
+  --muted:#8892a8;
+  --line:#e6eaf3;
+  --accent:#4f46e5;
+  --shadow:0 10px 28px rgba(34,46,90,.08);
+  --shadow-hover:0 16px 40px rgba(34,46,90,.14);
+  --rad:16px;
   font-size:16px;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{
-  font-family:'Rajdhani','Times New Roman',system-ui,sans-serif;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",
+    "PingFang SC","Microsoft YaHei",sans-serif;
   background:var(--bg);
-  color:var(--ink);
-  min-height:100vh;
-  overflow-x:hidden;
-}
-/* ---- ambient background ---- */
-.stage{position:fixed;inset:0;z-index:0;overflow:hidden}
-.glow1,.glow2,.glow3{position:absolute;border-radius:50%;filter:blur(90px);opacity:.55}
-.glow1{width:46vw;height:46vw;left:-12vw;top:-14vw;
-  background:radial-gradient(circle,#0b3f9e,transparent 68%)}
-.glow2{width:40vw;height:40vw;right:-10vw;top:24vh;
-  background:radial-gradient(circle,#0a5fb0,transparent 66%)}
-.glow3{width:34vw;height:34vw;left:26vw;bottom:-18vw;
-  background:radial-gradient(circle,#09326e,transparent 70%)}
-#stars{position:absolute;inset:0;width:100%;height:100%}
-.gridline{position:absolute;inset:0;
   background-image:
-    linear-gradient(rgba(60,140,255,.06) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(60,140,255,.06) 1px,transparent 1px);
-  background-size:48px 48px;
-  mask-image:radial-gradient(circle at 50% 22%,#000 30%,transparent 78%);
+    radial-gradient(920px 520px at 8% -8%,#e7ebff 0%,transparent 60%),
+    radial-gradient(760px 520px at 96% 0%,#f1e9ff 0%,transparent 55%);
+  background-attachment:fixed;
+  color:var(--ink);
+  line-height:1.6;
+  min-height:100vh;
+  padding:0 0 60px;
 }
-/* ---- shell ---- */
-.shell{position:relative;z-index:1;width:min(1240px,92vw);
-  margin:0 auto;padding:0 0 90px}
-/* ---- hero ---- */
-.hero{padding:84px 0 40px;text-align:center;position:relative}
-.orbit{position:absolute;top:60px;left:50%;width:560px;height:300px;
-  transform:translateX(-50%);
-  border-radius:50%;pointer-events:none;opacity:.5}
-.orbit i{position:absolute;inset:0;border-radius:50%;
-  border:1px dashed rgba(80,180,255,.35);
-  transform:rotate(var(--r,0deg))}
-.orbit i em{position:absolute;top:-6px;left:50%;width:12px;height:12px;
-  margin-left:-6px;border-radius:50%;background:var(--cy);
-  box-shadow:var(--glow)}
-.eyebrow{display:inline-flex;align-items:center;gap:10px;
-  font-family:'Orbitron','Times New Roman',sans-serif;
-  font-size:13px;letter-spacing:4px;color:var(--cy);
-  border:1px solid var(--line);background:var(--panel);
-  padding:8px 18px;border-radius:40px;backdrop-filter:blur(8px)}
-.dot{width:8px;height:8px;border-radius:50%;background:var(--cy);
-  box-shadow:var(--glow);animation:pulse 1.6s infinite}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}
-  50%{opacity:.4;transform:scale(.7)}}
-h1.title{
-  font-family:'Orbitron','Times New Roman',sans-serif;
-  font-size:clamp(34px,6vw,62px);font-weight:900;
-  line-height:1.1;margin:22px auto 8px;letter-spacing:2px;
-  background:linear-gradient(92deg,#7dffff 0%,var(--cy) 30%,#4a9dff 62%,#8fd4ff 100%);
-  -webkit-background-clip:text;background-clip:text;
-  color:transparent;
-  filter:drop-shadow(0 6px 30px rgba(64,180,255,.35))
+.wrap{max-width:1180px;margin:0 auto;padding:0 18px}
+
+/* ---------- header ---------- */
+header.hero{
+  text-align:center;
+  padding:60px 0 22px;
+  position:relative;
 }
-.sub{max-width:640px;margin:0 auto;color:var(--mut);
-  font-size:17px;line-height:1.7}
-.statbar{display:flex;gap:14px;justify-content:center;
-  flex-wrap:wrap;margin-top:28px}
-.stat{background:var(--panel);border:1px solid var(--line);
-  border-radius:14px;padding:12px 22px;display:flex;
-  flex-direction:column;align-items:center;min-width:112px;
-  backdrop-filter:blur(8px)}
-.stat b{font-family:'Orbitron','Times New Roman',sans-serif;
-  font-size:26px;color:#fff;font-weight:700}
-.stat span{color:var(--mut);font-size:12px;letter-spacing:1px}
-/* ---- controls ---- */
-.controls{position:sticky;top:12px;z-index:20;margin:26px 0 8px;
-  background:rgba(7,16,38,.72);border:1px solid var(--line);
-  border-radius:20px;backdrop-filter:blur(14px) saturate(150%);
-  padding:14px;box-shadow:var(--sh);
-  display:flex;flex-wrap:wrap;gap:12px;align-items:center}
-.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;flex:1}
-.search{position:relative;flex:1;min-width:210px}
-.search input{width:100%;background:rgba(10,24,56,.7);
-  border:1px solid var(--line);border-radius:12px;
-  color:var(--ink);padding:12px 15px 12px 42px;font-size:15px;
-  outline:none;transition:border-color .25s,box-shadow .25s}
-.search input:focus{border-color:var(--cy);box-shadow:var(--glow)}
-.search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);
-  width:18px;height:18px;stroke:var(--mut)}
-.chips{display:flex;gap:8px;flex-wrap:wrap}
-.chip{display:flex;align-items:center;gap:6px;cursor:pointer;
-  background:rgba(10,24,56,.6);border:1px solid var(--line);
-  color:var(--mut);padding:9px 15px;border-radius:12px;
-  font-size:14px;transition:.25s;user-select:none}
-.chip b{font-family:'Orbitron','Times New Roman',sans-serif;color:var(--cy);
-  font-size:11px}
-.chip:hover{border-color:var(--cy);color:var(--ink)}
-.chip.on{background:linear-gradient(120deg,var(--cy2),var(--cy));
-  color:#04121f;border-color:transparent;font-weight:600}
-.chip.on b{color:#04121f}
-.tools{display:flex;gap:8px}
-.vbtn{width:42px;height:42px;border-radius:12px;cursor:pointer;
-  background:rgba(10,24,56,.6);border:1px solid var(--line);
-  display:grid;place-items:center;color:var(--mut);transition:.25s}
-.vbtn.on{background:var(--panel2);border-color:var(--cy);color:var(--cy)}
-.vbtn svg{width:20px;height:20px;stroke:currentColor}
-/* ---- category ---- */
-.cats{position:relative;z-index:1}
-.cat{position:relative;margin-top:46px}
-.cat-head{display:flex;align-items:baseline;gap:16px;margin-bottom:20px}
-.cat-tag{font-family:'Orbitron','Times New Roman',sans-serif;
-  font-size:22px;font-weight:700;color:#fff;letter-spacing:1px;
-  display:flex;align-items:center;gap:10px}
-.cat-tag::before{content:"";width:6px;height:26px;border-radius:4px;
-  background:linear-gradient(var(--acc),transparent)}
-.cat-count{color:var(--mut);font-size:13px;letter-spacing:1px}
-.cat-line{flex:1;height:1px;
-  background:linear-gradient(90deg,var(--acc),transparent)}
-/* ---- grid cards ---- */
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(252px,1fr));
-  gap:18px}
-.card{position:relative;perspective:900px}
-.card a{position:relative;display:block;height:100%
-   ;text-decoration:none;color:inherit;
-  border-radius:var(--rad);overflow:hidden;
-  background:linear-gradient(160deg,var(--panel2),rgba(8,18,44,.9));
+.cat-logo{
+  width:74px;height:74px;margin:0 auto 14px;
+  font-size:42px;line-height:74px;
+  background:linear-gradient(150deg,#fff,#eef0ff);
   border:1px solid var(--line);
-  padding:20px;transition:transform .3s,border-color .3s,box-shadow .3s;
-  box-shadow:0 10px 30px rgba(0,10,35,.35)}
-.card a:hover{transform:translateY(-6px) rotateX(2deg);
-  border-color:var(--cy);box-shadow:var(--sh),0 0 40px rgba(55,200,255,.28)}
-.card .ico{font-size:30px;line-height:1;filter:drop-shadow(0 6px 18px var(--acc))}
-.card h3{font-family:'Rajdhani','Times New Roman',sans-serif;
-  font-size:20px;margin:14px 0 6px;color:#fff;font-weight:700}
-.card p{color:var(--mut);font-size:13.5px;line-height:1.55;min-height:40px}
-.card .go{margin-top:14px;display:inline-flex;align-items:center;gap:6px;
-  color:var(--cy);font-family:'Orbitron','Times New Roman',sans-serif;
-  font-size:12px;letter-spacing:1px}
-.card .go span{transition:transform .3s}
+  border-radius:22px;
+  box-shadow:var(--shadow);
+  filter:drop-shadow(0 6px 16px rgba(79,70,229,.16));
+}
+.cat-logo.glo{animation:float 3.4s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-7px)}}
+header h1{
+  font-size:clamp(1.7rem,4vw,2.4rem);
+  font-weight:800;
+  letter-spacing:-.02em;
+  color:#2b2e70;
+  margin-bottom:10px;
+}
+header p.sub{
+  color:var(--muted);
+  font-size:1rem;
+  max-width:560px;
+  margin:0 auto;
+}
+.stats{
+  display:flex;gap:12px;justify-content:center;
+  flex-wrap:wrap;margin-top:20px;
+}
+.stat{
+  background:var(--card);border:1px solid var(--line);
+  border-radius:12px;padding:8px 18px;
+  font-size:.9rem;color:var(--ink2);
+  box-shadow:0 4px 12px rgba(34,46,90,.05);
+}
+.stat b{color:var(--accent);font-weight:700;margin-right:4px}
+
+/* ---------- control bar ---------- */
+.controls{
+  position:sticky;top:12px;z-index:20;
+  margin:26px 0 6px;padding:12px;
+  background:rgba(255,255,255,.82);
+  border:1px solid var(--line);
+  border-radius:18px;
+  box-shadow:var(--shadow);
+  backdrop-filter:blur(12px) saturate(160%);
+  display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;flex:1;min-width:240px}
+.search{position:relative;flex:1;min-width:200px}
+.search input{
+  width:100%;padding:11px 14px 11px 40px;
+  border:1px solid var(--line);border-radius:12px;
+  background:#fbfcff;color:var(--ink);font-size:.95rem;
+  outline:none;transition:border-color .25s,box-shadow .25s;
+}
+.search input:focus{border-color:var(--accent);
+  box-shadow:0 0 0 4px rgba(79,70,229,.10)}
+.search svg{position:absolute;left:13px;top:50%;
+  transform:translateY(-50%);width:18px;height:18px;
+  stroke:var(--muted)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{
+  display:inline-flex;align-items:center;gap:6px;
+  background:#fff;border:1px solid var(--line);
+  color:var(--ink2);padding:8px 13px;border-radius:11px;
+  cursor:pointer;font-size:.88rem;user-select:none;
+  transition:.22s;
+}
+.chip b{font-weight:600;font-size:.75rem;
+  background:var(--bg);border-radius:8px;padding:0 6px}
+.chip:hover{border-color:var(--acc);color:var(--ink)}
+.chip.on{background:var(--acc);border-color:var(--acc);
+  color:#fff;font-weight:600}
+.chip.on b{background:rgba(255,255,255,.22);color:#fff}
+.tools{display:flex;gap:8px}
+.vbtn{
+  width:42px;height:42px;border-radius:11px;cursor:pointer;
+  background:#fff;border:1px solid var(--line);
+  display:grid;place-items:center;color:var(--muted);
+  transition:.22s;
+}
+.vbtn.on{color:var(--accent);border-color:var(--accent);
+  background:#f3f4ff}
+.vbtn svg{width:20px;height:20px;stroke:currentColor}
+
+/* ---------- categories ---------- */
+.cats{position:relative;z-index:1;margin-top:6px}
+.cat{position:relative;margin-top:44px}
+.cat-head{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.cat-icon{
+  width:40px;height:40px;flex:0 0 auto;border-radius:12px;
+  display:grid;place-items:center;font-size:22px;
+  background:var(--bg-soft);color:var(--acc);
+  box-shadow:inset 0 0 0 1px var(--acc-line);
+}
+.cat-tag{font-size:1.25rem;font-weight:750;color:var(--ink)}
+.cat-count{color:var(--muted);font-size:.8rem}
+.cat-line{flex:1;height:2px;border-radius:2px;
+  background:var(--acc-line);opacity:.5}
+
+/* ---------- grid card ---------- */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
+  gap:16px}
+.card{opacity:0;transform:translateY(18px);
+  transition:opacity .5s ease,transform .5s ease}
+.card.sp{opacity:1;transform:none}
+.card a{
+  display:block;height:100%;text-decoration:none;color:inherit;
+  background:var(--card);border:1px solid var(--line);
+  border-radius:var(--rad);overflow:hidden;
+  box-shadow:0 4px 12px rgba(34,46,90,.04);
+  transition:.25s;
+}
+.card a:hover{transform:translateY(-5px);
+  border-color:var(--acc-line);
+  box-shadow:var(--shadow-hover)}
+.card .strip{height:5px;background:var(--acc)}
+.card .body{padding:18px 18px 16px}
+.card .ico{
+  width:46px;height:46px;border-radius:12px;font-size:24px;
+  display:grid;place-items:center;
+  background:var(--bg-soft);box-shadow:inset 0 0 0 1px var(--acc-line);
+}
+.card h3{font-size:1.05rem;font-weight:700;margin:12px 0 6px;color:var(--ink)}
+.card .key{font-size:.76rem;color:var(--acc);margin-bottom:6px}
+.card p{color:var(--mut,#718096);font-size:.84rem;line-height:1.55}
+.card .go{
+  margin-top:14px;display:inline-flex;align-items:center;gap:6px;
+  color:var(--acc);font-size:.84rem;font-weight:600;
+}
+.card .go span{transition:transform .25s}
 .card a:hover .go span{transform:translateX(4px)}
-.card .num{position:absolute;right:14px;top:10px;font-family:'Orbitron';
-  font-size:11px;color:var(--mut);opacity:.6}
-/* ---- list rows ---- */
-.list{display:none;flex-direction:column;gap:12px}
-.row{display:flex;align-items:center;gap:16px;cursor:pointer;
-  background:linear-gradient(90deg,var(--panel2),rgba(10,22,50,.7));
-  border:1px solid var(--line);border-radius:14px;
-  padding:14px 18px;text-decoration:none;color:inherit;
-  transition:.28s;position:relative;overflow:hidden}
-.row::before{content:"";position:absolute;left:0;top:0;height:100%;width:4px;
-  background:var(--acc);opacity:0;transition:.28s}
-.row:hover{transform:translateX(6px);border-color:var(--cy);
-  background-color:rgba(20,44,96,.6)}
-.row:hover::before{opacity:1}
-.row .ico{font-size:24px;flex:0 0 auto}
-.row .tx{flex:1;min-width:0}
-.row h4{font-size:18px;color:#fff;font-weight:600}
-.row p{color:var(--mut);font-size:13px;margin-top:2px}
-.row .arrow{flex:0 0 auto;color:var(--cy);transition:.3s}
-.row:hover .arrow{transform:translateX(5px)}
-/* ---- empty ---- */
-.empty{display:none;text-align:center;color:var(--mut);
-  padding:60px 0;font-size:16px}
-/* ---- footer ---- */
-.foot{text-align:center;color:var(--mut);font-size:13px;
-  margin-top:60px;border-top:1px solid var(--line);padding-top:24px;
-  letter-spacing:1px}
-/* ---- reveal ---- */
-.reveal{opacity:0;transform:translateY(28px);
-  transition:opacity .7s ease,transform .7s ease}
-.reveal.in{opacity:1;transform:none}
-/* ---- responsive ---- */
+
+/* ---------- list rows ---------- */
+.list{display:none;flex-direction:column;gap:10px}
+.list.on{display:flex}
+.grid.on-card{display:grid}
+a.row{
+  display:flex;align-items:center;gap:16px;
+  background:var(--card);border:1px solid var(--line);
+  border-left:5px solid var(--acc);
+  border-radius:14px;padding:14px 18px;
+  text-decoration:none;color:inherit;
+  box-shadow:0 3px 10px rgba(34,46,90,.04);
+  transition:.22s;
+}
+a.row:hover{transform:translateX(6px);
+  border-color:var(--acc-line);
+  box-shadow:var(--shadow-hover)}
+a.row .ico{
+  width:42px;height:42px;flex:0 0 auto;border-radius:11px;
+  font-size:22px;display:grid;place-items:center;
+  background:var(--bg-soft);
+}
+a.row .tx{flex:1;min-width:0}
+a.row h4{font-size:1rem;font-weight:650;color:var(--ink)}
+a.row .key{color:var(--acc);font-size:.78rem;margin-top:2px}
+a.row .arrow{flex:0 0 auto;color:var(--accent);font-size:1.1rem;
+  transition:.25s}
+a.row:hover .arrow{transform:translateX(5px)}
+
+/* ---------- empty & footer ---------- */
+.empty{display:none;text-align:center;color:var(--muted);
+  padding:80px 0;font-size:1rem}
+.empty b{display:block;font-size:2.6rem;margin-bottom:10px}
+footer{
+  text-align:center;color:var(--muted);font-size:.82rem;
+  margin-top:64px;border-top:1px solid var(--line);
+  padding-top:22px;letter-spacing:.4px;
+}
+
 @media(max-width:640px){
-  .hero{padding:56px 0 26px}
+  header.hero{padding:40px 0 16px}
   .controls{position:static}
-  .card p{min-height:auto}
 }
 </style>
 </head>
 <body>
-<div class="stage">
-  <div class="glow1"></div>
-  <div class="glow2"></div>
-  <div class="glow3"></div>
-  <canvas id="stars"></canvas>
-  <div class="gridline"></div>
-</div>
 
-<div class="shell">
+<div class="wrap">
   <header class="hero">
-    <div class="orbit"><i style="--r:0deg"><em></em></i>
-      <i style="--r:60deg"><em></em></i>
-      <i style="--r:120deg"><em></em></i></div>
-    <div class="eyebrow"><span class="dot"></span>
-      小黑喵 · SMART PHYSICS LAB</div>
-    <h1 class="title">小黑喵智慧物理实验室</h1>
-    <p class="sub">一个专为物理学习打造的交互动画实验室，涵盖质点运动、刚体转动、
-      振动波动与光学等经典仿真，拖动、观察、验证，让抽象的物理定律变得触手可及。</p>
-    <div class="statbar">
-      <div class="stat"><b id="stModels">0</b><span>交互模型</span></div>
-      <div class="stat"><b id="stCats">0</b><span>学科分类</span></div>
-      <div class="stat"><b>100%</b><span>物理还原度</span></div>
+    <div class="cat-logo glo">🐈‍⬛</div>
+    <h1>小黑喵智慧物理实验室</h1>
+    <p class="sub">交互式物理仿真合集 · 拖拽观察，让抽象定律触手可及</p>
+    <div class="stats">
+      <div class="stat"><b id="stModels">0</b>交互模型</div>
+      <div class="stat"><b id="stCats">0</b>大板块</div>
+      <div class="stat"><b id="stEnd">0</b>可拖拽仿真</div>
     </div>
   </header>
 
@@ -230,261 +238,286 @@ h1.title{
     <div class="bar">
       <div class="search">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2"
-             stroke-linecap="round"><circle cx="11" cy="11" r="7"/>
-          <path d="M21 21l-4.3-4.3"/></svg>
-        <input id="q" type="text" placeholder="搜索模型，如：振动 / 圆周 / 衍射…">
+             stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"/>
+          <path d="M21 21l-4.3-4.3"/>
+        </svg>
+        <input id="q" type="text"
+          placeholder="快捷搜索模型，如：振动 / 电场 / 双缝…">
       </div>
       <div class="chips" id="chips"></div>
     </div>
     <div class="tools">
       <button class="vbtn on" id="gridBtn" title="卡片视图">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2"
-             stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/>
+             stroke-linecap="round">
+          <rect x="3" y="3" width="7" height="7"/>
           <rect x="14" y="3" width="7" height="7"/>
           <rect x="3" y="14" width="7" height="7"/>
-          <rect x="14" y="14" width="7" height="7"/></svg>
+          <rect x="14" y="14" width="7" height="7"/>
+        </svg>
       </button>
       <button class="vbtn" id="listBtn" title="列表视图">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2"
-             stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13"/>
-          <path d="M3 6h.01M3 12h.01M3 18h.01"/></svg>
+             stroke-linecap="round">
+          <path d="M8 6h13M8 12h13M8 18h13"/>
+          <path d="M3 6h.01M3 12h.01M3 18h.01"/>
+        </svg>
       </button>
     </div>
   </div>
 
   <main class="cats" id="cats"></main>
-  <div class="empty" id="empty">未找到匹配的模型，换个关键词试试吧～</div>
+  <div class="empty" id="empty">
+    <b>🔍</b>未找到匹配的模型，换个关键词试试吧～
+  </div>
 
-  <footer class="foot">
-    小黑喵智慧物理实验室 · Powered by 交互动画仿真
-  </footer>
+  <footer>小黑喵智慧物理实验室 · 交互动画仿真合集</footer>
 </div>
 
 <script>
-/* ---------- data ---------- */
-const U='./.uploads/';
+/* ---------- categories ---------- */
+const D='./model/';
 const CATS=[
- {id:'kin',name:'质点运动学',acc:'#37c8ff',
-  d:'直线与曲线运动的轨迹、速度与加速度仿真'},
- {id:'rigid',name:'刚体动力学',acc:'#2b8cff',
-  d:'滚动、自转与进动的转动规律'},
- {id:'wave',name:'振动与波动',acc:'#6f7dff',
-  d:'简谐振动、阻尼、共振与波的传播'},
- {id:'optics',name:'光学仿真',acc:'#4ad0e0',
-  d:'光的衍射、干涉与等厚干涉现象'},
- {id:'thermo',name:'热学与气体',acc:'#00b4d8',
-  d:'热力学循环与气体动理论统计规律'},
- {id:'em',name:'电磁与近代物理',acc:'#3dd6b9',
-  d:'带电粒子在磁场中的运动与相对论效应'}
+ {id:'mech',name:'力学',acc:'#d97706',
+  bg:'#fdf3e3',line:'#f7dfb0',icon:'⚙️',
+  d:'运动、转动与动力学仿真'},
+ {id:'em',name:'电磁学',acc:'#db3d14',
+  bg:'#fdeee8',line:'#f7cfc0',icon:'⚡',
+  d:'电场、磁场与电磁波'},
+ {id:'wave',name:'振动和波',acc:'#2563eb',
+  bg:'#e8f0fd',line:'#c3d9fb',icon:'〰️',
+  d:'简谐振动、波动与多普勒'},
+ {id:'opt',name:'光学',acc:'#0891b2',
+  bg:'#e5f7fb',line:'#bde8f2',icon:'🔆',
+  d:'衍射、干涉与波动光学'},
+ {id:'thermo',name:'热学',acc:'#059669',
+  bg:'#e5f7f0',line:'#bfe9da',icon:'🌡️',
+  d:'气体动理论与统计规律'},
+ {id:'atom',name:'原子物理',acc:'#e11d48',
+  bg:'#fde8ee',line:'#f7c3d4',icon:'⚛️',
+  d:'能级、散射与原子结构'},
+ {id:'quantum',name:'量子物理',acc:'#7c3aed',
+  bg:'#f1eafd',line:'#dccbfa',icon:'🌌',
+  d:'光量子、波函数与德布罗意'},
+ {id:'rel',name:'相对论',acc:'#ca8a04',
+  bg:'#fbf5e6',line:'#f2e2b8',icon:'🚀',
+  d:'尺缩钟慢与洛伦兹时空'}
 ];
+
+/* ---------- models ---------- */
 const MODELS=[
- {t:'抛体运动仿真',c:'kin',k:'平抛·斜抛·竖直上抛',i:'🚀',
-  f:'8dfffea0-553d-4a8e-9bf1-5afeab61bcf0_抛体运动仿真.html',
-  d:'模拟抛体在重力下的运动轨迹与速度矢量，可切换三种抛射方式。'},
- {t:'圆周运动仿真',c:'kin',k:'匀速·非匀速',i:'🎡',
-  f:'8821a56e-4c3d-48c6-92fe-433186f09a99_圆周运动.html',
-  d:'展示圆周运动的角速度、向心力变化，匀速与非匀速自由切换。'},
- {t:'打点计时器测加速度',c:'kin',k:'纸带·加速度',i:'🕐',
-  f:'06e4432c-67a5-4c49-aaa3-cf19be59434f_打点计时器测加速度.html',
-  d:'模拟打点计时器打点纸带，通过逐差法测量并分析加速度。'},
- {t:'刚体纯滚动',c:'rigid',k:'转动·滑动',i:'🛞',
-  f:'7e8d7606-94fc-4798-85c6-60b681e85fbd_刚体纯滚动.html',
-  d:'演示刚体沿平面纯滚动的转轴、速度分布与动能关系。'},
- {t:'陀螺仪 · 自转与进动',c:'rigid',k:'角动量守恒',i:'🌀',
-  f:'620c1757-8bcc-4a84-99e9-79c7a2503339_陀螺仪 自转与进动.html',
-  d:'观察陀螺自转稳定性与进动现象，理解角动量守恒定律。'},
- {t:'链条从桌上滑落',c:'rigid',k:'可变质量·动力学',i:'⛓️',
-  f:'9ffe606f-2df4-4ff0-b4c9-cc847567b6a9_链条模型.html',
-  d:'模拟链条从桌面滑落的完整动力学过程，包含位移与速度变化。'},
- {t:'弹簧振子',c:'wave',k:'简谐振动',i:'🪃',
-  f:'f319174f-050a-40ed-ad9d-929e539db6bf_弹簧振子.html',
-  d:'简谐振动的位移、速度与加速度随时间正弦变化可视化。'},
- {t:'阻尼振动',c:'wave',k:'能量耗散',i:'📉',
-  f:'1bbb7747-f423-45d8-a21f-06a7b26f54a8_阻尼振动.html',
-  d:'演示阻尼对振幅的影响，振幅随时间指数衰减的过程。'},
- {t:'受迫振动与共振',c:'wave',k:'频率·振幅',i:'🎵',
-  f:'334cad75-c317-4754-807f-3e4cd25b9034_受迫振动与共振.html',
-  d:'研究驱动力频率与固有频率对振幅的影响，共振现象一目了然。'},
- {t:'横波与纵波的传播',c:'wave',k:'模式·传播',i:'🌊',
-  f:'6ca90788-da4c-43fa-b8e9-cfb111f16287_横波与纵波的传播.html',
-  d:'对比横波与纵波的质点振动方向与波的传播方向关系。'},
- {t:'单色与彩色衍射仿真',c:'optics',k:'单缝·多缝·光谱',i:'🌈',
-  f:'e828a2e8-6d8f-417b-9c61-f11371b5ce6c_单色与彩色衍射仿真.html',
-  d:'仿真单缝、多缝与彩色光的衍射条纹与强度分布图样。'},
- {t:'牛顿环',c:'optics',k:'等厚干涉·光强',i:'💿',
-  f:'牛顿环.html',
-  d:'平凸透镜与平板间的等厚干涉，展示环形条纹与光强分布。'},
- {t:'李萨如图形',c:'wave',k:'振动合成·相差',i:'✖️',
-  f:'李萨如图形.html',
-  d:'两个互相垂直简谐振动的合成，改变频率比与相差呈现丰富李萨如曲线。'},
- {t:'驻波的形成',c:'wave',k:'叠加·波节波腹',i:'〰️',
-  f:'驻波的形成.html',
-  d:'两列反向传播波的叠加成驻波，标出波节与波腹位置。'},
- {t:'多普勒效应',c:'wave',k:'波前·接收频率',i:'📣',
-  f:'多普勒效应.html',
-  d:'模拟移动声源的波前压缩与拉伸，实时计算接收频率。'},
- {t:'麦克斯韦速率分布',c:'thermo',k:'分布律·特征速率',i:'🌡️',
-  f:'麦克斯韦速率分布.html',
-  d:'气体分子速率分布曲线随温度变化，标注三种特征速率。'},
- {t:'带电粒子螺旋运动',c:'em',k:'洛伦兹力·回旋',i:'🧲',
+ /* 力学 */
+ {t:'抛体运动仿真',c:'mech',k:'平抛 · 斜抛 · 竖直上抛',i:'🚀',
+  f:'抛体运动仿真.html',
+  d:'模拟抛体在重力下的轨迹与速度矢量，三种抛射方式自由切换'},
+ {t:'圆周运动',c:'mech',k:'匀速 · 非匀速',i:'🎡',
+  f:'圆周运动.html',d:'展示角速度与向心力变化，观察半径对轨迹的影响'},
+ {t:'打点计时器测加速度',c:'mech',k:'纸带 · 逐差法',i:'🕐',
+  f:'打点计时器测量加速度.html',
+  d:'模拟打点纸带，用逐差法处理数据并测量加速度'},
+ {t:'刚体纯滚动',c:'mech',k:'转动 · 滑动',i:'🛞',
+  f:'刚体纯滚动.html',d:'演示刚体纯滚动的转轴、速度分布与动能关系'},
+ {t:'陀螺仪 · 自转与进动',c:'mech',k:'角动量守恒',i:'🌀',
+  f:'陀螺仪 自转与进动.html',
+  d:'观察陀螺自转稳定与进动，理解角动量守恒定律'},
+ {t:'链条模型',c:'mech',k:'可变质量 · 动力学',i:'⛓️',
+  f:'链条模型.html',d:'模拟链条从桌面滑落的完整动力学过程'},
+ /* 电磁学 */
+ {t:'带电粒子螺旋运动',c:'em',k:'洛伦兹力 · 回旋',i:'🧲',
   f:'带电粒子螺旋运动.html',
-  d:'带电粒子在匀强磁场中的螺旋运动，可拖动视角观察半径与螺距。'}
+  d:'带电粒子在匀强磁场中的螺旋运动，观察半径与螺距'},
+ {t:'点电荷电场',c:'em',k:'场线 · 电势',i:'💫',
+  f:'点电荷电场.html',d:'可视化点电荷周围的电场线与等势面分布'},
+ {t:'经典带电体系的电场',c:'em',k:'叠加 · 场强',i:'✨',
+  f:'经典带电体系的电场.html',
+  d:'多个带电体的电场叠加，直观理解场强矢量合成'},
+ {t:'电流与磁体的磁场分布',c:'em',k:'磁感线 · 安培',i:'🧭',
+  f:'电流与磁体的磁场分布.html',
+  d:'通电导线的磁场与磁体磁场，绘制磁感线分布'},
+ {t:'电偶极子与电磁波',c:'em',k:'辐射 · 传播',i:'📡',
+  f:'电偶级子与电磁波仿真.html',
+  d:'电偶极子振荡与电磁波的激发和传播过程'},
+ /* 振动和波 */
+ {t:'弹簧振子',c:'wave',k:'简谐振动',i:'🪃',
+  f:'弹簧振子.html',
+  d:'位移、速度与加速度随时间正弦变化的可视化'},
+ {t:'阻尼振动',c:'wave',k:'能量耗散',i:'📉',
+  f:'阻尼振动.html',d:'演示阻尼对振幅的影响，振幅指数衰减'},
+ {t:'受迫振动与共振',c:'wave',k:'频率 · 振幅',i:'🎵',
+  f:'受迫振动与共振.html',
+  d:'研究驱动力与固有频率关系，共振现象一目了然'},
+ {t:'横波与纵波的传播',c:'wave',k:'模式 · 传播',i:'🌊',
+  f:'横波与纵波的传播.html',
+  d:'对比横波与纵波的振动方向与传播方向关系'},
+ {t:'李萨如图形',c:'wave',k:'振动合成 · 相差',i:'✖️',
+  f:'李萨如图形.html',
+  d:'两互相垂直简谐振动的合成曲线，调节频率比呈现丰富图形'},
+ {t:'驻波的形成',c:'wave',k:'叠加 · 波节波腹',i:'〰️',
+  f:'驻波的形成-增强修复版.html',
+  d:'两列反向波叠加成驻波，标出波节与波腹位置'},
+ {t:'多普勒效应',c:'wave',k:'波前 · 接收频率',i:'📣',
+  f:'多普勒效应.html',
+  d:'模拟移动声源波前压缩与拉伸，实时计算接收频率'},
+ /* 热学 */
+ {t:'麦克斯韦速率分布',c:'thermo',k:'分布律 · 特征速率',i:'🌡️',
+  f:'麦克斯韦速率分布.html',
+  d:'气体分子速率分布随温度变化，标注三种特征速率'},
+ /* 光学 */
+ {t:'单色与彩色衍射',c:'opt',k:'衍射 · 光谱',i:'🌈',
+  f:'单色与彩色衍射仿真.html',
+  d:'单缝、多缝与彩色光的衍射条纹与强度分布图样'},
+ {t:'牛顿环',c:'opt',k:'等厚干涉 · 光强',i:'💿',
+  f:'牛顿环.html',
+  d:'平凸透镜与平板间的等厚干涉，展示环形条纹与光强'},
+ /* 原子物理 */
+ {t:'卢瑟福散射',c:'atom',k:'库仑散射 · 核式结构',i:'🎯',
+  f:'卢瑟福散射.html',
+  d:'α 粒子轰击金箔，观察库仑斥力下的偏转轨迹与散射分布'},
+ {t:'氢原子能级跃迁',c:'atom',k:'能级 · 光子辐射',i:'💫',
+  f:'氢原子能级跃迁.html',
+  d:'点击能级观察电子跃迁与光子吸收/辐射，显示波长与谱系'},
+ {t:'氢原子光谱线系',c:'atom',k:'里德伯公式 · 谱线',i:'🌈',
+  f:'氢原子光谱线系.html',
+  d:'计算并展示莱曼/巴耳末/帕邢系谱线在波长坐标上的分布'},
+ /* 量子物理 */
+ {t:'光电效应',c:'quantum',k:'光子能量 · 逸出功',i:'💡',
+  f:'光电效应.html',
+  d:'改变光频与金属逸出功，观察是否发生光电效应与 Eₖ-f 关系'},
+ {t:'一维无限深势阱',c:'quantum',k:'波函数 · 概率密度',i:'📦',
+  f:'一维无限深势阱.html',
+  d:'束缚态 ψₙ 与 |ψₙ|² 随量子数变化，展示能量量子化'},
+ {t:'德布罗意物质波',c:'quantum',k:'λ=h/p · 驻波量子化',i:'🌊',
+  f:'德布罗意物质波.html',
+  d:'电子的德布罗意波长与原子尺度对比，轨道驻波量子化'},
+ /* 相对论 */
+ {t:'尺缩钟慢',c:'rel',k:'洛伦兹因子 · 时空',i:'⏳',
+  f:'尺缩钟慢.html',
+  d:'调节飞船速度，观察长度收缩与时间膨胀效应'},
+ {t:'洛伦兹变换 · 时空图',c:'rel',k:'光锥 · 坐标系变换',i:'🚀',
+  f:'洛伦兹变换时空图.html',
+  d:'拖动事件点，直观观察它在两个惯性系中的坐标与不变量'}
 ];
 
 /* ---------- state ---------- */
+const MBUT='#718096';
 let cur='all';
 let mode='grid';
-const renderNum=
- (n)=>String(n).padStart(2,'0');
+const qEl=document.getElementById('q');
+const catsEl=document.getElementById('cats');
+const emptyEl=document.getElementById('empty');
 
 /* ---------- chips ---------- */
 const chipsEl=document.getElementById('chips');
 function buildChips(){
- let all={id:'all',name:'全部模型',acc:'#37c8ff'};
- [all,...CATS].forEach((c,i)=>{
-  if(i===0&&cur!=='all')c.on=false;
- });
- let html=`<button class="chip on" data-c="all">
-  全部 <b>${renderNum(MODELS.length)}</b></button>`;
- CATS.forEach(c=>{
-  let n=MODELS.filter(m=>m.c===c.id).length;
-  html+=`<button class="chip" data-c="${c.id}">
-   ${c.name} <b>${renderNum(n)}</b></button>`;
- });
- chipsEl.innerHTML=html;
- chipsEl.querySelectorAll('.chip').forEach(b=>{
-  b.addEventListener('click',()=>{
-   cur=b.dataset.c;
-   chipsEl.querySelectorAll('.chip').forEach(x=>
-     x.classList.toggle('on',x===b));
-   render();
-   scrollToCats();
+  let html=`<button class="chip on" data-c="all"
+    style="--acc:#6366f1">全部 <b>${MODELS.length}</b></button>`;
+  CATS.forEach(c=>{
+    let n=MODELS.filter(m=>m.c===c.id).length;
+    html+=`<button class="chip" data-c="${c.id}"
+      style="--acc:${c.acc}">${c.icon} ${c.name}
+      <b>${n}</b></button>`;
   });
- });
+  chipsEl.innerHTML=html;
+  chipsEl.querySelectorAll('.chip').forEach(b=>{
+    b.addEventListener('click',()=>{
+      cur=b.dataset.c;
+      chipsEl.querySelectorAll('.chip').forEach(x=>
+        x.classList.toggle('on',x===b));
+      render();
+      scrollToCats();
+    });
+  });
 }
 function scrollToCats(){
- document.getElementById('cats').scrollIntoView(
-  {behavior:'smooth',block:'start'});
+  catsEl.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 /* ---------- render ---------- */
-const catsEl=document.getElementById('cats');
-function modelOf(m){
- const n=MODELS.indexOf(m)+1;
- const num=renderNum(n);
- if(mode==='grid'){
-  return `<div class="card reveal"><a href="${U+m.f}">
-   <span class="num">#${num}</span><div class="ico">${m.i}</div>
-   <h3>${m.t}</h3><p>${m.d}</p>
-   <span class="go">进入仿真 <span>→</span></span></a></div>`;
- }
- return `<a class="row" href="${U+m.f}">
-   <span class="ico">${m.i}</span>
-   <div class="tx"><h4>${m.t}</h4><p>${m.k}</p></div>
-   <span class="arrow">→</span></a>`;
+function match(m,q){
+  return (m.t+m.k+m.d).toLowerCase().includes(q);
+}
+function cardOf(m,n){
+  return `<div class="card" style="--acc:${mcol(m).acc};
+    --bg-soft:${mcol(m).bg};--acc-line:${mcol(m).line};
+    --mut:${mcol(m).mut}">
+    <a href="${D+encodeURI(m.f)}">
+      <div class="strip"></div>
+      <div class="body">
+        <div class="ico">${m.i}</div>
+        <h3>${m.t}</h3>
+        <div class="key">${m.k}</div>
+        <p>${m.d}</p>
+        <span class="go">进入仿真 <span>→</span></span>
+      </div>
+    </a></div>`;
+}
+function rowOf(m){
+  return `<a class="row" href="${D+encodeURI(m.f)}"
+    style="--acc:${mcol(m).acc};--bg-soft:${mcol(m).bg}">
+    <span class="ico">${m.i}</span>
+    <div class="tx"><h4>${m.t}</h4>
+      <div class="key">${m.k}</div></div>
+    <span class="arrow">→</span>
+  </a>`;
+}
+function mcol(m){
+  const c=CATS.find(x=>x.id===m.c)||CATS[0];
+  return {acc:c.acc,bg:c.bg,line:c.line,mut:MBUT};
 }
 function buildCat(c,ms){
- const wrapper=mode==='grid'?'grid':'list';
- const wc=mode==='grid'?'grid':'list-wrap';
- let inner=ms.map(modelOf).join('');
- return `<section class="cat reveal" id="cat-${c.id}"
-   style="--acc:${c.acc}">
-   <div class="cat-head">
-     <h2 class="cat-tag">${c.name}</h2>
-     <span class="cat-count">${renderNum(ms.length)} 个模型 ·
-      ${c.d}</span>
-     <div class="cat-line"></div></div>
-   <div class="${wc}">${inner}</div></section>`;
+  const inner=ms.map(m=>mode==='grid'?cardOf(m):rowOf(m)).join('');
+  const wcls=mode==='grid'
+    ?'grid on-card':'list on';
+  return `<section class="cat"
+    style="--acc:${c.acc};--bg-soft:${c.bg};
+      --acc-line:${c.line};--mut:${MBUT}">
+    <div class="cat-head">
+      <div class="cat-icon">${c.icon}</div>
+      <h2 class="cat-tag">${c.name}</h2>
+      <span class="cat-count">${ms.length} 个模型 · ${c.d}</span>
+      <div class="cat-line"></div>
+    </div>
+    <div class="${wcls}">${inner}</div>
+  </section>`;
 }
 function render(){
- const q=(document.getElementById('q').value
-   ||'').trim().toLowerCase();
- const visible=CATS.filter(c=>{
-  if(cur!=='all'&&c.id!==cur)return false;
-  return MODELS.some(m=>m.c===c.id&&
-    (m.t+m.k+m.d).toLowerCase().includes(q));
- }).map(c=>{
-  let ms=MODELS.filter(m=>m.c===c.id).filter(m=>
-    (m.t+m.k+m.d).toLowerCase().includes(q));
-  return buildCat(c,ms);
- }).join('');
- catsEl.innerHTML=visible;
- document.getElementById('empty').style.display=
-   visible?'none':'block';
- requestAnimationFrame(observe);
+  const q=(qEl.value||'').trim().toLowerCase();
+  const visible=CATS.filter(c=>{
+    if(cur!=='all'&&c.id!==cur)return false;
+    return MODELS.some(m=>m.c===c.id&&match(m,q));
+  }).map(c=>{
+    let ms=MODELS.filter(m=>m.c===c.id&&match(m,q));
+    return buildCat(c,ms);
+  }).join('');
+  catsEl.innerHTML=visible;
+  emptyEl.style.display=visible?'none':'block';
+  requestAnimationFrame(()=>{
+    document.querySelectorAll('.card').forEach((el,j)=>{
+      setTimeout(()=>el.classList.add('sp'),j*40);
+    });
+  });
 }
+
 /* ---------- view switch ---------- */
 const gridBtn=document.getElementById('gridBtn');
 const listBtn=document.getElementById('listBtn');
 function setMode(m){
- mode=m;
- gridBtn.classList.toggle('on',m==='grid');
- listBtn.classList.toggle('on',m==='list');
- document.querySelectorAll('.grid').forEach(g=>{
-  g.style.display=m==='grid'?'grid':'none';
-  g.classList.toggle('grid',m==='grid');
-  g.classList.toggle('list',m==='list');
- });
- render();
+  mode=m;
+  gridBtn.classList.toggle('on',m==='grid');
+  listBtn.classList.toggle('on',m==='list');
+  render();
 }
 gridBtn.addEventListener('click',()=>setMode('grid'));
 listBtn.addEventListener('click',()=>setMode('list'));
-document.getElementById('q').addEventListener('input',()=>{
- requestAnimationFrame(render);
-});
-
-/* ---------- reveal ---------- */
-function observe(){
- const io=new IntersectionObserver(es=>{
-  es.forEach(e=>{
-   if(e.isIntersecting){
-    e.target.classList.add('in');
-    io.unobserve(e.target);
-   }
-  });
- },{threshold:.08});
- document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
-}
-
-/* ---------- starfield ---------- */
-function stars(){
- const cn=document.getElementById('stars');
- const cx=cn.getContext('2d');
- function fit(){
-  cn.width=cn.offsetWidth;cn.height=cn.offsetHeight;
- }
- fit();window.addEventListener('resize',fit);
- const N=Math.min(130,Math.floor(cn.width/9));
- let pts=[];
- function init(){
-  pts=Array.from({length:N},()=>({
-   x:Math.random()*cn.width,y:Math.random()*cn.height,
-   r:Math.random()*1.4+.3,s:Math.random()*.5+.2,
-   o:Math.random()*Math.PI*2
-  }));
- }
- init();
- function draw(){
-  cx.clearRect(0,0,cn.width,cn.height);
-  pts.forEach(p=>{
-   p.o+=p.s*.02;
-   let a=.2+Math.abs(Math.sin(p.o))*.6;
-   cx.beginPath();
-   cx.fillStyle=`rgba(120,200,255,${a})`;
-   cx.arc(p.x,p.y,p.r,0,Math.PI*2);
-   cx.fill();
-  });
-  requestAnimationFrame(draw);
- }
- draw();
-}
+qEl.addEventListener('input',render);
 
 /* ---------- boot ---------- */
 buildChips();
 document.getElementById('stModels').textContent=MODELS.length;
 document.getElementById('stCats').textContent=CATS.length;
+document.getElementById('stEnd').textContent=MODELS.length;
 render();
-stars();
 </script>
 </body>
 </html>

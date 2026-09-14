@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>牛顿环 · 等厚干涉仿真</title>
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#f5f7fc;--card:#fff;--ink:#1a2238;--ink2:#4a5568;--muted:#8892a8;
+  --accent:#4f46e5;--accent2:#7c6cf5;--line:#e6eaf3;
+  --green:#10b981;--red:#ef4444;--amber:#f59e0b;--blue:#3b82f6;
+}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",
+    "Microsoft YaHei",sans-serif;
+  background:var(--bg);
+  background-image:radial-gradient(900px 500px at 10% -10%,#e7ebff 0%,transparent 60%),
+                   radial-gradient(700px 500px at 95% 0%,#f1e9ff 0%,transparent 55%);
+  background-attachment:fixed;
+  color:var(--ink);line-height:1.65;padding:28px 16px 56px;min-height:100vh;
+}
+.wrap{max-width:1080px;margin:0 auto;}
+header{text-align:center;margin-bottom:26px;}
+header h1{font-size:clamp(1.5rem,3.4vw,2rem);font-weight:750;color:#2b2e70;
+  margin-bottom:6px;letter-spacing:-.02em;}
+header h1 em{font-style:normal;color:var(--accent);}
+header p{color:var(--muted);font-size:.95rem;}
+.tag{display:inline-block;font-size:.75rem;letter-spacing:.14em;color:var(--accent);
+  background:#eef1ff;border:1px solid #dde3ff;padding:.25rem .85rem;
+  border-radius:999px;font-weight:600;margin-bottom:12px;}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:18px 20px;box-shadow:0 1px 2px rgba(22,33,58,.03),
+    0 10px 28px -20px rgba(22,33,58,.28);margin-bottom:16px;}
+.controls{display:flex;flex-wrap:wrap;gap:16px 24px;align-items:flex-end;}
+.slider-group{display:flex;flex-direction:column;gap:5px;min-width:150px;
+  flex:1;max-width:210px;}
+.slider-group label{font-size:.78rem;color:var(--muted);font-weight:600;
+  display:flex;justify-content:space-between;align-items:baseline;}
+.slider-group label span{color:var(--accent);font-weight:700;
+  font-variant-numeric:tabular-nums;}
+.swatch-show{display:flex;align-items:center;gap:8px;margin-top:2px;
+  font-size:.72rem;color:var(--muted);}
+.swatch{display:inline-block;width:16px;height:16px;border-radius:4px;
+  border:1px solid var(--line);vertical-align:middle;}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;
+  border-radius:3px;background:#e4e8f3;outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+  width:16px;height:16px;border-radius:50%;
+  background:linear-gradient(140deg,var(--accent),var(--accent2));
+  box-shadow:0 2px 6px -1px rgba(79,70,229,.6);cursor:pointer;
+  transition:transform .15s;}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15);}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border:none;
+  border-radius:50%;background:linear-gradient(140deg,var(--accent),
+  var(--accent2));box-shadow:0 2px 6px -1px rgba(79,70,229,.6);cursor:pointer;}
+.btn-group{display:flex;gap:10px;}
+.btn{border:none;padding:10px 22px;font-family:inherit;font-size:.9rem;
+  font-weight:650;border-radius:10px;cursor:pointer;transition:all .18s ease;
+  white-space:nowrap;}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;box-shadow:0 6px 16px -6px rgba(79,70,229,.8);}
+.btn-primary:hover{transform:translateY(-1px);
+  box-shadow:0 10px 22px -8px rgba(79,70,229,.9);}
+.btn-ghost{background:#f1f3fa;color:var(--ink2);}
+.btn-ghost:hover{background:#e8ebf5;color:var(--accent);}
+.scene-panel{padding:16px;background:linear-gradient(180deg,#fbfcff,#f6f8ff);}
+.canvas-row{display:flex;flex-wrap:wrap;gap:18px;justify-content:center;
+  align-items:flex-start;}
+canvas{display:block;max-width:100%;height:auto;border-radius:12px;
+  border:1px solid var(--line);}
+#ring{background:#fafbff;}
+#curve{background:#fbfcff;}
+.curve-title{text-align:center;color:var(--ink2);font-size:.82rem;
+  margin:10px 0 0;font-weight:600;}
+.legend{color:var(--muted);font-size:.82rem;text-align:center;margin-top:12px;
+  line-height:1.7;}
+.legend b{color:var(--accent);}
+.formula-row{background:linear-gradient(180deg,#fbfcff,#f5f7ff);
+  border:1px solid #e8ecfb;border-radius:12px;padding:14px 18px;margin:12px 0;
+  text-align:center;overflow-x:auto;}
+.formula-row.hl{border-left:4px solid var(--accent);
+  background:linear-gradient(180deg,#f8f9ff,#eef1ff);}
+h3.sec{font-size:1rem;font-weight:700;margin-bottom:12px;display:flex;
+  align-items:center;gap:8px;color:var(--ink);}
+h3.sec::before{content:"";width:4px;height:17px;border-radius:2px;
+  background:linear-gradient(180deg,var(--accent),var(--accent2));}
+footer{text-align:center;color:var(--muted);font-size:.82rem;margin-top:26px;}
+footer .dot{display:inline-block;width:4px;height:4px;border-radius:50%;
+  background:#cbd5e1;margin:0 .55rem;vertical-align:middle;}
+mjx-container{overflow-x:auto;overflow-y:hidden;max-width:100%;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="tag">光学 · 等厚干涉</div>
+    <h1>牛顿环 <em>·</em> 等厚干涉仿真</h1>
+    <p>平凸透镜与平板玻璃之间空气隙形成的同心等厚干涉条纹</p>
+  </header>
+
+  <div class="panel controls">
+    <div class="slider-group">
+      <label>波长 λ <span id="lambdaVal">546 nm</span></label>
+      <input type="range" id="lambda" min="380" max="760" step="1" value="546">
+      <span class="swatch-show">透射色 <span class="swatch" id="lambdaSw"></span></span>
+    </div>
+    <div class="slider-group">
+      <label>曲率半径 R <span id="RVal">200 cm</span></label>
+      <input type="range" id="R" min="80" max="600" step="10" value="200">
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-primary" id="luna">单色模式</button>
+      <button class="btn btn-ghost" id="reset">重置</button>
+    </div>
+  </div>
+
+  <div class="panel scene-panel">
+    <div class="canvas-row">
+      <canvas id="ring" width="520" height="520"></canvas>
+      <div>
+        <p class="curve-title">沿直径的一维光强分布</p>
+        <canvas id="curve" width="300" height="300"></canvas>
+      </div>
+    </div>
+    <p class="legend">中心为暗斑，由反射半波损失产生 π 位相跃变。
+      第 m 级暗环半径 <b>$r_m=\sqrt{m\lambda R}$</b>，曲率半径或
+      波长越大，条纹越稀疏。</p>
+  </div>
+
+  <div class="panel">
+    <h3 class="sec">基本公式</h3>
+    <div class="formula-row hl">
+      $$r_m = \sqrt{m\lambda R}\qquad(m=1,2,3,\dots)\ \text{暗环}$$
+    </div>
+    <div class="formula-row">
+      $$r_m = \sqrt{(m-\tfrac12)\lambda R}\qquad(m=1,2,3,\dots)\ \text{亮环}$$
+    </div>
+    <div class="formula-row">
+      $$2ne_{\text{空气隙}}=\frac{r^2}{R},\qquad
+      \delta = 2e + \frac{\lambda}{2} = m\lambda$$
+    </div>
+  </div>
+
+  <footer>牛顿环仿真<span class="dot"></span>等厚干涉<span class="dot"></span>
+    Optics Lab</footer>
+</div>
+
+<script>
+"use strict";
+const ring=document.getElementById("ring");
+const curve=document.getElementById("curve");
+const gk=ring.getContext("2d");
+const gc=curve.getContext("2d");
+const lb=document.getElementById("lambda");
+const rb=document.getElementById("R");
+const lv=document.getElementById("lambdaVal");
+const rv=document.getElementById("RVal");
+const sw=document.getElementById("lambdaSw");
+const luna=document.getElementById("luna");
+
+const SRL=3.0;      // 曲率半径尺度映射
+const SCL=0.0035;   // 波长尺度映射
+let colorMode=false;
+let rafTimer=null;
+
+function wavToRgb(w){
+  let r=0,g=0,b=0,f;
+  if(w>=380&&w<440){r=-(w-440)/60;b=1;}
+  else if(w<490){g=(w-440)/50;b=1;}
+  else if(w<510){g=1;b=-(w-510)/20;}
+  else if(w<580){r=(w-510)/70;g=1;}
+  else if(w<645){r=1;g=-(w-645)/65;}
+  else if(w<=780){r=1;}
+  if(w>=380&&w<420){f=0.3+0.7*(w-380)/40;}
+  else if(w<=645){f=1;}
+  else if(w<=780){f=(780-w)/135+0.3;}
+  else{f=0;}
+  return [Math.round(r*f*255),Math.round(g*f*255),Math.round(b*f*255)];
+}
+
+function brightness(r,ro,wl){
+  return Math.pow(Math.sin(Math.PI*r*r/(ro*wl)),2);
+}
+
+function whiteLight(r,ro){
+  let s=0,n=0;
+  for(let w=400;w<=705;w+=15){s+=brightness(r,ro,w*SCL);n++;}
+  return s/n;
+}
+
+function drawRings(){
+  const W=ring.width,H=ring.height;
+  const cx=W/2,cy=H/2;
+  const Rlim=Math.min(cx,cy)*0.985;
+  const lam=parseFloat(lb.value);
+  const ro=parseFloat(rb.value)*SRL;
+  const col=wavToRgb(lam);
+  const img=gk.createImageData(W,H);
+  const d=img.data;
+  for(let y=0;y<H;y++){
+    for(let x=0;x<W;x++){
+      const dx=x-cx,dy=y-cy;
+      const r=Math.sqrt(dx*dx+dy*dy);
+      let r1=0,g1=0,b1=0;
+      if(r<=Rlim){
+        if(colorMode){
+          let rs=0,gs=0,bs=0,N=0;
+          for(let w=400;w<=705;w+=15){
+            const bk=brightness(r,ro,w*SCL);
+            const c=wavToRgb(w);
+            rs+=c[0]*bk; gs+=c[1]*bk; bs+=c[2]*bk; N++;
+          }
+          const sc=255*1.7/N;
+          r1=Math.min(255,rs*sc);
+          g1=Math.min(255,gs*sc);
+          b1=Math.min(255,bs*sc);
+        }else{
+          const bk=brightness(r,ro,lam*SCL);
+          const s2=255*bk*1.5;
+          r1=Math.min(255,col[0]/255*s2);
+          g1=Math.min(255,col[1]/255*s2);
+          b1=Math.min(255,col[2]/255*s2);
+        }
+      }
+      const i=(y*W+x)*4;
+      d[i]=Math.round(r1);d[i+1]=Math.round(g1);
+      d[i+2]=Math.round(b1);d[i+3]=255;
+    }
+  }
+  gk.putImageData(img,0,0);
+}
+
+function drawCurve(){
+  const W=curve.width,H=curve.height;
+  const lam=parseFloat(lb.value);
+  const ro=parseFloat(rb.value)*SRL;
+  gc.clearRect(0,0,W,H);
+  gc.strokeStyle="#e6eaf3";gc.beginPath();
+  gc.moveTo(0,H*0.06);gc.lineTo(0,H*0.96);gc.lineTo(W,H*0.96);gc.stroke();
+  const RlimOut=ring.width/2*0.985;
+  gc.lineWidth=1.6;gc.beginPath();
+  const step=2;
+  let norm=0;
+  const vals=[];
+  for(let r=0;r<=RlimOut;r+=step){
+    let v=colorMode?whiteLight(r,ro):brightness(r,ro,lam*SCL);
+    vals.push(v);if(v>norm)norm=v;
+  }
+  for(let i=0;i<vals.length;i++){
+    if(norm>0)vals[i]=vals[i]/norm;
+    const px=i*step/RlimOut*W;
+    const py=H*0.9-vals[i]*H*0.8;
+    if(i===0)gc.moveTo(px,py);else gc.lineTo(px,py);
+  }
+  gc.strokeStyle=colorMode?"#8b5cf6":"#4f46e5";gc.stroke();
+}
+
+function refresh(){
+  lv.textContent=lb.value+" nm";
+  rv.textContent=rb.value+" cm";
+  const c=wavToRgb(parseFloat(lb.value));
+  sw.style.background="rgb("+c[0]+","+c[1]+","+c[2]+")";
+  drawRings();drawCurve();
+}
+
+function schedule(){
+  if(rafTimer)return;
+  rafTimer=requestAnimationFrame(function(){rafTimer=null;refresh();});
+}
+
+lb.addEventListener("input",schedule);
+rb.addEventListener("input",schedule);
+luna.addEventListener("click",function(){
+  colorMode=!colorMode;
+  luna.textContent=colorMode?"单色模式":"彩色模式";
+  refresh();
+});
+document.getElementById("reset").addEventListener("click",function(){
+  colorMode=false;
+  lb.value=546;rb.value=200;
+  luna.textContent="单色模式";
+  refresh();
+});
+refresh();
+</script>
+</body>
+</html>

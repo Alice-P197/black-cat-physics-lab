@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>德布罗意物质波 · 交互仿真</title>
+<style>
+:root{
+  --bg:#f5f7fc;--card:#fff;--ink:#1a2238;--ink2:#4a5568;
+  --muted:#8892a8;--accent:#4f46e5;--accent2:#7c6cf5;--line:#e6eaf3;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",
+  "Microsoft YaHei",sans-serif;background:var(--bg);
+  background-image:radial-gradient(900px 500px at 10% -10%,#e7ebff 0,transparent 60%),
+  radial-gradient(700px 500px at 95% 0,#f1e9ff 0,transparent 55%);
+  background-attachment:fixed;color:var(--ink);min-height:100vh;
+  padding:26px 16px 54px;line-height:1.65}
+.wrap{max-width:1080px;margin:0 auto}
+header{text-align:center;margin-bottom:22px}
+header h1{font-size:clamp(1.4rem,3.2vw,1.9rem);font-weight:750;
+  color:#2b2e70;letter-spacing:-.02em}
+header p{color:var(--muted);font-size:.92rem}
+header .tag{display:inline-block;font-size:.74rem;letter-spacing:.14em;
+  color:var(--accent);background:#eef1ff;border:1px solid #dde3ff;
+  padding:.24rem .85rem;border-radius:999px;font-weight:600;margin-bottom:11px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:17px 20px;box-shadow:0 1px 2px rgba(22,33,58,.03),
+  0 10px 28px -20px rgba(22,33,58,.28);margin-bottom:15px}
+.controls{display:flex;flex-wrap:wrap;gap:16px 26px;align-items:flex-end}
+.grp{display:flex;flex-direction:column;gap:5px;min-width:150px;flex:1;max-width:240px}
+.grp label{font-size:.8rem;color:var(--muted);font-weight:600;
+  display:flex;justify-content:space-between}
+.grp label span{color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;
+  border-radius:3px;background:#e4e8f3;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;
+  border-radius:50%;background:linear-gradient(140deg,var(--accent),var(--accent2));
+  box-shadow:0 2px 6px -1px rgba(79,70,229,.6);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border:none;border-radius:50%;
+  background:linear-gradient(140deg,var(--accent),var(--accent2));cursor:pointer}
+.scene-panel{padding:0;overflow:hidden}
+canvas#cv{display:block;width:100%;height:540px}
+results{display:block}
+.results{display:flex;flex-wrap:wrap;gap:12px}
+.rbox{flex:1;min-width:110px;background:#f8faff;border:1px solid var(--line);
+  border-radius:12px;padding:11px 15px}
+.rbox .t{font-size:.72rem;color:var(--muted);letter-spacing:.06em}
+.rbox .v{font-size:1.15rem;font-weight:750;color:var(--accent);
+  font-variant-numeric:tabular-nums}
+.notes{font-size:.88rem;color:var(--ink2);line-height:1.7}
+.notes b{color:var(--ink)}.notes .f{color:var(--accent);font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="tag">量子物理 · QUANTUM</div>
+    <h1>德布罗意物质波</h1>
+    <p>电子波动性：德布罗意波长 λ=h/p，与原子尺度的比较与轨道驻波量子化</p>
+  </header>
+
+  <div class="panel">
+    <div class="controls">
+      <div class="grp">
+        <label>加速电压 U <span id="uEl">100 V</span></label>
+        <input type="range" id="U" min="10" max="1000" step="1" value="100">
+      </div>
+      <div class="grp">
+        <label>轨道波形数 n <span id="nEl">4</span></label>
+        <input type="range" id="n" min="1" max="8" step="1" value="4">
+      </div>
+    </div>
+  </div>
+
+  <div class="panel scene-panel"><canvas id="cv"></canvas></div>
+
+  <div class="panel">
+    <div class="results">
+      <div class="rbox"><div class="t">电子速度 v</div><div class="v" id="rV">—</div></div>
+      <div class="rbox"><div class="t">德布罗意波长 λ</div><div class="v" id="rL">—</div></div>
+      <div class="rbox"><div class="t">λ : 原子直径</div><div class="v" id="rR">—</div></div>
+      <div class="rbox"><div class="t">驻波条件</div><div class="v" id="rQ">—</div></div>
+    </div>
+  </div>
+
+  <div class="panel notes">
+    德布罗意关系 <span class="f">λ = h/p</span>。电子的德布罗意波长与其动量成反比，
+    加速电压越高、速度越大，λ 越短。当 λ 与原子间距（~0.1 nm）相当时，
+    波动性显著。玻尔量子化可解释为电子轨道上形成<b>驻波</b>：只有
+    <span class="f">周长 = n·λ</span> 的轨道才是稳定的。
+  </div>
+</div>
+
+<script>
+const cv=document.getElementById('cv'),cx=cv.getContext('2d');
+const W=900,H=540;cv.width=W;cv.height=H;
+const m=9.109e-31,e=1.602e-19,h=6.626e-34;
+const els={U:document.getElementById('U'),n:document.getElementById('n'),
+  uEl:document.getElementById('uEl'),nEl:document.getElementById('nEl'),
+  rV:document.getElementById('rV'),rL:document.getElementById('rL'),
+  rR:document.getElementById('rR'),rQ:document.getElementById('rQ')};
+let t0=performance.now();
+function phys(){
+  const U=+els.U.value;
+  const v=Math.sqrt(2*e*U/m);      // m/s
+  const lam=h/(m*v);               // m
+  return {U,v,lam};
+}
+function upd(){
+  const p=phys();
+  els.uEl.textContent=p.U+' V';
+  els.nEl.textContent=els.n.value;
+  els.rV.textContent=(p.v/1e6).toFixed(1)+'×10⁶ m/s';
+  els.rL.textContent=(p.lam*1e9).toFixed(2)+' nm';
+  els.rR.textContent=(p.lam/0.1e-9).toFixed(2)+' : 1';
+}
+function draw(){
+  cx.clearRect(0,0,W,H);
+  const p=phys(),n=+els.n.value;
+  const tt=(performance.now()-t0)/1000;
+  const cx0=450,cy=290,r0=150,A=16;
+  // orbit guide
+  cx.strokeStyle='#e6eaf3';cx.lineWidth=1;
+  cx.beginPath();cx.arc(cx0,cy,r0+A+12,0,6.29);cx.stroke();
+  // standing wave r(θ)=r0 + A*sin(nθ) (animate phase for travel but keep nodes)
+  cx.strokeStyle='#4f46e5';cx.lineWidth=2.6;cx.beginPath();
+  for(let i=0;i<=360;i++){
+    const th=i*Math.PI/180;
+    const rr=r0+A*Math.sin(n*th);
+    const x=cx0+rr*Math.cos(th),y=cy+rr*Math.sin(th);
+    if(i===0)cx.moveTo(x,y);else cx.lineTo(x,y);
+  }
+  cx.stroke();
+  // nodes (where r=r0)
+  cx.fillStyle='#db3d14';
+  for(let k=0;k<n;k++){
+    const ang=k*Math.PI/n;
+    cx.beginPath();cx.arc(cx0+r0*Math.cos(ang),cy+r0*Math.sin(ang),3,0,6.29);cx.fill();
+  }
+  // traveling electron dot
+  const eang=tt*1.2;
+  const er=r0+A*Math.sin(n*eang);
+  cx.beginPath();cx.arc(cx0+er*Math.cos(eang),cy+er*Math.sin(eang),6,0,6.29);
+  cx.fillStyle='#059669';cx.fill();cx.lineWidth=1.5;cx.strokeStyle='#fff';cx.stroke();
+  // labels
+  cx.fillStyle='#2b2e70';cx.font='700 14px sans-serif';cx.textAlign='center';
+  cx.fillText('轨道驻波：周长 = '+n+'·λ',cx0,64);
+  cx.fillStyle='#8892a8';cx.font='12px sans-serif';
+  cx.fillText('电子沿轨道绕行，只有整数个波长（n）能自洽成驻波',cx0,86);
+  // λ scale ruler (bottom left)
+  const rx=70,ry=440,rw=520,rW=1e-9; // 0..1 nm
+  cx.fillStyle='#2b2e70';cx.font='700 13px sans-serif';cx.textAlign='left';
+  cx.fillText('德布罗意波长与原子尺度对比（0 — 1 nm）',rx,ry-8);
+  cx.fillStyle='#f1f3fa';cx.strokeStyle='#c9d4ee';
+  cx.fillText('0',rx,ry+26);cx.textAlign='right';cx.fillText('1 nm',rx+rw,ry+26);
+  // atomic diameter marker ~0.1nm
+  const ox2=rx+rw*0.1;
+  cx.strokeStyle='#f59e0b';cx.setLineDash([4,4]);
+  cx.beginPath();cx.moveTo(ox2,ry-20);cx.lineTo(ox2,ry+18);cx.stroke();cx.setLineDash([]);
+  cx.textAlign='center';cx.fillStyle='#d97706';cx.fillText('原子直径',ox2,ry+34);
+  // λ bar
+  const lw=Math.max(2,p.lam/rW*rw);
+  cx.fillStyle='rgba(79,70,229,.75)';
+  cx.fillRect(rx,ry,lw,14);
+  cx.fillStyle='#4f46e5';cx.textAlign='left';
+  cx.fillText('λ = '+(p.lam*1e9).toFixed(2)+' nm',rx+lw+8,ry+12);
+  // quantum condition indicator
+  const ok = 2*Math.PI*r0; // just show info
+  els.rQ.textContent=n+' 个波长可成驻波';
+  requestAnimationFrame(draw);
+}
+els.U.oninput=()=>{upd();};
+els.n.oninput=()=>{upd();};
+upd();draw();
+</script>
+</body>
+</html>

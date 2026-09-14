@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>电磁学 · 交互仿真</title>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+  :root {
+    --bg-color: #f4f6fb;
+    --card-bg: #ffffff;
+    --text-main: #2d3436;
+    --text-sub: #636e72;
+    --text-light: #b2bec3;
+    --primary: #6c5ce7;
+    --primary-hover: #5b4cdb;
+    --green: #00b894;
+    --red: #ff7675;
+    --blue: #0984e3;
+    --border: #e5e9f2;
+    --shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    --radius: 16px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    min-height: 100vh;
+  }
+
+  .wrap {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 30px 20px 60px;
+  }
+
+  /* 头部 */
+  .header { text-align: center; margin-bottom: 24px; }
+  .badge {
+    display: inline-block;
+    background: rgba(108, 92, 231, 0.1);
+    color: var(--primary);
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+  }
+  .title {
+    font-size: clamp(22px, 3vw, 32px);
+    font-weight: 700;
+    margin: 0 0 8px;
+    color: #1e272e;
+  }
+  .subtitle {
+    color: var(--text-sub);
+    font-size: 14px;
+    margin: 0;
+  }
+
+  /* 控制栏 */
+  .control-bar {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 14px 20px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px 22px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border);
+  }
+
+  .btn-group {
+    display: flex;
+    gap: 8px;
+    background: #f8f9fc;
+    padding: 4px;
+    border-radius: 12px;
+  }
+  .btn-group button {
+    border: none;
+    background: transparent;
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-sub);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-group button.active {
+    background: var(--primary);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3);
+  }
+
+  .slider-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    color: var(--text-sub);
+  }
+  .slider-group label { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+  .slider-group input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 90px;
+    height: 4px;
+    border-radius: 2px;
+    background: #e5e9f2;
+    outline: none;
+  }
+  .slider-group input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: var(--primary);
+    cursor: pointer;
+    box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.18);
+  }
+  .slider-group .val {
+    color: var(--primary);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    min-width: 40px;
+    font-size: 13px;
+  }
+
+  .action-btns {
+    display: flex;
+    gap: 10px;
+    margin-left: auto;
+  }
+  .action-btns button {
+    border: none;
+    padding: 8px 18px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-play {
+    background: var(--primary);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
+  }
+  .btn-play:hover { background: var(--primary-hover); }
+  .btn-reset {
+    background: #f8f9fc;
+    color: var(--text-sub);
+    border: 1px solid var(--border);
+  }
+  .btn-reset:hover { background: #eef1f8; }
+
+  /* 主区域 */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 900px) {
+    .main-grid { grid-template-columns: 1fr; }
+  }
+
+  .canvas-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 16px;
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+  }
+  .canvas-card h3 {
+    margin: 0 0 12px;
+    font-size: 14px;
+    color: var(--text-sub);
+    font-weight: 600;
+  }
+  .canvas-main {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 12px;
+    background: #fafbfe;
+    display: block;
+  }
+
+  .data-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 16px;
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .data-card h3 {
+    margin: 0 0 4px;
+    font-size: 14px;
+    color: var(--text-sub);
+    font-weight: 600;
+  }
+  .data-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .data-item {
+    background: #f8f9fc;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #eef1f8;
+  }
+  .data-label {
+    font-size: 11px;
+    color: var(--text-light);
+    margin-bottom: 4px;
+  }
+  .data-value {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-main);
+    font-variant-numeric: tabular-nums;
+  }
+  .data-value.green { color: var(--green); }
+  .data-value.orange { color: #e17055; }
+  .data-value.blue { color: var(--blue); }
+
+  /* 公式区域 */
+  .formula-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 14px 20px;
+    border: 1px solid var(--border);
+    margin-bottom: 20px;
+  }
+  .formula-card h3 {
+    margin: 0 0 10px;
+    font-size: 13px;
+    color: var(--text-sub);
+    font-weight: 600;
+  }
+  .formula-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 13px;
+    color: var(--text-main);
+  }
+  .formula-item {
+    background: #fafbfe;
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid #eef1f8;
+    flex-shrink: 0;
+  }
+
+  /* 底部图表 */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 700px) {
+    .charts-grid { grid-template-columns: 1fr; }
+  }
+  .chart-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 16px;
+    border: 1px solid var(--border);
+  }
+  .chart-card h3 {
+    margin: 0 0 12px;
+    font-size: 13px;
+    color: var(--text-sub);
+    font-weight: 600;
+  }
+  .chart-canvas {
+    width: 100%;
+    height: 180px;
+    display: block;
+    background: #fafbfe;
+    border-radius: 8px;
+  }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="header">
+    <div class="badge">电磁学 · 交互仿真</div>
+    <h1 class="title">电偶极子与电磁波仿真</h1>
+    <p class="subtitle">静电场线 / 等势面 · 振荡偶极子辐射 — 动画 / 数据 / 公式一体化演示</p>
+  </header>
+
+  <!-- 控制栏 -->
+  <div class="control-bar">
+    <div class="btn-group">
+      <button id="mode-static" class="active">静电场</button>
+      <button id="mode-wave">电磁波</button>
+    </div>
+
+    <!-- 通用：电荷量 q -->
+    <div class="slider-group">
+      <label>电荷量 q <input type="range" id="qmag" min="0.4" max="2.4" step="0.05" value="1.00"><span class="val" id="qmagv">1.00</span></label>
+    </div>
+
+    <!-- 通用：偶极长度 l -->
+    <div class="slider-group">
+      <label>偶极长度 l <input type="range" id="dlen" min="0.18" max="0.85" step="0.01" value="0.46"><span class="val" id="dlenv">0.46</span></label>
+    </div>
+
+    <!-- 静电场控制 -->
+    <div id="ctrl-static" class="slider-group">
+      <label>等势线密度 <input type="range" id="dens" min="1.12" max="1.70" step="0.01" value="1.32"><span class="val" id="densv">1.32</span></label>
+    </div>
+
+    <!-- 电磁波控制 -->
+    <div id="ctrl-wave" class="slider-group hidden">
+      <label>时间流速 <input type="range" id="spd" min="0" max="2.2" step="0.05" value="1.0"><span class="val" id="spdv">1.00</span></label>
+    </div>
+
+    <div class="action-btns">
+      <button id="btn-play" class="btn-play">▶ 播放</button>
+      <button id="btn-reset" class="btn-reset">↺ 重置</button>
+    </div>
+  </div>
+
+  <!-- 主区域 -->
+  <div class="main-grid">
+    <div class="canvas-card">
+      <h3 id="canvas-title">静电场：电场线与等势面</h3>
+      <canvas id="mainCanvas" class="canvas-main"></canvas>
+    </div>
+
+    <div class="data-card">
+      <h3>实时数据</h3>
+      <div class="data-grid">
+        <div class="data-item">
+          <div class="data-label">时间 t</div>
+          <div class="data-value" id="data-t">0.00 s</div>
+        </div>
+        <div class="data-item">
+          <div class="data-label">偶极矩 p(t)</div>
+          <div class="data-value blue" id="data-p">0.46</div>
+        </div>
+        <div class="data-item">
+          <div class="data-label">电荷量 q</div>
+          <div class="data-value green" id="data-q">1.00</div>
+        </div>
+        <div class="data-item">
+          <div class="data-label">偶极长度 l</div>
+          <div class="data-value orange" id="data-l">0.46</div>
+        </div>
+      </div>
+      <div style="font-size:12px; color:var(--text-light); margin-top:4px; line-height:1.6;">
+        <span id="info-text">静电场模式：观察电场线与等势面的正交分布。</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 公式区域 -->
+  <div class="formula-card">
+    <h3>理论公式（LaTeX）</h3>
+    <div class="formula-list">
+      <div class="formula-item">\[ \vec{E} = \frac{q}{4\pi\varepsilon_0 r^2}\,\hat{r} \]</div>
+      <div class="formula-item">\[ V = \frac{q}{4\pi\varepsilon_0 r} \]</div>
+      <div class="formula-item">\[ \vec{p}(t) = q\,\vec{l}(t) \]</div>
+      <div class="formula-item">\[ \vec{E}_{rad} \propto \frac{q\,\ddot{l}(t_r)\sin\theta}{r}\,\hat{\theta} \]</div>
+      <div class="formula-item">\[ P \propto q^2 \ddot{l}^{\,2} \]</div>
+    </div>
+  </div>
+
+  <!-- 底部图表 -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <h3>偶极矩 p(t) — t</h3>
+      <canvas id="chart1" class="chart-canvas"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3>辐射场 E_rad(t) — t</h3>
+      <canvas id="chart2" class="chart-canvas"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ============================================================
+   全局状态
+   ============================================================ */
+let mode = 'static';
+let playing = true;
+let simT = 0;
+let lastTS = 0;
+let speed = 1.0;
+
+// 全局物理参数
+let qCharge = 1.00;     // 电荷量（任意单位，1 = 默认）
+let dipoleLen = 0.46;   // 偶极长度
+
+// 静电场
+let dens = 1.32;
+
+// 电磁波
+const LAM = 0.80;
+const CV  = 0.80;
+const OM  = 2 * Math.PI * CV / LAM;
+const KK  = 2 * Math.PI / LAM;
+
+/* 呼吸式偶极子长度模型：
+   d(t) = l(t) = 2*(DC + DA*cos ωt)
+   最大长度 = dipoleLen  → DC + DA = dipoleLen/2
+   比值 DA/DC = 0.8      → DC = dipoleLen/3.6, DA = 0.8*DC
+   保证 d(t) 最小值 = 2*(DC-DA) = 0.4*DC > 0，电荷永不穿过。 */
+function dipoleParams(){
+  const DC = dipoleLen / 3.6;
+  const DA = 0.8 * DC;
+  return { DC, DA };
+}
+
+// 画布引用
+const canvas = document.getElementById('mainCanvas');
+const ctx = canvas.getContext('2d');
+const chart1 = document.getElementById('chart1');
+const ctx1 = chart1.getContext('2d');
+const chart2 = document.getElementById('chart2');
+const ctx2 = chart2.getContext('2d');
+
+const isoCanvas = document.createElement('canvas');
+const isoCtx = isoCanvas.getContext('2d', { willReadFrequently: true });
+
+let W = 0, H = 0, S = 1, CX = 0, CY = 0;
+let CW = 0, CH = 0;
+
+/* ============================================================
+   画布适配
+   ============================================================ */
+function fit(el, c){
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const rect = el.getBoundingClientRect();
+  const w = Math.max(2, rect.width);
+  const h = Math.max(2, rect.height);
+  const pw = Math.round(w*dpr), ph = Math.round(h*dpr);
+  if (el.width !== pw || el.height !== ph){ el.width = pw; el.height = ph; }
+  c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { w, h };
+}
+
+function resizeMain(){
+  const { w, h } = fit(canvas, ctx);
+  W = w; H = h; CX = w/2; CY = h/2;
+  S = Math.min(w, h)/2 * 0.94;
+}
+function resizeCharts(){
+  const r1 = fit(chart1, ctx1);
+  CW = r1.w; CH = r1.h;
+  fit(chart2, ctx2);
+}
+
+/* ============================================================
+   静电场：电场线 + 等势面（含电荷量 q 与偶极长度 l）
+   ============================================================ */
+function chargePositions(){
+  const half = dipoleLen / 2;
+  return { qP: {x: -half, y: 0}, qN: {x: half, y: 0} };
+}
+
+function E1(x, y, pos){
+  const ax = x - pos.qP.x, ay = y - pos.qP.y;
+  const bx = x - pos.qN.x, by = y - pos.qN.y;
+  const ra = Math.sqrt(ax*ax + ay*ay) + 1e-9;
+  const rb = Math.sqrt(bx*bx + by*by) + 1e-9;
+  const ia = 1/(ra*ra*ra), ib = 1/(rb*rb*rb);
+  // 正负电荷各带 qCharge 电荷量
+  return [qCharge*(ax*ia - bx*ib), qCharge*(ay*ia - by*ib)];
+}
+
+function renderPotential(pos){
+  const RES = 0.72;
+  const iw = Math.max(4, Math.round(W * RES));
+  const ih = Math.max(4, Math.round(H * RES));
+  isoCanvas.width = iw; isoCanvas.height = ih;
+  const img = isoCtx.createImageData(iw, ih);
+  const data = img.data;
+
+  const V0 = 0.10;
+  const lnR = Math.log(dens);
+  const invRes = 1 / RES;
+  let o = 0;
+
+  for (let j = 0; j < ih; j++){
+    const sy = (j + 0.5) * invRes;
+    const wy = (CY - sy) / S;
+    const wy2 = wy * wy;
+    for (let i = 0; i < iw; i++){
+      const sx = (i + 0.5) * invRes;
+      const wx = (sx - CX) / S;
+
+      const ra = Math.sqrt((wx - pos.qP.x)**2 + wy2) + 1e-7;
+      const rb = Math.sqrt((wx - pos.qN.x)**2 + wy2) + 1e-7;
+
+      // 物理电势 V = q*(1/r+ - 1/r-)
+      const Vphys = qCharge * (1/ra - 1/rb);
+      // 颜色用归一化后的形状场（避免随 q 变饱和）
+      const Vshape = (1/ra - 1/rb);
+      const s = Math.tanh(Vshape * 2.2);
+
+      let R, G, B;
+      if (s > 0){ R = 8 + s*150; G = 10 + s*42; B = 18 + s*16; }
+      else { const u = -s; R = 8 + u*16; G = 10 + u*44; B = 18 + u*165; }
+
+      // 等势线：用物理电势 Vphys
+      const av = Vphys < 0 ? -Vphys : Vphys;
+      if (av > 1e-5){
+        const lvl = Math.log(av / V0) / lnR;
+        if (lvl > -6 && lvl < 26){
+          const dd = Math.abs(lvl - Math.round(lvl));
+          if (dd < 0.10){
+            const t = 1 - dd / 0.10;
+            const amp = t * t * 235;
+            R += amp * (s > 0 ? 1.0 : 0.68);
+            G += amp * 0.88;
+            B += amp * (s < 0 ? 1.0 : 0.68);
+            if (R > 255) R = 255;
+            if (G > 255) G = 255;
+            if (B > 255) B = 255;
+          }
+        }
+      }
+      data[o++] = R; data[o++] = G; data[o++] = B; data[o++] = 255;
+    }
+  }
+  isoCtx.putImageData(img, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(isoCanvas, 0, 0, W, H);
+}
+
+function drawLines(pos){
+  const r0 = Math.min(0.042, dipoleLen * 0.20);
+  const N = 72;
+  ctx.lineWidth = 1.15;
+  ctx.strokeStyle = 'rgba(215, 240, 255, 0.80)';
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+
+  for (let i = 0; i < N; i++){
+    const a = 2 * Math.PI * (i + 0.5) / N;
+    let x = pos.qP.x + r0 * Math.cos(a);
+    let y = pos.qP.y + r0 * Math.sin(a);
+    ctx.moveTo(CX + x * S, CY - y * S);
+
+    for (let s = 0; s < 1200; s++){
+      const e = E1(x, y, pos);
+      const m = Math.sqrt(e[0]*e[0] + e[1]*e[1]);
+      if (!(m > 1e-13)) break;
+      const dP = Math.hypot(x - pos.qP.x, y - pos.qP.y);
+      const dN = Math.hypot(x - pos.qN.x, y - pos.qN.y);
+      const dn = dP < dN ? dP : dN;
+      let h = dn * 0.20;
+      if (h < 0.003) h = 0.003;
+      if (h > 0.016) h = 0.016;
+      x += e[0]/m * h;
+      y += e[1]/m * h;
+      ctx.lineTo(CX + x * S, CY - y * S);
+      if (dN < r0 * 0.85) break;
+      if (x*x + y*y > 3.2) break;
+    }
+  }
+  ctx.stroke();
+}
+
+function drawCharge(cx, cy, color, sign){
+  const px = CX + cx * S, py = CY - cy * S;
+  // 电荷点的大小随 qCharge 变化
+  const rad = 4 + 4 * qCharge;
+  const glow = rad + 18;
+
+  const g = ctx.createRadialGradient(px, py, 0, px, py, glow);
+  g.addColorStop(0, color + 'cc');
+  g.addColorStop(0.4, color + '44');
+  g.addColorStop(1, color + '00');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(px, py, glow, 0, Math.PI * 2); ctx.fill();
+
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.arc(px, py, rad, 0, Math.PI * 2); ctx.fill();
+
+  // 正负号
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.55)';
+  ctx.lineWidth = 1.6;
+  const s = rad * 0.45;
+  ctx.beginPath();
+  ctx.moveTo(px - s, py); ctx.lineTo(px + s, py);
+  if (sign > 0){ ctx.moveTo(px, py - s); ctx.lineTo(px, py + s); }
+  ctx.stroke();
+}
+
+function drawStaticField(){
+  ctx.fillStyle = '#fafbfe';
+  ctx.fillRect(0, 0, W, H);
+
+  const pos = chargePositions();
+  renderPotential(pos);
+  drawLines(pos);
+  drawCharge(pos.qP.x, pos.qP.y, '#ff5c5c', +1);
+  drawCharge(pos.qN.x, pos.qN.y, '#5c8cff', -1);
+}
+
+/* ============================================================
+   电磁波：赫兹偶极子推迟场（含 q、l 依赖）
+   ------------------------------------------------------------
+   物理偶极矩 p(t) = q * l(t)，l(t) = 2*(DC + DA*cos ωt)。
+   场强与 p 及其导数成正比，因此整体乘以 qCharge。
+   ============================================================ */
+function E2(x, y, t, DC, DA){
+  const r = Math.sqrt(x*x + y*y);
+  if (r < 0.016) return [0, 0];
+
+  const cosT = y / r;
+  const sinT = x / r;
+
+  const ph = OM * (t - r / CV);
+  const c1 = Math.cos(ph);
+  const s1 = Math.sin(ph);
+
+  const i3 = 1 / (r*r*r);
+  const i2 = KK / (r*r);
+  const i1 = (KK*KK) / r;
+
+  // 归一化振幅 1 + 0.8cos，再乘 qCharge
+  const pTerm   = qCharge * (1 + 0.8*c1) * i3;
+  const dpTerm  = qCharge * (-0.8 * s1) * i2;
+  const ddpTerm = qCharge * (-0.8 * c1) * i1;
+
+  const common = pTerm + dpTerm;
+  const Er = 2 * cosT * common;
+  const Et = sinT * (common + ddpTerm);
+
+  const Ex = Er*sinT + Et*cosT;
+  const Ey = Er*cosT - Et*sinT;
+  return [Ex, Ey];
+}
+
+function traceWave(x, y, t, DC, DA){
+  const x0 = x, y0 = y;
+  ctx.moveTo(CX + x*S, CY - y*S);
+  const h = 0.011;
+  for (let s = 0; s < 620; s++){
+    const e = E2(x, y, t, DC, DA);
+    const m = Math.sqrt(e[0]*e[0] + e[1]*e[1]);
+    if (!(m > 1e-13)) break;
+    x += e[0]/m * h;
+    y += e[1]/m * h;
+    ctx.lineTo(CX + x*S, CY - y*S);
+    if (x*x + y*y > 2.8) break;
+    if (s > 40){
+      const dx = x - x0, dy = y - y0;
+      if (dx*dx + dy*dy < 0.0003) break;
+    }
+  }
+}
+
+function drawWaveCharge(x, y, color){
+  const px = CX + x*S, py = CY - y*S;
+  const rad = 4 + 3 * qCharge;
+  const glow = rad + 16;
+
+  const g = ctx.createRadialGradient(px, py, 0, px, py, glow);
+  g.addColorStop(0, color + 'bb');
+  g.addColorStop(0.35, color + '3a');
+  g.addColorStop(1, color + '00');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(px, py, glow, 0, Math.PI * 2); ctx.fill();
+
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.arc(px, py, rad, 0, Math.PI * 2); ctx.fill();
+}
+
+function drawWave(t){
+  ctx.fillStyle = '#fafbfe';
+  ctx.fillRect(0, 0, W, H);
+
+  // 参考轴
+  ctx.strokeStyle = 'rgba(110, 140, 190, 0.12)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 6]);
+  ctx.beginPath();
+  ctx.moveTo(CX, 0); ctx.lineTo(CX, H);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  const { DC, DA } = dipoleParams();
+
+  // 电场线
+  const N = 76;
+  const r0 = Math.max(0.018, Math.min(0.04, dipoleLen * 0.09));
+  ctx.lineWidth = 1.2;
+  // 电荷量大时线更亮
+  const lineAlpha = Math.min(1, 0.55 + 0.18 * qCharge);
+  ctx.strokeStyle = `rgba(95, 220, 255, ${lineAlpha.toFixed(3)})`;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+
+  for (let i = 0; i < N; i++){
+    const a = 2 * Math.PI * (i + 0.5) / N;
+    const x0 = r0 * Math.cos(a);
+    const y0 = r0 * Math.sin(a);
+    const e = E2(x0, y0, t, DC, DA);
+    if (e[0]*x0 + e[1]*y0 <= 0) continue;
+    traceWave(x0, y0, t, DC, DA);
+  }
+  ctx.stroke();
+
+  // 两个电荷：y 位置由呼吸式长度决定
+  const osc = Math.cos(OM * t);
+  const yPlus =  DC + DA * osc;
+  const yMinus = -yPlus;
+  drawWaveCharge(0,  yPlus,  '#ff5c5c');
+  drawWaveCharge(0,  yMinus, '#5c8cff');
+}
+
+/* ============================================================
+   图表
+   ============================================================ */
+function drawCharts(t){
+  const pad = 30;
+  const w = CW - pad * 2;
+  const h = CH - pad * 2;
+  const { DC, DA } = dipoleParams();
+  const Tspan = 2.5;
+
+  // ---- 图表 1：p(t) = q * l(t) ----
+  ctx1.clearRect(0, 0, CW, CH);
+  ctx1.fillStyle = '#fafbfe';
+  ctx1.fillRect(0, 0, CW, CH);
+
+  ctx1.strokeStyle = '#e5e9f2';
+  ctx1.lineWidth = 1;
+  ctx1.beginPath();
+  for (let i = 0; i <= 4; i++){
+    const y = pad + h * i / 4;
+    ctx1.moveTo(pad, y); ctx1.lineTo(pad + w, y);
+  }
+  ctx1.stroke();
+
+  ctx1.strokeStyle = '#b2bec3';
+  ctx1.beginPath();
+  ctx1.moveTo(pad, pad); ctx1.lineTo(pad, pad + h); ctx1.lineTo(pad + w, pad + h);
+  ctx1.stroke();
+
+  // p_max = q * l_max = q * dipoleLen
+  const pMax = qCharge * dipoleLen;
+  const pMin = qCharge * 2 * (DC - DA); // 最小值 > 0
+
+  ctx1.beginPath();
+  ctx1.strokeStyle = '#6c5ce7';
+  ctx1.lineWidth = 2;
+  for (let i = 0; i <= 120; i++){
+    const tt = i / 120 * Tspan;
+    const val = qCharge * 2 * (DC + DA * Math.cos(OM * tt));
+    const px = pad + (tt / Tspan) * w;
+    const py = pad + h - ((val - pMin) / (pMax - pMin + 1e-9)) * h;
+    if (i === 0) ctx1.moveTo(px, py);
+    else ctx1.lineTo(px, py);
+  }
+  ctx1.stroke();
+
+  const curT = t % Tspan;
+  const curVal = qCharge * 2 * (DC + DA * Math.cos(OM * curT));
+  const curPx = pad + (curT / Tspan) * w;
+  const curPy = pad + h - ((curVal - pMin) / (pMax - pMin + 1e-9)) * h;
+  ctx1.fillStyle = '#6c5ce7';
+  ctx1.beginPath(); ctx1.arc(curPx, curPy, 4, 0, Math.PI * 2); ctx1.fill();
+
+  // ---- 图表 2：E_rad(t) ∝ q * l̈(t) ∝ -q cos(ωt) ----
+  ctx2.clearRect(0, 0, CW, CH);
+  ctx2.fillStyle = '#fafbfe';
+  ctx2.fillRect(0, 0, CW, CH);
+
+  ctx2.strokeStyle = '#e5e9f2';
+  ctx2.lineWidth = 1;
+  ctx2.beginPath();
+  for (let i = 0; i <= 4; i++){
+    const y = pad + h * i / 4;
+    ctx2.moveTo(pad, y); ctx2.lineTo(pad + w, y);
+  }
+  ctx2.stroke();
+
+  ctx2.strokeStyle = '#b2bec3';
+  ctx2.beginPath();
+  ctx2.moveTo(pad, pad); ctx2.lineTo(pad, pad + h); ctx2.lineTo(pad + w, pad + h);
+  ctx2.stroke();
+
+  // 归一化振幅按 q 缩放，形状仍为 cos
+  const ampScale = Math.min(1, qCharge / 2.4);
+  ctx2.beginPath();
+  ctx2.strokeStyle = '#00b894';
+  ctx2.lineWidth = 2;
+  for (let i = 0; i <= 120; i++){
+    const tt = i / 120 * Tspan;
+    const val = Math.cos(OM * tt); // ∝ l̈ ∝ -cos
+    const px = pad + (tt / Tspan) * w;
+    const py = pad + h / 2 - val * h * 0.4 * (0.4 + 0.6 * ampScale);
+    if (i === 0) ctx2.moveTo(px, py);
+    else ctx2.lineTo(px, py);
+  }
+  ctx2.stroke();
+
+  const curVal2 = Math.cos(OM * curT);
+  const curPy2 = pad + h / 2 - curVal2 * h * 0.4 * (0.4 + 0.6 * ampScale);
+  ctx2.fillStyle = '#00b894';
+  ctx2.beginPath(); ctx2.arc(curPx, curPy2, 4, 0, Math.PI * 2); ctx2.fill();
+}
+
+/* ============================================================
+   数据面板
+   ============================================================ */
+function updateData(t){
+  document.getElementById('data-q').textContent = qCharge.toFixed(2);
+  document.getElementById('data-l').textContent = dipoleLen.toFixed(2);
+
+  if (mode === 'static'){
+    document.getElementById('data-t').textContent = '—';
+    document.getElementById('data-p').textContent = '—';
+    document.getElementById('info-text').textContent =
+      '静电场模式：拖动 q 改变电荷量，拖动 l 改变电荷间距。';
+  } else {
+    const { DC, DA } = dipoleParams();
+    const p = qCharge * 2 * (DC + DA * Math.cos(OM * t));
+    document.getElementById('data-t').textContent = t.toFixed(2) + ' s';
+    document.getElementById('data-p').textContent = p.toFixed(3);
+    document.getElementById('info-text').textContent =
+      '电磁波模式：电荷“呼吸”振荡，p(t) 与 q、l 成正比。';
+  }
+}
+
+/* ============================================================
+   主循环
+   ============================================================ */
+function loop(now){
+  if (!lastTS) lastTS = now;
+  let dt = (now - lastTS) / 1000;
+  lastTS = now;
+  if (dt > 0.05) dt = 0.05;
+
+  if (playing) simT += dt * speed;
+
+  if (mode === 'static'){
+    drawStaticField();
+  } else {
+    drawWave(simT);
+    drawCharts(simT);
+  }
+  updateData(simT);
+  requestAnimationFrame(loop);
+}
+
+/* ============================================================
+   事件绑定
+   ============================================================ */
+const modeStaticBtn = document.getElementById('mode-static');
+const modeWaveBtn = document.getElementById('mode-wave');
+const ctrlStatic = document.getElementById('ctrl-static');
+const ctrlWave = document.getElementById('ctrl-wave');
+const canvasTitle = document.getElementById('canvas-title');
+
+function setMode(m){
+  mode = m;
+  if (m === 'static'){
+    modeStaticBtn.classList.add('active');
+    modeWaveBtn.classList.remove('active');
+    ctrlStatic.classList.remove('hidden');
+    ctrlWave.classList.add('hidden');
+    canvasTitle.textContent = '静电场：电场线与等势面';
+  } else {
+    modeWaveBtn.classList.add('active');
+    modeStaticBtn.classList.remove('active');
+    ctrlWave.classList.remove('hidden');
+    ctrlStatic.classList.add('hidden');
+    canvasTitle.textContent = '电磁波：振荡偶极子辐射';
+  }
+  simT = 0;
+  playing = true;
+  document.getElementById('btn-play').textContent = '⏸ 暂停';
+}
+
+modeStaticBtn.addEventListener('click', () => setMode('static'));
+modeWaveBtn.addEventListener('click', () => setMode('wave'));
+
+const qmagEl = document.getElementById('qmag');
+const qmagvEl = document.getElementById('qmagv');
+const dlenEl = document.getElementById('dlen');
+const dlenvEl = document.getElementById('dlenv');
+const densEl = document.getElementById('dens');
+const densvEl = document.getElementById('densv');
+const spdEl = document.getElementById('spd');
+const spdvEl = document.getElementById('spdv');
+
+qmagEl.addEventListener('input', () => {
+  qCharge = parseFloat(qmagEl.value);
+  qmagvEl.textContent = qCharge.toFixed(2);
+});
+
+dlenEl.addEventListener('input', () => {
+  dipoleLen = parseFloat(dlenEl.value);
+  dlenvEl.textContent = dipoleLen.toFixed(2);
+});
+
+densEl.addEventListener('input', () => {
+  dens = parseFloat(densEl.value);
+  densvEl.textContent = dens.toFixed(2);
+});
+
+spdEl.addEventListener('input', () => {
+  speed = parseFloat(spdEl.value);
+  spdvEl.textContent = speed.toFixed(2);
+});
+
+const playBtn = document.getElementById('btn-play');
+playBtn.addEventListener('click', () => {
+  playing = !playing;
+  playBtn.textContent = playing ? '⏸ 暂停' : '▶ 播放';
+});
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  simT = 0;
+  playing = true;
+  playBtn.textContent = '⏸ 暂停';
+  qCharge = 1.00; qmagEl.value = 1.00; qmagvEl.textContent = '1.00';
+  dipoleLen = 0.46; dlenEl.value = 0.46; dlenvEl.textContent = '0.46';
+  dens = 1.32; densEl.value = 1.32; densvEl.textContent = '1.32';
+  speed = 1.0; spdEl.value = 1.0; spdvEl.textContent = '1.00';
+});
+
+window.addEventListener('resize', () => {
+  resizeMain();
+  resizeCharts();
+});
+
+/* ============================================================
+   初始化
+   ============================================================ */
+requestAnimationFrame(() => {
+  resizeMain();
+  resizeCharts();
+  setMode('static');
+  requestAnimationFrame(loop);
+});
+
+})();
+</script>
+</body>
+</html>

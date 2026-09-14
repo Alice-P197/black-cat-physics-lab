@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>卢瑟福散射 · 交互仿真</title>
+<style>
+:root{
+  --bg:#f5f7fc;--card:#fff;--ink:#1a2238;--ink2:#4a5568;
+  --muted:#8892a8;--accent:#4f46e5;--accent2:#7c6cf5;--line:#e6eaf3;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",
+  "Microsoft YaHei",sans-serif;background:var(--bg);
+  background-image:radial-gradient(900px 500px at 10% -10%,#e7ebff 0,transparent 60%),
+  radial-gradient(700px 500px at 95% 0,#f1e9ff 0,transparent 55%);
+  background-attachment:fixed;color:var(--ink);min-height:100vh;
+  padding:26px 16px 54px;line-height:1.65}
+.wrap{max-width:1080px;margin:0 auto}
+header{text-align:center;margin-bottom:22px}
+header h1{font-size:clamp(1.4rem,3.2vw,1.9rem);font-weight:750;
+  color:#2b2e70;letter-spacing:-.02em}
+header p{color:var(--muted);font-size:.92rem}
+header .tag{display:inline-block;font-size:.74rem;letter-spacing:.14em;
+  color:var(--accent);background:#eef1ff;border:1px solid #dde3ff;
+  padding:.24rem .85rem;border-radius:999px;font-weight:600;margin-bottom:11px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:17px 20px;box-shadow:0 1px 2px rgba(22,33,58,.03),
+  0 10px 28px -20px rgba(22,33,58,.28);margin-bottom:15px}
+.controls{display:flex;flex-wrap:wrap;gap:16px 26px;align-items:flex-end}
+.grp{display:flex;flex-direction:column;gap:5px;min-width:150px;flex:1;max-width:230px}
+.grp label{font-size:.8rem;color:var(--muted);font-weight:600;
+  display:flex;justify-content:space-between}
+.grp label span{color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;
+  border-radius:3px;background:#e4e8f3;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;
+  border-radius:50%;background:linear-gradient(140deg,var(--accent),var(--accent2));
+  box-shadow:0 2px 6px -1px rgba(79,70,229,.6);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border:none;border-radius:50%;
+  background:linear-gradient(140deg,var(--accent),var(--accent2));cursor:pointer}
+.btn-group{display:flex;gap:10px}
+.btn{border:none;padding:9px 20px;font-family:inherit;font-size:.9rem;font-weight:650;
+  border-radius:10px;cursor:pointer;transition:all .18s}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;box-shadow:0 6px 16px -6px rgba(79,70,229,.8)}
+.btn-primary:hover{transform:translateY(-1px)}
+.btn-ghost{background:#f1f3fa;color:var(--ink2)}
+.btn-ghost:hover{background:#e8ebf5;color:var(--accent)}
+.scene-panel{padding:0;overflow:hidden}
+canvas#cv{display:block;width:100%;height:460px}
+.results{display:flex;flex-wrap:wrap;gap:12px;margin-top:2px}
+.rbox{flex:1;min-width:150px;background:#f8faff;border:1px solid var(--line);
+  border-radius:12px;padding:11px 15px}
+.rbox .t{font-size:.72rem;color:var(--muted);letter-spacing:.06em}
+.rbox .v{font-size:1.25rem;font-weight:750;color:var(--accent);
+  font-variant-numeric:tabular-nums}
+.notes{font-size:.88rem;color:var(--ink2);line-height:1.7}
+.notes b{color:var(--ink)}.notes .f{color:var(--accent);font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="tag">原子物理 · ATOMIC</div>
+    <h1>卢瑟福散射</h1>
+    <p>α 粒子入射到金箔，观察经典库仑作用下的偏转轨迹与散射分布</p>
+  </header>
+
+  <div class="panel">
+    <div class="controls">
+      <div class="grp">
+        <label>入射能量 E<sub>k</sub> <span id="eEl">5.0 MeV</span></label>
+        <input type="range" id="energy" min="2" max="9" step="0.1" value="5">
+      </div>
+      <div class="grp">
+        <label>瞄准距离 b <span id="bEl">90 fm</span></label>
+        <input type="range" id="impact" min="5" max="260" step="1" value="90">
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary" id="fire">发射 α 粒子</button>
+        <button class="btn btn-ghost" id="burst">散射分布演示</button>
+        <button class="btn btn-ghost" id="clear">清除</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel scene-panel"><canvas id="cv"></canvas></div>
+
+  <div class="panel">
+    <div class="results">
+      <div class="rbox"><div class="t">散射角 θ</div><div class="v" id="rTheta">—</div></div>
+      <div class="rbox"><div class="t">最接近距离 r_min</div><div class="v" id="rMin">—</div></div>
+      <div class="rbox"><div class="t">大角散射占比(&gt;45°)</div><div class="v" id="rRate">—</div></div>
+    </div>
+  </div>
+
+  <div class="panel notes">
+    原子核体积极小，电荷集中；绝大多数 α 粒子远离原子核几乎不偏转，
+    少数靠近者受强斥力发生大角偏转甚至反弹——这是<b>核式结构</b>的直接证据。
+    满足 <span class="f">cot(θ/2) = 2E·b / (Z₁Z₂e²)</span>。
+  </div>
+</div>
+
+<script>
+const cv=document.getElementById('cv'),cx=cv.getContext('2d');
+const W=900,H=460,ox=W*0.5,oy=H*0.5;
+cv.width=W;cv.height=H;
+const S=4300,vInf=9,KEEV=1.44,Z1=2,Z2=79;
+let parts=[],source={x:26,y:oy}; // current single particle
+
+const eEl=document.getElementById('eEl'),bEl=document.getElementById('bEl');
+const rTheta=document.getElementById('rTheta'),
+      rMin=document.getElementById('rMin'),
+      rRate=document.getElementById('rRate');
+function EMeV(){return +document.getElementById('energy').value;}
+function bFm(){return +document.getElementById('impact').value;}
+function upd(){
+  eEl.textContent=EMeV().toFixed(1)+' MeV';
+  bEl.textContent=bFm()+' fm';
+}
+
+function shoot(bpx){
+  source={x:26,y:oy+bpx,vx:vInf,vy:0,trail:[]};
+  let p=source,steps=0;
+  while(steps<6000&&p.x<W+40){
+    let dx=ox-p.x,dy=oy-p.y,r=Math.hypot(dx,dy);
+    if(r<0.6)break;
+    let f=S/(r*r);
+    p.vx+=dx/r*f*0.55;
+    p.vy+=dy/r*f*0.55;
+    p.x+=p.vx*0.55; p.y+=p.vy*0.55; steps++;
+    if(steps%3===0)p.trail.push({x:p.x,y:p.y});
+    if(p.x<10)break;
+  }
+  return p;
+}
+function measure(p){
+  const tl=p.trail,n=tl.length;if(n<2)return {deg:0,rmin:0};
+  const a=tl[n-1],b=tl[n-2]||a;
+  let dx=a.x-b.x,dy=a.y-b.y;
+  let deg=Math.atan2(Math.abs(dy),Math.abs(dx))*180/Math.PI;
+  if(a.x<ox)deg=180-Math.min(deg,180);
+  let rmin=1e9;
+  for(let i=0;i<n;i++){let d=Math.hypot(tl[i].x-ox,tl[i].y-oy);
+    if(d<rmin)rmin=d;}
+  return {deg:deg,rmin:rmin/2.2};
+}
+
+function draw(){
+  cx.clearRect(0,0,W,H);
+  cx.strokeStyle='#eef1f8';
+  for(let x=0;x<W;x+=40){cx.beginPath();cx.moveTo(x,0);cx.lineTo(x,H);cx.stroke();}
+  for(let y=0;y<H;y+=40){cx.beginPath();cx.moveTo(0,y);cx.lineTo(W,y);cx.stroke();}
+  // foil
+  cx.fillStyle='rgba(236,240,252,.9)';cx.fillRect(ox-3,0,6,H);
+  // nucleus
+  cx.beginPath();cx.arc(ox,oy,8,0,6.29);cx.fillStyle='#f59e0b';cx.fill();
+  cx.lineWidth=1.6;cx.strokeStyle='#fff';cx.stroke();
+  // source
+  cx.beginPath();cx.arc(26,oy,5,0,6.29);cx.fillStyle='#8b5cf6';cx.fill();
+  // particles
+  for(const p of parts){
+    if(!p.trail||p.trail.length<2)continue;
+    cx.strokeStyle='rgba(79,70,229,.32)';cx.lineWidth=1.5;cx.beginPath();
+    cx.moveTo(p.trail[0].x,p.trail[0].y);
+    for(let i=1;i<p.trail.length;i++)cx.lineTo(p.trail[i].x,p.trail[i].y);
+    cx.stroke();
+  }
+  // moving head
+  if(anim){
+    const i=Math.min(anim.k,source.trail.length-1);
+    if(i>=0){const h=source.trail[i];
+      cx.beginPath();cx.arc(h.x,h.y,3.2,0,6.29);
+      cx.fillStyle='#4f46e5';cx.fill();}
+  }
+  // burst detector dots
+  cx.fillStyle='rgba(79,70,229,.7)';
+  for(const d of dots){
+    const ra=160,px=ox+ra*Math.cos(d.a),py=oy-ra*Math.sin(d.a);
+    cx.beginPath();cx.arc(px,py,2,0,6.29);cx.fill();
+  }
+}
+let anim=null,timeo=null;
+function animateTrail(p){
+  anim={k:0};p.cur=0;
+  const step=()=>{
+    if(anim.k<source.trail.length-1){anim.k++;timeo=setTimeout(step,8);}
+    else{anim=null;timeo=null;const m=measure(p);
+      rTheta.textContent=m.deg.toFixed(1)+'°';
+      rMin.textContent=m.rmin.toFixed(0)+' fm';}
+  };
+  step();
+}
+function fireOne(){
+  const p=shoot(bFm()*2.2);parts.push(p);
+  rRate.textContent='—';
+  if(timeo)clearTimeout(timeo);
+  animateTrail(p);
+}
+let dots=[];
+document.getElementById('fire').onclick=fireOne;
+document.getElementById('clear').onclick=()=>{parts=[];dots=[];
+  if(timeo)clearTimeout(timeo);anim=null;
+  rTheta.textContent='—';rMin.textContent='—';rRate.textContent='—';};
+document.getElementById('energy').oninput=upd;
+document.getElementById('impact').oninput=upd;
+document.getElementById('burst').onclick=()=>{
+  parts=[];dots=[];let big=0,n=200;
+  for(let i=0;i<n;i++){
+    const b=Math.random()*270*2.2;
+    const p=shoot(b);parts.push(p);
+    const m=measure(p);
+    dots.push({a:m.deg*Math.PI/180});
+    if(m.deg>45)big++;
+  }
+  anim=null;
+  rTheta.textContent='—';rMin.textContent='—';
+  rRate.textContent=(100*big/n).toFixed(0)+'%';
+};
+upd();
+(function loop(){
+  draw();requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

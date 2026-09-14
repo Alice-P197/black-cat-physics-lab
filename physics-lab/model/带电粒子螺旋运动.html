@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>带电粒子螺旋运动</title>
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#f5f7fc;--card:#fff;--ink:#1a2238;--ink2:#4a5568;--muted:#8892a8;
+  --accent:#4f46e5;--accent2:#7c6cf5;--line:#e6eaf3;
+  --green:#10b981;--red:#ef4444;--amber:#f59e0b;--blue:#3b82f6;
+}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",
+    "Microsoft YaHei",sans-serif;
+  background:var(--bg);
+  background-image:radial-gradient(900px 500px at 10% -10%,#e7ebff 0%,transparent 60%),
+                   radial-gradient(700px 500px at 95% 0%,#f1e9ff 0%,transparent 55%);
+  background-attachment:fixed;
+  color:var(--ink);line-height:1.65;padding:28px 16px 56px;min-height:100vh;
+}
+.wrap{max-width:1080px;margin:0 auto;}
+header{text-align:center;margin-bottom:26px;}
+header h1{font-size:clamp(1.5rem,3.4vw,2rem);font-weight:750;color:#2b2e70;
+  margin-bottom:6px;letter-spacing:-.02em;}
+header p{color:var(--muted);font-size:.95rem;}
+.tag{display:inline-block;font-size:.75rem;letter-spacing:.14em;color:var(--accent);
+  background:#eef1ff;border:1px solid #dde3ff;padding:.25rem .85rem;border-radius:999px;
+  font-weight:600;margin-bottom:12px;}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:18px 20px;box-shadow:0 1px 2px rgba(22,33,58,.03),0 10px 28px -20px rgba(22,33,58,.28);
+  margin-bottom:16px;}
+.controls{display:flex;flex-wrap:wrap;gap:16px 24px;align-items:flex-end;}
+.slider-group{display:flex;flex-direction:column;gap:5px;min-width:150px;flex:1;max-width:230px;}
+.slider-group label{font-size:.78rem;color:var(--muted);font-weight:600;
+  display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
+.slider-group label span{color:var(--accent);font-weight:700;
+  font-variant-numeric:tabular-nums;}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;
+  border-radius:3px;background:#e4e8f3;outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+  width:16px;height:16px;border-radius:50%;
+  background:linear-gradient(140deg,var(--accent),var(--accent2));
+  box-shadow:0 2px 6px -1px rgba(79,70,229,.6);cursor:pointer;transition:transform .15s;}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15);}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border:none;border-radius:50%;
+  background:linear-gradient(140deg,var(--accent),var(--accent2));
+  box-shadow:0 2px 6px -1px rgba(79,70,229,.6);cursor:pointer;}
+.btn-group{display:flex;gap:10px;}
+.btn{border:none;padding:10px 22px;font-family:inherit;font-size:.9rem;font-weight:650;
+  border-radius:10px;cursor:pointer;transition:all .18s ease;white-space:nowrap;}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;
+  box-shadow:0 6px 16px -6px rgba(79,70,229,.8);}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 10px 22px -8px rgba(79,70,229,.9);}
+.btn-ghost{background:#f1f3fa;color:var(--ink2);}
+.btn-ghost:hover{background:#e8ebf5;color:var(--accent);}
+.seg{display:flex;gap:6px;background:#f1f3fa;padding:5px;border-radius:11px;
+  margin-top:4px;width:fit-content;}
+.seg button{border:none;background:transparent;padding:6px 12px;font-size:.82rem;
+  font-family:inherit;font-weight:600;color:var(--ink2);border-radius:8px;
+  cursor:pointer;transition:all .18s ease;white-space:nowrap;}
+.seg button:hover{color:var(--accent);}
+.seg button.on{background:#fff;color:var(--accent);
+  box-shadow:0 2px 8px -2px rgba(79,70,229,.35);}
+.scene-panel{padding:12px;background:linear-gradient(180deg,#fcfdff,#f7f9ff);}
+#stage{position:relative;width:100%;height:300px;border-radius:12px;overflow:hidden;
+  background:linear-gradient(180deg,#fafbff,#f2f6fd);
+  box-shadow:inset 0 0 0 1px #eef1f8;cursor:grab;}
+#stage:active{cursor:grabbing;}
+#cv{display:block;width:100%;height:100%;}
+h3.sec{font-size:1rem;font-weight:700;margin-bottom:12px;display:flex;
+  align-items:center;gap:8px;color:var(--ink);}
+h3.sec::before{content:"";width:4px;height:17px;border-radius:2px;
+  background:linear-gradient(180deg,var(--accent),var(--accent2));}
+.formula-row{background:linear-gradient(180deg,#fbfcff,#f5f7ff);border:1px solid #e8ecfb;
+  border-radius:12px;padding:14px 18px;margin:12px 0;text-align:center;overflow-x:auto;}
+.formula-row.hl{border-left:4px solid var(--accent);
+  background:linear-gradient(180deg,#f8f9ff,#eef1ff);}
+.legend-info{display:flex;gap:20px;flex-wrap:wrap;margin-top:16px;padding-top:14px;
+  border-top:1px solid var(--line);font-size:.82rem;color:var(--ink2);}
+.legend-info b{color:var(--accent);}
+footer{text-align:center;color:var(--muted);font-size:.82rem;margin-top:26px;}
+footer .dot{display:inline-block;width:4px;height:4px;border-radius:50%;
+  background:#cbd5e1;margin:0 .55rem;vertical-align:middle;}
+mjx-container{overflow-x:auto;overflow-y:hidden;max-width:100%;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="tag">电磁学 · 洛伦兹力</div>
+    <h1>带电粒子螺旋运动</h1>
+    <p>匀强磁场沿 +z 方向 · 拖动画面旋转视角</p>
+  </header>
+
+  <div class="panel controls">
+    <div class="slider-group">
+      <label>电荷符号</label>
+      <div class="seg" id="segQ">
+        <button class="on" data-q="1">正电荷</button>
+        <button data-q="-1">负电荷</button>
+      </div>
+    </div>
+    <div class="slider-group">
+      <label>平行分量 v∥ <span id="vpv">1.2</span></label>
+      <input type="range" id="vp" min="0.05" max="5" step="0.05" value="1.2">
+    </div>
+    <div class="slider-group">
+      <label>垂直分量 v⊥ <span id="vpv2">2.0</span></label>
+      <input type="range" id="vp2" min="0.1" max="4" step="0.05" value="2">
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-primary" id="reset">重置</button>
+      <button class="btn btn-ghost" id="play">暂停</button>
+    </div>
+  </div>
+
+  <div class="panel scene-panel">
+    <div id="stage">
+      <canvas id="cv"></canvas>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3 class="sec">核心公式</h3>
+    <div class="formula-row hl">
+      $$\vec{B}=B_0\hat{z},\qquad \omega_c=\frac{|q|B}{m}=k$$
+    </div>
+    <div class="formula-row">
+      $$r=\frac{m\,v_\perp}{|q|B},\qquad
+        h=\frac{2\pi\,m\,v_\parallel}{|q|B}$$
+    </div>
+    <div class="formula-row">
+      $$v_\parallel\parallel\vec{B}\Rightarrow\text{匀速沿轴};\quad
+        v_\perp\perp\vec{B}\Rightarrow\text{匀速圆周};\quad
+        \text{合成}\Rightarrow\text{等距螺线}$$
+    </div>
+    <div class="legend-info" id="readout">
+      <span>回旋半径 r <b id="rVal">—</b></span>
+      <span>螺距 h <b id="hVal">—</b></span>
+      <span>角频率 ωc <b id="wVal">—</b></span>
+      <span>视场 z ∈ [<b id="zw">—</b>, <b id="zw2">—</b>]</span>
+    </div>
+  </div>
+
+  <footer>带电粒子螺旋运动<span class="dot"></span>洛伦兹力<span class="dot"></span>Mechanics Lab</footer>
+</div>
+<script>
+(function () {
+  "use strict";
+  var cv = document.getElementById("cv");
+  var ctx = cv.getContext("2d");
+  var DPR = Math.max(1, window.devicePixelRatio || 1);
+  var W = 0, H = 0, CX = 0, CY = 0;
+
+  function resize() {
+    var st = document.getElementById("stage");
+    W = st.clientWidth; H = st.clientHeight;
+    cv.width = Math.round(W * DPR);
+    cv.height = Math.round(H * DPR);
+    cv.style.width = W + "px";
+    cv.style.height = H + "px";
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    CX = W / 2; CY = H / 2;
+  }
+  window.addEventListener("resize", resize);
+
+  var k = 1.0, qSign = 1, vPar = 1.2, vPerp = 2.0;
+  var rot = 0.7, tilt = 0.95;
+  var playing = true, t = 0, SPEED = 1.0;
+  var S = 26;            /* 每帧自适应的显示比例 */
+  var cT = 0, sT = 0, cR = 0, sR = 0;
+
+  var ctl = {
+    vp: document.getElementById("vp"),
+    vp2: document.getElementById("vp2"),
+    play: document.getElementById("play"),
+    reset: document.getElementById("reset")
+  };
+  var elems = {
+    vpv: document.getElementById("vpv"),
+    vpv2: document.getElementById("vpv2"),
+    rVal: document.getElementById("rVal"),
+    hVal: document.getElementById("hVal"),
+    wVal: document.getElementById("wVal"),
+    zw: document.getElementById("zw"),
+    zw2: document.getElementById("zw2")
+  };
+
+  ctl.vp.addEventListener("input", function () {
+    vPar = parseFloat(ctl.vp.value);
+    elems.vpv.textContent = vPar.toFixed(2);
+  });
+  ctl.vp2.addEventListener("input", function () {
+    vPerp = parseFloat(ctl.vp2.value);
+    elems.vpv2.textContent = vPerp.toFixed(2);
+  });
+  ctl.play.addEventListener("click", function () {
+    playing = !playing;
+    ctl.play.textContent = playing ? "暂停" : "播放";
+  });
+  ctl.reset.addEventListener("click", function () {
+    t = 0; playing = true;
+    ctl.play.textContent = "暂停";
+  });
+
+  var segQ = document.getElementById("segQ");
+  segQ.querySelectorAll("button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      segQ.querySelectorAll("button").forEach(function (x) {
+        x.classList.remove("on");
+      });
+      b.classList.add("on");
+      qSign = parseInt(b.getAttribute("data-q"), 10);
+    });
+  });
+
+  var dragging = false, lx = 0, ly = 0;
+  function beginDrag(x, y) { dragging = true; lx = x; ly = y; }
+  function dragTo(x, y) {
+    if (!dragging) return;
+    rot += (x - lx) * 0.012;
+    tilt -= (y - ly) * 0.012;
+    lx = x; ly = y;
+    if (tilt < 0.15) tilt = 0.15;
+    if (tilt > 1.45) tilt = 1.45;
+  }
+  cv.addEventListener("mousedown", function (e) {
+    beginDrag(e.clientX, e.clientY); e.preventDefault();
+  });
+  window.addEventListener("mousemove", function (e) {
+    dragTo(e.clientX, e.clientY);
+  });
+  window.addEventListener("mouseup", function () { dragging = false; });
+  cv.addEventListener("touchstart", function (e) {
+    if (e.touches.length === 1)
+      beginDrag(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: true });
+  window.addEventListener("touchmove", function (e) {
+    if (e.touches.length === 1)
+      dragTo(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: true });
+  window.addEventListener("touchend", function () { dragging = false; });
+
+  function params() {
+    var r = vPerp / k;                /* 回旋半径 */
+    var h = (2 * Math.PI * vPar) / k; /* 螺距 */
+    return { r: r, h: h };
+  }
+
+  function setCam() {
+    cR = Math.cos(rot); sR = Math.sin(rot);
+    cT = Math.cos(tilt); sT = Math.sin(tilt);
+  }
+  /* 3D 透视投影：入参为世界单位 */
+  function proj(x, y, z, out) {
+    var x1 = (x * cR - y * sR) * S;
+    var y1 = (x * sR + y * cR) * S;
+    var y2 = y1 * cT - (z * S) * sT;
+    out.x = CX + x1;
+    out.y = CY - y2;
+    out.d = y1 * sT + z * S * cT;
+  }
+
+  function angleAt(h, z) {
+    if (h > 1e-6) return (qSign * 2 * Math.PI * z) / h;
+    return qSign * z * 1000;
+  }
+
+  function build() {
+    var P = params();
+    var r = P.r, h = P.h;
+    var Sr = (0.82 * W) / (2 * Math.max(r, 1e-4));
+    var turnsRaw = 1e6;
+    if (h > 1e-6) {
+      turnsRaw = ((0.76 * H / 2) / Sr - r * cT) / ((h / 2) * sT);
+    }
+    var turns = Math.max(1.4, Math.min(3.0, turnsRaw));
+    var zmax = (h > 1e-6) ? (turns * h / 2) : Math.max(r, 0.4);
+    var halfH = r * cT + zmax * sT;
+    var sw = (0.82 * W) / (2 * Math.max(r, 1e-4));
+    var sh = (0.76 * H) / (2 * Math.max(halfH, 1e-4));
+    S = Math.max(6, Math.min(120, Math.min(sw, sh)));
+
+    var period = 2 * zmax + 1e-6;
+    var zz = ((t % period) + period) % period;
+    var zc = -zmax + zz;         /* 粒子当前位置 z */
+    drawScene(r, h, zmax, zc);
+    readout(r, h, zmax);
+  }
+
+  function readout(r, h, zmax) {
+    elems.rVal.textContent = r.toFixed(3);
+    elems.hVal.textContent = h.toFixed(3);
+    elems.wVal.textContent = k.toFixed(2);
+    var zz = Math.max(zmax, 0.1);
+    elems.zw.textContent = (-zz).toFixed(1);
+    elems.zw2.textContent = zz.toFixed(1);
+  }
+
+  function drawScene(r, h, zmax, zc) {
+    ctx.clearRect(0, 0, W, H);
+    var g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, "#fbfcff");
+    g.addColorStop(0.5, "#f3f6fe");
+    g.addColorStop(1, "#fbfcff");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    grid(r);
+    fieldArrow(zmax);
+    axes(r);
+    helix(r, h, zmax, zc);
+
+    ctx.fillStyle = "#8892a8";
+    ctx.font = "13px -apple-system,sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("磁场 B 沿 +z · 拖动画面旋转视角", CX, H - 12);
+  }
+
+  function grid(r) {
+    var ext = r * 2.3;
+    ctx.strokeStyle = "rgba(96,110,170,0.18)";
+    ctx.lineWidth = 1;
+    var o = { x: 0, y: 0, d: 0 };
+    for (var g = 1; g <= 5; g++) {
+      var rr = ext * g / 5;
+      ctx.beginPath();
+      var Ns = 140;
+      for (var i = 0; i <= Ns; i++) {
+        var a = 2 * Math.PI * i / Ns;
+        proj(rr * Math.cos(a), rr * Math.sin(a), 0, o);
+        if (i === 0) ctx.moveTo(o.x, o.y); else ctx.lineTo(o.x, o.y);
+      }
+      ctx.stroke();
+    }
+  }
+
+  function axes(r) {
+    var o = { x: 0, y: 0, d: 0 }, p = { x: 0, y: 0, d: 0 };
+    var eLen = r * 1.7;
+    proj(0, 0, 0, o);
+    ctx.lineWidth = 1.4;
+    proj(eLen, 0, 0, p);
+    ctx.strokeStyle = "#4f46e5";
+    ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(p.x, p.y); ctx.stroke();
+    proj(eLen * 1.12, 0, 0, p);
+    ctx.fillStyle = "#4f46e5";
+    ctx.font = "14px 'Times New Roman', Georgia, serif";
+    ctx.fillText("x", p.x + 4, p.y - 4);
+
+    proj(0, eLen, 0, p);
+    ctx.strokeStyle = "#10b981";
+    ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(p.x, p.y); ctx.stroke();
+    proj(0, eLen * 1.12, 0, p);
+    ctx.fillStyle = "#10b981";
+    ctx.fillText("y", p.x + 4, p.y - 4);
+  }
+
+  function fieldArrow(zmax) {
+    var top = zmax * 1.16 + 14 / S;   /* 世界单位 */
+    var o = { x: 0, y: 0, d: 0 };
+    var hd = { x: 0, y: 0, d: 0 };
+    proj(0, 0, 0, o);
+    proj(0, 0, top, hd);
+    ctx.strokeStyle = "#6366f1";
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    ctx.moveTo(o.x, o.y); ctx.lineTo(hd.x, hd.y); ctx.stroke();
+    var ang = Math.atan2(hd.y - o.y, hd.x - o.x);
+    var as = 12;
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    ctx.moveTo(hd.x, hd.y);
+    ctx.lineTo(hd.x - as * Math.cos(ang - 0.42),
+               hd.y - as * Math.sin(ang - 0.42));
+    ctx.moveTo(hd.x, hd.y);
+    ctx.lineTo(hd.x - as * Math.cos(ang + 0.42),
+               hd.y - as * Math.sin(ang + 0.42));
+    ctx.stroke();
+    proj(0, 0, top + 9 / S, hd);
+    ctx.fillStyle = "#4f46e5";
+    ctx.font = "15px 'Times New Roman', Georgia, serif";
+    ctx.textAlign = "center";
+    ctx.fillText("B", hd.x, hd.y - 7);
+    ctx.textAlign = "left";
+  }
+
+  function helix(r, h, zmax, zc) {
+    drawTrack(r, h, zmax);
+    tail(r, h, zc);
+    var th = angleAt(h, zc);
+    var o = { x: 0, y: 0, d: 0 };
+    proj(r * Math.cos(th), r * Math.sin(th), zc, o);
+    var rad = 8;
+    var gr = ctx.createRadialGradient(o.x, o.y, 1, o.x, o.y, rad);
+    gr.addColorStop(0, "#ffffff");
+    gr.addColorStop(0.4, "#8b5cf6");
+    gr.addColorStop(1, "#4f46e5");
+    ctx.fillStyle = gr;
+    ctx.beginPath(); ctx.arc(o.x, o.y, rad, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = "rgba(79,70,229,0.6)";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  function drawTrack(r, h, zmax) {
+    var o = { x: 0, y: 0, d: 0 };
+    ctx.strokeStyle = "rgba(79,70,229,0.30)";
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    var N = 700;
+    var first = true;
+    for (var i = 0; i <= N; i++) {
+      var z = -zmax + (2 * zmax) * i / N;
+      var th = angleAt(h, z);
+      proj(r * Math.cos(th), r * Math.sin(th), z, o);
+      if (first) { ctx.moveTo(o.x, o.y); first = false; }
+      else ctx.lineTo(o.x, o.y);
+    }
+    ctx.stroke();
+  }
+
+  function tail(r, h, zc) {
+    var o = { x: 0, y: 0, d: 0 };
+    ctx.beginPath();
+    var first = true;
+    var back = 90;
+    for (var i = back; i >= 0; i--) {
+      var z = zc - i * 0.12;
+      var th = angleAt(h, z);
+      proj(r * Math.cos(th), r * Math.sin(th), z, o);
+      if (first) { ctx.moveTo(o.x, o.y); first = false; }
+      else ctx.lineTo(o.x, o.y);
+    }
+    ctx.strokeStyle = "rgba(139,92,246,0.6)";
+    ctx.lineWidth = 2.6;
+    ctx.stroke();
+  }
+
+  var last = performance.now();
+  function frame(now) {
+    if (playing) {
+      var dt = Math.min(0.05, (now - last) / 1000);
+      t += dt * SPEED;
+    }
+    last = now;
+    setCam();
+    build();
+    requestAnimationFrame(frame);
+  }
+
+  resize();
+  setCam();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

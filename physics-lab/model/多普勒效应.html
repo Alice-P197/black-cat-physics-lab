@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>多普勒效应 · 移动声源的波前压缩与拉伸</title>
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#f5f7fc;--card:#fff;--ink:#1a2238;--ink2:#4a5568;--muted:#8892a8;
+  --accent:#4f46e5;--accent2:#7c6cf5;--line:#e6eaf3;
+  --green:#10b981;--red:#ef4444;--amber:#f59e0b;--blue:#3b82f6;
+}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",
+    "Microsoft YaHei",sans-serif;
+  background:var(--bg);
+  background-image:radial-gradient(900px 500px at 10% -10%,#e7ebff 0%,transparent 60%),
+                   radial-gradient(700px 500px at 95% 0%,#f1e9ff 0%,transparent 55%);
+  background-attachment:fixed;
+  color:var(--ink);line-height:1.65;padding:28px 16px 56px;min-height:100vh;
+}
+.wrap{max-width:1080px;margin:0 auto;}
+header{text-align:center;margin-bottom:26px;}
+header h1{font-size:clamp(1.5rem,3.4vw,2rem);font-weight:750;color:#2b2e70;
+  margin-bottom:6px;letter-spacing:-.02em;}
+header p{color:var(--muted);font-size:.95rem;}
+.tag{display:inline-block;font-size:.75rem;letter-spacing:.14em;color:var(--accent);
+  background:#eef1ff;border:1px solid #dde3ff;padding:.25rem .85rem;
+  border-radius:999px;font-weight:600;margin-bottom:12px;}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:18px 20px;box-shadow:0 1px 2px rgba(22,33,58,.03),
+   0 10px 28px -20px rgba(22,33,58,.28);margin-bottom:16px;}
+.controls{display:flex;flex-wrap:wrap;gap:16px 24px;align-items:flex-end;}
+.slider-group{display:flex;flex-direction:column;gap:5px;min-width:150px;
+  flex:1;max-width:210px;}
+.slider-group label{font-size:.78rem;color:var(--muted);font-weight:600;
+  display:flex;justify-content:space-between;align-items:baseline;}
+.slider-group label span{color:var(--accent);font-weight:700;
+  font-variant-numeric:tabular-nums;}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;
+  border-radius:3px;background:#e4e8f3;outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+  width:16px;height:16px;border-radius:50%;
+  background:linear-gradient(140deg,var(--accent),var(--accent2));
+  box-shadow:0 2px 6px -1px rgba(79,70,229,.6);cursor:pointer;
+  transition:transform .15s;}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15);}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border:none;
+  border-radius:50%;background:linear-gradient(140deg,var(--accent),var(--accent2));
+  box-shadow:0 2px 6px -1px rgba(79,70,229,.6);cursor:pointer;}
+.btn-group{display:flex;gap:10px;}
+.btn{border:none;padding:10px 22px;font-family:inherit;font-size:.9rem;
+  font-weight:650;border-radius:10px;cursor:pointer;transition:all .18s ease;
+  white-space:nowrap;}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;box-shadow:0 6px 16px -6px rgba(79,70,229,.8);}
+.btn-primary:hover{transform:translateY(-1px);
+  box-shadow:0 10px 22px -8px rgba(79,70,229,.9);}
+.btn-ghost{background:#f1f3fa;color:var(--ink2);}
+.btn-ghost:hover{background:#e8ebf5;color:var(--accent);}
+.scene-panel{padding:14px;background:linear-gradient(180deg,#fbfcff,#f6f8ff);}
+#cv{display:block;width:100%;height:auto;border-radius:12px;}
+.readout{display:flex;flex-wrap:wrap;gap:8px 24px;align-items:center;
+  margin-top:12px;padding-top:12px;border-top:1px solid var(--line);
+  font-size:.84rem;color:var(--ink2);}
+.readout b{color:var(--accent);font-variant-numeric:tabular-nums;}
+.legend-info{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px;
+  font-size:.82rem;color:var(--ink2);}
+.legend-info .sq{display:inline-block;width:10px;height:10px;
+  border-radius:2px;margin-right:5px;vertical-align:-1px;}
+h3.sec{font-size:1rem;font-weight:700;margin-bottom:12px;display:flex;
+  align-items:center;gap:8px;color:var(--ink);}
+h3.sec::before{content:"";width:4px;height:17px;border-radius:2px;
+  background:linear-gradient(180deg,var(--accent),var(--accent2));}
+.formula-row{background:linear-gradient(180deg,#fbfcff,#f5f7ff);
+  border:1px solid #e8ecfb;border-radius:12px;padding:14px 18px;margin:12px 0;
+  text-align:center;overflow-x:auto;}
+.formula-row.hl{border-left:4px solid var(--accent);
+  background:linear-gradient(180deg,#f8f9ff,#eef1ff);}
+.formula-row .fcap{display:block;color:var(--muted);font-size:.82rem;
+  margin-bottom:8px;font-weight:600;}
+.note{font-size:.82rem;color:var(--muted);line-height:1.7;margin-top:10px;}
+.note b{color:var(--red);}
+footer{text-align:center;color:var(--muted);font-size:.82rem;margin-top:26px;}
+footer .dot{display:inline-block;width:4px;height:4px;border-radius:50%;
+  background:#cbd5e1;margin:0 .55rem;vertical-align:middle;}
+mjx-container{overflow-x:auto;overflow-y:hidden;max-width:100%;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="tag">波动学 · 多普勒效应</div>
+    <h1>多普勒效应 · 移动声源</h1>
+    <p>声源沿水平线匀速往复运动，前方波前压缩、后方波前拉伸</p>
+  </header>
+
+  <div class="panel scene-panel">
+    <canvas id="cv" width="960" height="520"></canvas>
+    <div class="readout">
+      <span>波速 c <b id="cVal">343</b> m/s</span>
+      <span>声源速度 vₛ <b id="vsVal">120</b> m/s</span>
+      <span>声源频率 f₀ <b id="f0Val">1000</b> Hz</span>
+      <span>前方(压缩) f′ <b id="fAhead">1538.1</b> Hz</span>
+      <span>后方(拉伸) f′ <b id="fBack">741.0</b> Hz</span>
+    </div>
+    <div class="legend-info">
+      <span><i class="sq" style="background:#4f46e5"></i>声源</span>
+      <span><span class="sq" style="background:#ef4444"></span>观察者(上方)</span>
+      <span>蓝色圆环为先后发出的波前</span>
+    </div>
+  </div>
+
+  <div class="panel controls">
+    <div class="slider-group">
+      <label>声源速度 vₛ <span id="vsSVal">120 m/s</span></label>
+      <input type="range" id="vs" min="0" max="300" step="1" value="120">
+    </div>
+    <div class="slider-group">
+      <label>波速 c <span id="cSVal">343 m/s</span></label>
+      <input type="range" id="cw" min="200" max="500" step="1" value="343">
+    </div>
+    <div class="slider-group">
+      <label>声源频率 f₀ <span id="f0SVal">1000 Hz</span></label>
+      <input type="range" id="f0" min="200" max="2000" step="10" value="1000">
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-primary" id="btnPlay">暂停</button>
+      <button class="btn btn-ghost" id="btnReset">重置</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3 class="sec">多普勒公式</h3>
+    <div class="formula-row hl">
+      $$f'=f_0\,\frac{c}{c\mp v_s}$$
+    </div>
+    <div class="formula-row">
+      <span class="fcap">朝向声源（前方，波前压缩）频率升高</span>
+      $$f_2=f_0\,\frac{c}{c-v_s}$$
+    </div>
+    <div class="formula-row">
+      <span class="fcap">远离声源（后方，波前拉伸）频率降低</span>
+      $$f_1=f_0\,\frac{c}{c+v_s}$$
+    </div>
+    <div class="note">
+      观察者固定于声源轨迹上方（<b>红色圆点</b>）。声源向右运动时，
+      右侧的波前因追赶而<b>变密（蓝环密集）</b>，左侧<b>变疏</b>；
+      当 vₛ → c 时，前方波前趋于重合（马赫前缘）。$v_s$ 为声源速率，
+      $c$ 为波速，$f_0$ 为声源频率。
+    </div>
+  </div>
+
+  <footer>多普勒效应<span class="dot"></span>移动声源
+    <span class="dot"></span>Mechanics Lab</footer>
+</div>
+<script>
+(function(){
+  "use strict";
+  var cv=document.getElementById("cv");
+  var ctx=cv.getContext("2d");
+  var W=cv.width, H=cv.height;
+  var ySrc=H*0.64, obsX=W/2, obsY=H*0.16;
+
+  /* 显示单位速度 */
+  var cDisp=240;                 /* 波前扩张的显示速度(px/s) */
+  var vs=120, c=343, f0=1000;
+  var srcV=1;                    /* 声源运动方向: +1 右 / -1 左 */
+
+  var waves=[];                  /* 波前 {x,y,r} */
+  var emitTimer=0;
+  var xSrc=W*0.22;
+  var playing=true;
+
+  /* 控件 */
+  var vsS=document.getElementById("vs"),
+      cwS=document.getElementById("cw"),
+      f0S=document.getElementById("f0"),
+      vsSVal=document.getElementById("vsSVal"),
+      cSVal=document.getElementById("cSVal"),
+      f0SVal=document.getElementById("f0SVal");
+
+  function refreshReadout(){
+    if(vs>=c){ /* 超/接近声速只做提示 */
+      document.getElementById("fAhead").textContent="→∞";
+      document.getElementById("fBack").textContent=
+        (f0*c/(c+vs)).toFixed(1);
+      return;
+    }
+    document.getElementById("fAhead").textContent=
+      (f0*c/(c-vs)).toFixed(1);
+    document.getElementById("fBack").textContent=
+      (f0*c/(c+vs)).toFixed(1);
+    document.getElementById("cVal").textContent=c;
+    document.getElementById("vsVal").textContent=vs;
+    document.getElementById("f0Val").textContent=f0;
+  }
+
+  vsS.addEventListener("input",function(){
+    vs=+vsS.value; vsSVal.textContent=vs+" m/s"; refreshReadout();
+  });
+  cwS.addEventListener("input",function(){
+    c=+cwS.value; cSVal.textContent=c+" m/s"; refreshReadout();
+  });
+  f0S.addEventListener("input",function(){
+    f0=+f0S.value; f0SVal.textContent=f0+" Hz"; refreshReadout();
+  });
+
+  document.getElementById("btnPlay").addEventListener("click",function(){
+    playing=!playing;
+    this.textContent=playing?"暂停":"播放";
+  });
+  document.getElementById("btnReset").addEventListener("click",reset);
+
+  function reset(){
+    waves=[]; emitTimer=0; xSrc=W*0.22; srcV=1; playing=true;
+    document.getElementById("btnPlay").textContent="暂停";
+    refreshReadout();
+  }
+
+  function step(dt){
+    var vsDisp=vs/343*cDisp;
+    xSrc+=srcV*vsDisp*dt;
+    if(xSrc>W+20){xSrc=W+20; srcV=-1;}
+    if(xSrc<-20){xSrc=-20; srcV=1;}
+
+    /* 按周期发出波前（显示间隔由 f0 控制） */
+    var interval=0.09*(1000/f0);
+    emitTimer+=dt;
+    while(emitTimer>=interval){
+      emitTimer-=interval;
+      waves.push({x:xSrc,y:ySrc,r:0});
+    }
+    /* 波前扩张 */
+    for(var i=0;i<waves.length;i++)waves[i].r+=cDisp*dt;
+    /* 移除过大波前 */
+    var cap=Math.hypot(W,H)+40;
+    for(i=waves.length-1;i>=0;i--){
+      if(waves[i].r>cap)waves.splice(i,1);
+    }
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle="#fafbff";
+    ctx.fillRect(0,0,W,H);
+
+    /* 网格 */
+    ctx.strokeStyle="#edf1f9";
+    ctx.lineWidth=1;
+    for(var x=0;x<=W;x+=40){
+      ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();
+    }
+    for(var y=0;y<=H;y+=40){
+      ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();
+    }
+
+    /* 声源轨迹线 */
+    ctx.strokeStyle="#d7def1";
+    ctx.setLineDash([6,6]);
+    ctx.beginPath();ctx.moveTo(0,ySrc);ctx.lineTo(W,ySrc);ctx.stroke();
+    ctx.setLineDash([]);
+
+    /* 波前 */
+    var cap=Math.hypot(W,H)+40;
+    for(var i=0;i<waves.length;i++){
+      var w=waves[i];
+      var a=Math.max(0,0.5*(1-w.r/cap));
+      ctx.strokeStyle="rgba(59,130,246,"+(a*0.8).toFixed(3)+")";
+      ctx.lineWidth=1.2;
+      ctx.beginPath();ctx.arc(w.x,w.y,w.r,0,Math.PI*2);ctx.stroke();
+    }
+
+    /* 声源 */
+    ctx.fillStyle="#4f46e5";
+    ctx.beginPath();ctx.arc(xSrc,ySrc,9,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle="#fff";ctx.lineWidth=2;ctx.stroke();
+    ctx.fillStyle="#1a2238";
+    ctx.font="bold 12px -apple-system,sans-serif";
+    ctx.textAlign="center";
+    ctx.fillText("声源",xSrc,ySrc-18);
+
+    /* 运动方向箭头 */
+    if(vs>2){
+      var ax=xSrc+srcV*22;
+      ctx.strokeStyle="#4f46e5";ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(xSrc+srcV*10,ySrc);
+      ctx.lineTo(ax,ySrc);ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(ax,ySrc);
+      ctx.lineTo(ax-srcV*7,ySrc-5);
+      ctx.lineTo(ax-srcV*7,ySrc+5);
+      ctx.closePath();ctx.fillStyle="#4f46e5";ctx.fill();
+    }
+
+    /* 观察者 */
+    ctx.fillStyle="#ef4444";
+    ctx.beginPath();ctx.arc(obsX,obsY,7,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle="#fff";ctx.lineWidth=2;ctx.stroke();
+    ctx.fillStyle="#1a2238";
+    ctx.fillText("观察者",obsX,obsY-16);
+
+    /* 区域标注 */
+    ctx.font="12px -apple-system,sans-serif";
+    ctx.fillStyle="#dc2626";
+    ctx.fillText("← 波前拉伸 (频率降低)",W-250,60);
+    ctx.fillStyle="#059669";
+    ctx.fillText("波前压缩 (频率升高) →",40,60);
+  }
+
+  /* 主循环 */
+  var last=performance.now();
+  function frame(now){
+    var dt=Math.min(0.05,(now-last)/1000);
+    last=now;
+    if(playing)step(dt);
+    draw();
+    refreshReadout();
+    requestAnimationFrame(frame);
+  }
+
+  refreshReadout();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

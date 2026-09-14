@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>尺缩钟慢 · 相对论</title>
+<style>
+:root{
+  --bg:#f5f7fc;--card:#fff;--ink:#1a2238;--ink2:#4a5568;
+  --muted:#8892a8;--accent:#4f46e5;--accent2:#7c6cf5;--line:#e6eaf3;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",
+  "Microsoft YaHei",sans-serif;background:var(--bg);
+  background-image:radial-gradient(900px 500px at 10% -10%,#e7ebff 0,transparent 60%),
+  radial-gradient(700px 500px at 95% 0,#f1e9ff 0,transparent 55%);
+  background-attachment:fixed;color:var(--ink);min-height:100vh;
+  padding:26px 16px 54px;line-height:1.65}
+.wrap{max-width:1080px;margin:0 auto}
+header{text-align:center;margin-bottom:22px}
+header h1{font-size:clamp(1.4rem,3.2vw,1.9rem);font-weight:750;
+  color:#2b2e70;letter-spacing:-.02em}
+header p{color:var(--muted);font-size:.92rem}
+header .tag{display:inline-block;font-size:.74rem;letter-spacing:.14em;
+  color:var(--accent);background:#eef1ff;border:1px solid #dde3ff;
+  padding:.24rem .85rem;border-radius:999px;font-weight:600;margin-bottom:11px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:17px 20px;box-shadow:0 1px 2px rgba(22,33,58,.03),
+  0 10px 28px -20px rgba(22,33,58,.28);margin-bottom:15px}
+.controls{display:flex;flex-wrap:wrap;gap:16px 26px;align-items:flex-end}
+.grp{display:flex;flex-direction:column;gap:5px;min-width:170px;flex:1;max-width:280px}
+.grp label{font-size:.8rem;color:var(--muted);font-weight:600;
+  display:flex;justify-content:space-between}
+.grp label span{color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;
+  border-radius:3px;background:#e4e8f3;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;
+  border-radius:50%;background:linear-gradient(140deg,var(--accent),var(--accent2));
+  box-shadow:0 2px 6px -1px rgba(79,70,229,.6);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border:none;border-radius:50%;
+  background:linear-gradient(140deg,var(--accent),var(--accent2));cursor:pointer}
+.btn-group{display:flex;gap:10px}
+.btn{border:none;padding:10px 20px;font-family:inherit;font-size:.9rem;font-weight:650;
+  border-radius:10px;cursor:pointer;transition:all .18s}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;box-shadow:0 6px 16px -6px rgba(79,70,229,.8)}
+.btn-ghost{background:#eef1ff;color:var(--accent)}
+.scene-panel{padding:0;overflow:hidden}
+canvas#cv{display:block;width:100%;height:500px}
+.results{display:flex;flex-wrap:wrap;gap:12px}
+.rbox{flex:1;min-width:120px;background:#f8faff;border:1px solid var(--line);
+  border-radius:12px;padding:11px 15px}
+.rbox .t{font-size:.72rem;color:var(--muted);letter-spacing:.06em}
+.rbox .v{font-size:1.15rem;font-weight:750;color:var(--accent);
+  font-variant-numeric:tabular-nums}
+.notes{font-size:.88rem;color:var(--ink2);line-height:1.7}
+.notes b{color:var(--ink)}.notes .f{color:var(--accent);font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="tag">相对论 · RELATIVITY</div>
+    <h1>尺缩钟慢</h1>
+    <p>拖动速度滑块，看运动参照系中的长度收缩与时间膨胀</p>
+  </header>
+
+  <div class="panel">
+    <div class="controls">
+      <div class="grp">
+        <label>飞船速度 v <span id="vEl">0.60 c</span></label>
+        <input type="range" id="v" min="0" max="0.99" step="0.01" value="0.6">
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary" id="play">运行 ▶</button>
+        <button class="btn btn-ghost" id="reset">重置 ⏪</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel scene-panel"><canvas id="cv"></canvas></div>
+
+  <div class="panel">
+    <div class="results">
+      <div class="rbox"><div class="t">洛伦兹因子 γ</div><div class="v" id="rG">—</div></div>
+      <div class="rbox"><div class="t">长度收缩 L/L₀</div><div class="v" id="rLength">—</div></div>
+      <div class="rbox"><div class="t">时间膨胀 Δt/Δt′</div><div class="v" id="rTime">—</div></div>
+      <div class="rbox"><div class="t">飞船上时钟</div><div class="v" id="rShip">—</div></div>
+    </div>
+  </div>
+
+  <div class="panel notes">
+    狭义相对论：<span class="f">γ = 1/√(1−v²/c²)</span>，
+    运动物体长度收缩 <span class="f">L = L₀/γ</span>，
+    运动参照系时间膨胀 <span class="f">Δt = γ·Δt′</span>。
+    两台"光钟"对比：静止系光在竖直往返，飞船内光走<b>斜线</b>更长，
+    故一次"滴答"更久。当 v→c，γ→∞，杆长趋近 0、时钟趋于停止。
+  </div>
+</div>
+
+<script>
+const cv=document.getElementById('cv'),cx=cv.getContext('2d');
+const W=900,H=500;cv.width=W;cv.height=H;
+const els={v:document.getElementById('v'),vEl:document.getElementById('vEl'),
+  rG:document.getElementById('rG'),rLength:document.getElementById('rLength'),
+  rTime:document.getElementById('rTime'),rShip:document.getElementById('rShip'),
+  play:document.getElementById('play')};
+let run=false,baseT=0,shipAcc=0,last=0;
+function gamma(b){return 1/Math.sqrt(1-b*b);}
+function upd(){
+  const b=+els.v.value,g=gamma(b);
+  els.vEl.textContent=b.toFixed(2)+' c';
+  els.rG.textContent=g.toFixed(2);
+  els.rLength.textContent='1 / '+g.toFixed(2);
+  els.rTime.textContent=g.toFixed(2)+' : 1';
+}
+function clock(x,y,w,seg,tilt){
+  cx.strokeStyle='#c9d4ee';cx.lineWidth=1.5;
+  cx.fillStyle='rgba(255,255,255,.85)';
+  cx.beginPath();cx.roundRect(x,y,w,70,12);cx.fill();cx.stroke();
+  cx.fillStyle='#f59e0b';cx.fillRect(x+12,y+14,10,46);
+  cx.fillRect(x+w-22,y+14,10,46);
+  // pulse from bottom mirror to top, segment position
+  const frac=(seg%1);
+  const lx=x+19+ (tilt?seg*tilt:0);
+  const ly=y+60-frac*46;
+  cx.strokeStyle='#4f46e5';cx.lineWidth=2;
+  cx.beginPath();cx.moveTo(x+19,y+60);cx.lineTo(lx,ly);cx.stroke();
+  cx.fillStyle='#4f46e5';cx.beginPath();cx.arc(lx,ly,3.5,0,6.29);cx.fill();
+}
+function draw(){
+  const b=+els.v.value,g=gamma(b);
+  const tt=performance.now()/1000;
+  cx.clearRect(0,0,W,H);
+  // header
+  cx.fillStyle='#2b2e70';cx.font='700 15px sans-serif';cx.textAlign='center';
+  cx.fillText('运动物理：两架光钟与一根杆',450,34);
+  // rest clock
+  clock(120,90,170,tt*1,'');
+  cx.fillStyle='#5b6478';cx.font='600 12px sans-serif';
+  cx.fillText('静止系光钟（一格 = 1 tick）',205,178);
+  // moving clock (time dilated): tick rate scaled by 1/g
+  const rate=tt/g;
+  clock(540,90,170,rate, run?b*0.7:0);
+  cx.fillText('飞船内光钟（光走斜线，更慢）',625,178);
+  // tie lines
+  cx.setLineDash([3,4]);cx.strokeStyle='#c5cde2';cx.lineWidth=1;
+  cx.beginPath();cx.moveTo(205,88);cx.lineTo(625,88);cx.stroke();cx.setLineDash([]);
+  // length contraction bars
+  cx.fillStyle='#2b2e70';cx.font='700 14px sans-serif';
+  cx.fillText('长度收缩对比',450,262);
+  const sy=285,Lpx=300,cx0=450;
+  cx.fillStyle='#8892a8';cx.font='12px sans-serif';
+  cx.fillText('静止杆 L₀',cx0-Lpx-46,sy-6);
+  cx.strokeStyle='#a9b3cc';cx.lineWidth=7;cx.lineCap='round';
+  cx.beginPath();cx.moveTo(cx0-Lpx/2,sy);cx.lineTo(cx0+Lpx/2,sy);cx.stroke();cx.lineCap='butt';
+  const Mpx=Lpx/g;
+  cx.strokeStyle='#4f46e5';cx.lineWidth=9;
+  cx.fillStyle='#4f46e5';
+  cx.fillText('运动杆 L = L₀/γ',cx0-Mpx/2-44,sy+52);
+  cx.lineCap='round';
+  cx.beginPath();cx.moveTo(cx0-Mpx/2,sy+34);cx.lineTo(cx0+Mpx/2,sy+34);cx.stroke();
+  cx.lineCap='butt';
+  // arrow showing frame motion
+  cx.fillStyle='#5b6478';cx.font='12px sans-serif';
+  cx.fillText('飞船以 '+b.toFixed(2)+' c 向右运动  →',450,410);
+  // ship clock readout (elapsed)
+  if(run){
+    const d=tt-(baseT?baseT:tt);
+    shipAcc+=0.016/g;
+    els.rShip.textContent=shipAcc.toFixed(1)+' s';
+  }
+  requestAnimationFrame(draw);
+}
+function resetAll(){
+  run=false;els.play.textContent='运行 ▶';
+  els.v.value=0.6;shipAcc=0;last=0;baseT=0;
+  els.rShip.textContent='—';upd();
+}
+els.v.oninput=()=>{run=false;els.play.textContent='运行 ▶';upd();};
+els.play.onclick=()=>{
+  run=!run;
+  els.play.textContent=run?'暂停 ⏸':'运行 ▶';
+  if(!run){els.rShip.textContent='—';shipAcc=0;}
+};
+document.getElementById('reset').onclick=resetAll;
+upd();draw();
+</script>
+</body>
+</html>

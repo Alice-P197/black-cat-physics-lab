@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>麦克斯韦速率分布律 · 气体动理论</title>
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#f5f7fc;--card:#fff;--ink:#1a2238;--ink2:#4a5568;--muted:#8892a8;
+  --accent:#4f46e5;--accent2:#7c6cf5;--line:#e6eaf3;
+  --green:#10b981;--amber:#f59e0b;--blue:#6366f1;
+}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",sans-serif;
+  background:var(--bg);
+  background-image:radial-gradient(900px 500px at 10% -10%,#e7ebff 0%,transparent 60%),
+                   radial-gradient(700px 500px at 95% 0%,#f1e9ff 0%,transparent 55%);
+  background-attachment:fixed;
+  color:var(--ink);line-height:1.65;padding:28px 16px 56px;min-height:100vh;
+}
+.wrap{max-width:1080px;margin:0 auto;}
+header{text-align:center;margin-bottom:26px;}
+header h1{font-size:clamp(1.5rem,3.4vw,2rem);font-weight:750;color:#2b2e70;
+  margin-bottom:6px;letter-spacing:-.02em;}
+header p{color:var(--muted);font-size:.95rem;}
+.tag{display:inline-block;font-size:.75rem;letter-spacing:.14em;color:var(--accent);
+  background:#eef1ff;border:1px solid #dde3ff;padding:.25rem .85rem;border-radius:999px;
+  font-weight:600;margin-bottom:12px;}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:18px 20px;box-shadow:0 1px 2px rgba(22,33,58,.03),
+  0 10px 28px -20px rgba(22,33,58,.28);margin-bottom:16px;}
+.controls{display:flex;flex-wrap:wrap;gap:16px 24px;align-items:flex-end;}
+.slider-group{display:flex;flex-direction:column;gap:5px;min-width:150px;
+  flex:1;max-width:220px;}
+.slider-group label{font-size:.78rem;color:var(--muted);font-weight:600;
+  display:flex;justify-content:space-between;align-items:baseline;}
+.slider-group label span{color:var(--accent);font-weight:700;
+  font-variant-numeric:tabular-nums;}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;
+  border-radius:3px;background:#e4e8f3;outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+  width:16px;height:16px;border-radius:50%;
+  background:linear-gradient(140deg,var(--accent),var(--accent2));
+  box-shadow:0 2px 6px -1px rgba(79,70,229,.6);cursor:pointer;
+  transition:transform .15s;}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15);}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border:none;
+  border-radius:50%;background:linear-gradient(140deg,var(--accent),
+  var(--accent2));box-shadow:0 2px 6px -1px rgba(79,70,229,.6);cursor:pointer;}
+.toggle{display:flex;align-items:center;gap:8px;font-size:.82rem;
+  color:var(--ink2);font-weight:600;padding-bottom:4px;}
+.toggle input{accent-color:var(--accent);width:15px;height:15px;}
+.scene-panel{padding:14px;background:linear-gradient(180deg,#fbfcff,#f6f8ff);
+  overflow:hidden;}
+canvas{display:block;width:100%;height:auto;border-radius:12px;}
+.legend-info{display:flex;gap:20px;flex-wrap:wrap;margin-top:12px;
+  padding-top:12px;border-top:1px solid var(--line);font-size:.82rem;
+  color:var(--ink2);}
+.legend-info b{color:var(--accent);font-variant-numeric:tabular-nums;}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.78rem;margin-top:10px;
+  color:var(--ink2);}
+.legend i{font-style:normal;display:inline-block;width:14px;height:3px;
+  border-radius:2px;margin-right:5px;vertical-align:middle;}
+.hint{font-size:.78rem;color:var(--muted);margin-top:10px;line-height:1.8;}
+.hint b{color:var(--accent);}
+.formula-row{background:linear-gradient(180deg,#fbfcff,#f5f7ff);
+  border:1px solid #e8ecfb;border-radius:12px;padding:14px 18px;
+  margin:12px 0;text-align:center;overflow-x:auto;}
+.formula-row.hl{border-left:4px solid var(--accent);
+  background:linear-gradient(180deg,#f8f9ff,#eef1ff);}
+h3.sec{font-size:1rem;font-weight:700;margin-bottom:12px;display:flex;
+  align-items:center;gap:8px;color:var(--ink);}
+h3.sec::before{content:"";width:4px;height:17px;border-radius:2px;
+  background:linear-gradient(180deg,var(--accent),var(--accent2));}
+footer{text-align:center;color:var(--muted);font-size:.82rem;margin-top:26px;}
+footer .dot{display:inline-block;width:4px;height:4px;border-radius:50%;
+  background:#cbd5e1;margin:0 .55rem;vertical-align:middle;}
+mjx-container{overflow-x:auto;overflow-y:hidden;max-width:100%;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="tag">热力学 · 气体动理论</div>
+    <h1>麦克斯韦速率分布律</h1>
+    <p>理想气体分子速率分布 f(v) 曲线绘制与小球碰撞演示</p>
+  </header>
+
+  <div class="panel controls">
+    <div class="slider-group">
+      <label>温度 T <span id="tVal">300</span> K</label>
+      <input type="range" id="ts" min="100" max="1500" step="10" value="300">
+    </div>
+    <div class="slider-group">
+      <label>摩尔质量 M <span id="mVal">28</span> g/mol</label>
+      <input type="range" id="ms" min="2" max="131" step="1" value="28">
+    </div>
+    <div class="toggle" style="padding-bottom:12px;">
+      <input type="checkbox" id="simCk" checked>
+      <label for="simCk">开启小球碰撞动画</label>
+    </div>
+  </div>
+
+  <div class="panel scene-panel">
+    <canvas id="cv1" width="900" height="440"></canvas>
+    <div class="legend-info">
+      <span>最概然速率 <b id="vpV">--</b></span>
+      <span>平均速率 <b id="vbV">--</b></span>
+      <span>方均根速率 <b id="vrV">--</b></span>
+      <span>比值 <b id="ratioV">--</b></span>
+    </div>
+    <div class="legend">
+      <span><i style="background:#6366f1"></i>v_p 最概然</span>
+      <span><i style="background:#10b981"></i>v̄ 平均</span>
+      <span><i style="background:#f59e0b"></i>v_rms 方均根</span>
+      <span><i style="background:#4f46e5"></i>f(v) 分布曲线</span>
+    </div>
+  </div>
+
+  <div class="panel scene-panel">
+    <canvas id="cv2" width="900" height="300"></canvas>
+    <div class="hint">
+      小球按当前速率分布做等质量弹性碰撞与壁面反弹，
+      柱图（靛蓝）叠加理论 f(v) 曲线，二者可相互印证。
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3 class="sec">速率分布函数</h3>
+    <div class="formula-row hl">
+      $$f(v)=4\pi\left(\frac{m}{2\pi k_B T}\right)^{3/2}
+        v^{2}\,e^{-\frac{m v^{2}}{2 k_B T}}$$
+    </div>
+    <div class="formula-row">
+      $$v_p=\sqrt{\frac{2k_B T}{m}},\quad
+        \bar{v}=\sqrt{\frac{8k_B T}{\pi m}},\quad
+        v_{\mathrm{rms}}=\sqrt{\frac{3k_B T}{m}}$$
+    </div>
+    <div class="formula-row">
+      $$v_{\mathrm{rms}} : \bar{v} : v_p
+        = \sqrt{3}\,:\,\sqrt{\frac{8}{\pi}}\,:\,1$$
+    </div>
+  </div>
+
+  <footer>麦克斯韦速率分布<span class="dot"></span>
+    气体分子速率分布<span class="dot"></span>Thermodynamics Lab</footer>
+</div>
+
+<script>
+"use strict";
+const kB=1.380649e-23;
+const NA=6.02214076e23;
+const PI=Math.PI;
+const cv1=document.getElementById("cv1");
+const c1=cv1.getContext("2d");
+const cv2=document.getElementById("cv2");
+const c2=cv2.getContext("2d");
+const W1=cv1.width,H1=cv1.height;
+const W2=cv2.width,H2=cv2.height;
+
+let T=300,M=28,sim=true;
+
+function params(){
+  const m=M*1e-3/NA;
+  const a=m/(2*kB*T);
+  const vp=Math.sqrt(1/a);
+  const vr=Math.sqrt(3/a);
+  return {m,a,vp,vb:Math.sqrt(8/(PI*a)),
+    vr,vmax:3.4*vr};
+}
+
+/* ---------- 分布曲线画布 ---------- */
+const PX={l:72,r:872,t:46,b:400};
+function fv(v,a){
+  return 4*Math.pow(a/PI,1.5)*v*v*Math.exp(-a*v*v);
+}
+function niceTick(max){
+  let d=Math.pow(10,Math.floor(Math.log10(max)));
+  const v=max/d;
+  const s=v<1.5?1:v<3?2:v<7?5:10;
+  return s*d;
+}
+function fmt(n){
+  if(n>=1000)return (n/1000).toFixed(1)+"k";
+  if(n>=100)return n.toFixed(0);
+  if(n>=10)return n.toFixed(1);
+  return n.toFixed(2);
+}
+function drawDist(){
+  const p=params();
+  c1.clearRect(0,0,W1,H1);
+  const xl=PX.l,xr=PX.r,yt=PX.t,yb=PX.b;
+  /* 背景 */
+  c1.fillStyle="#fafbff";
+  c1.fillRect(xl,yt,xr-xl,yb-yt);
+  /* 坐标刻度 */
+  c1.strokeStyle="#e6eaf3";
+  c1.lineWidth=1;
+  const stepV=niceTick(p.vmax);
+  c1.fillStyle="#8892a8";
+  c1.font="12px 'Times New Roman'";
+  c1.textAlign="center";
+  for(let v=0;v<=p.vmax+1e-9;v+=stepV){
+    const x=xl+(v/p.vmax)*(xr-xl);
+    c1.beginPath();c1.moveTo(x,yt);c1.lineTo(x,yb);
+    c1.stroke();
+    c1.fillText(fmt(v),x,yb+16);
+  }
+  c1.fillText("v / (m·s⁻¹)",(xl+xr)/2,yb+34);
+  /* y 归一化：以峰值 f(vp) 为满高度 */
+  const fmax=fv(p.vp,p.a);
+  function YY(f){return yb-(f/fmax)*(yb-yt)*0.92;}
+  c1.fillText("f(v)",xl-8,(yt+yb)/2);
+  /* 分布曲线 */
+  c1.strokeStyle="#4f46e5";
+  c1.lineWidth=2.2;
+  c1.beginPath();
+  const N=220;
+  let started=false;
+  for(let i=0;i<=N;i++){
+    const v=p.vmax*i/N;
+    const x=xl+(v/p.vmax)*(xr-xl);
+    const y=YY(fv(v,p.a));
+    if(!started){c1.moveTo(x,y);started=true;}
+    else c1.lineTo(x,y);
+  }
+  c1.stroke();
+  /* 三条特征速率 */
+  const marks=[
+    {v:p.vp,color:"#6366f1",txt:"v_p",side:1},
+    {v:p.vb,color:"#10b981",txt:"v̄",side:2},
+    {v:p.vr,color:"#f59e0b",txt:"v_rms",side:0}
+  ];
+  for(const mk of marks){
+    const x=xl+(mk.v/p.vmax)*(xr-xl);
+    c1.save();
+    c1.strokeStyle=mk.color;
+    c1.lineWidth=1.6;
+    c1.setLineDash([5,4]);
+    c1.beginPath();c1.moveTo(x,yt);c1.lineTo(x,yb);
+    c1.stroke();
+    c1.restore();
+    c1.fillStyle=mk.color;
+    c1.font="bold 12px 'Times New Roman'";
+    c1.textAlign="left";
+    const ang=mk.side;
+    let ty=ang===0?yt+16:ang===1?yt+36:yt+56;
+    c1.fillText(mk.txt+" = "+fmt(mk.v),x+6,ty);
+  }
+  c1.strokeStyle="#cbd5e1";
+  c1.strokeRect(xl,yt,xr-xl,yb-yt);
+  /* 读取数值 */
+  document.getElementById("vpV").textContent=fmt(p.vp)+" m/s";
+  document.getElementById("vbV").textContent=fmt(p.vb)+" m/s";
+  document.getElementById("vrV").textContent=fmt(p.vr)+" m/s";
+  document.getElementById("ratioV").textContent=
+    (p.vb/p.vp).toFixed(3)+" : "+(p.vr/p.vp).toFixed(3)+" (v̄/vp, vr/vp)";
+}
+
+/* ---------- 小球碰撞演示 ---------- */
+const BALLS=48,BALLR=5,PAD=26,PRF=2.4,NB=40;
+const balls=[];
+const hacc=new Array(NB).fill(0);
+function initBalls(){
+  balls.length=0;
+  for(let i=0;i<BALLS;i++){
+    balls.push({x:PAD+BALLR+Math.random()*(W2-2*PAD-2*BALLR),
+      y:PAD+BALLR+Math.random()*(H2-2*PAD-2*BALLR),vx:0,vy:0});
+    setSpeed(balls[i]);
+  }
+}
+function setSpeed(b){
+  const m=M*1e-3/NA;
+  const s=Math.sqrt(kB*T/m);
+  const z1=Math.sqrt(-2*Math.log(1-Math.random()))*Math.cos(2*PI*Math.random());
+  const z2=Math.sqrt(-2*Math.log(1-Math.random()))*Math.cos(2*PI*Math.random());
+  const z3=Math.sqrt(-2*Math.log(1-Math.random()))*Math.cos(2*PI*Math.random());
+  const speed=s*Math.sqrt(z1*z1+z2*z2+z3*z3);
+  const p=params();
+  const sp=speed/p.vp*PRF;
+  const th=Math.random()*2*PI;
+  b.vx=sp*Math.cos(th);b.vy=sp*Math.sin(th);
+}
+function collide(a,b,r){
+  let dx=b.x-a.x,dy=b.y-a.y;
+  const d=Math.hypot(dx,dy);
+  if(d===0||d>2*r)return;
+  const nx=dx/d,ny=dy/d;
+  const ov=(2*r-d)/2;
+  a.x-=nx*ov;a.y-=ny*ov;b.x+=nx*ov;b.y+=ny*ov;
+  const rel=(a.vx-b.vx)*nx+(a.vy-b.vy)*ny;
+  if(rel<=0)return;
+  a.vx-=rel*nx;a.vy-=rel*ny;
+  b.vx+=rel*nx;b.vy+=rel*ny;
+}
+function updateBalls(){
+  const p=params(),r=BALLR;
+  for(const b of balls){
+    b.x+=b.vx;b.y+=b.vy;
+    if(b.x<r+PAD){b.x=r+PAD;b.vx=Math.abs(b.vx);}
+    if(b.x>W2-PAD-r){b.x=W2-PAD-r;b.vx=-Math.abs(b.vx);}
+    if(b.y<r+PAD){b.y=r+PAD;b.vy=Math.abs(b.vy);}
+    if(b.y>H2-PAD-r){b.y=H2-PAD-r;b.vy=-Math.abs(b.vy);}
+    if(Math.random()<0.004)setSpeed(b);
+  }
+  for(let i=0;i<BALLS;i++)for(let j=i+1;j<BALLS;j++){
+    collide(balls[i],balls[j],r);
+  }
+  /* 底部直方图区域 */
+  c2.clearRect(0,0,W2,H2);
+  c2.fillStyle="#fbfcff";
+  c2.fillRect(PAD,PAD,W2-2*PAD,H2-2*PAD);
+  const hb=H2-PAD,top=hb-14;
+  const dv=p.vmax/NB;
+  hacc.fill(0);
+  for(const b of balls){
+    const sp=Math.hypot(b.vx,b.vy)/PRF*p.vp;
+    let k=Math.floor(sp/dv);
+    if(k>=NB)k=NB-1;
+    hacc[k]++;
+  }
+  /* 理论 f(v) 曲线 */
+  c2.strokeStyle="rgba(79,70,229,.95)";
+  c2.lineWidth=1.8;
+  c2.beginPath();
+  for(let i=0;i<=120;i++){
+    const v=p.vmax*i/120;
+    const x=PAD+(v/p.vmax)*(W2-2*PAD);
+    const y=top-(fv(v,p.a)/fv(p.vp,p.a))*(top-PAD)*0.96;
+    if(i===0)c2.moveTo(x,y);else c2.lineTo(x,y);
+  }
+  c2.stroke();
+  /* 柱图：归一化到 f 沿线的 0.8 高度 */
+  const barW=(W2-2*PAD)/NB;
+  c2.fillStyle="rgba(79,70,229,.35)";
+  for(let k=0;k<NB;k++){
+    const cnt=hacc[k];
+    if(cnt<=0)continue;
+    const hgt=cnt/Math.max(1,haccMax())*(top-PAD)*0.8;
+    const x0=PAD+k*barW;
+    c2.fillRect(x0+0.5,top-hgt,barW-1.2,hgt);
+  }
+  /* 小球 */
+  c2.fillStyle="#6366f1";
+  for(const b of balls){
+    c2.beginPath();c2.arc(b.x,b.y,BALLR,0,2*PI);c2.fill();
+  }
+  c2.strokeStyle="#cbd5e1";
+  c2.strokeRect(PAD,PAD,W2-2*PAD,H2-2*PAD);
+  c2.fillStyle="#8892a8";
+  c2.font="11px 'Times New Roman'";
+  c2.textAlign="left";
+  c2.fillText("速度直方图（靛蓝柱）与理论 f(v)（靛蓝线）",PAD,H2-6);
+}
+function haccMax(){
+  let mx=0;
+  for(const v of hacc)if(v>mx)mx=v;
+  return mx;
+}
+
+/* ---------- 主循环 ---------- */
+let last=performance.now();
+function loop(){
+  const now=performance.now();
+  const dt=Math.min(32,now-last);last=now;
+  drawDist();
+  if(sim)updateBalls();
+  requestAnimationFrame(loop);
+}
+
+/* ---------- 控件绑定 ---------- */
+const ts=document.getElementById("ts");
+const ms=document.getElementById("ms");
+const tVal=document.getElementById("tVal");
+const mVal=document.getElementById("mVal");
+const simCk=document.getElementById("simCk");
+ts.addEventListener("input",()=>{
+  T=+ts.value;tVal.textContent=T;
+  setSpeedAll();
+});
+ms.addEventListener("input",()=>{
+  M=+ms.value;mVal.textContent=M;
+  setSpeedAll();
+});
+simCk.addEventListener("change",()=>{
+  sim=simCk.checked;
+});
+function setSpeedAll(){for(const b of balls)setSpeed(b);}
+
+initBalls();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

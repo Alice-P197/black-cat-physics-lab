@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>圆周运动仿真 · 匀速 / 非匀速</title>
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$','$']],
+    displayMath: [['$$','$$']]
+  },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+
+:root{
+  --bg:#f5f7fc;
+  --card:#ffffff;
+  --ink:#1a2238;
+  --ink2:#4a5568;
+  --muted:#8892a8;
+  --accent:#4f46e5;
+  --accent2:#7c6cf5;
+  --line:#e6eaf3;
+  --green:#10b981;
+  --red:#ef4444;
+  --amber:#f59e0b;
+  --blue:#3b82f6;
+}
+
+html,body{height:100%;}
+
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--bg);
+  background-image:
+    radial-gradient(900px 500px at 10% -10%,#e7ebff 0%,transparent 60%),
+    radial-gradient(700px 500px at 95% 0%,#f1e9ff 0%,transparent 55%);
+  background-attachment:fixed;
+  color:var(--ink);
+  line-height:1.65;
+  min-height:100vh;
+  padding:28px 16px 56px;
+}
+
+.wrap{max-width:1200px;margin:0 auto;}
+
+/* ---------- Header ---------- */
+header{text-align:center;margin-bottom:26px;}
+
+header h1{
+  font-size:clamp(1.5rem,3.4vw,2.1rem);
+  font-weight:750;
+  letter-spacing:-.02em;
+  color:#2b2e70;
+  margin-bottom:6px;
+}
+
+header p{
+  color:var(--muted);
+  font-size:.95rem;
+}
+
+header .tag{
+  display:inline-block;
+  font-size:.75rem;
+  letter-spacing:.14em;
+  color:var(--accent);
+  background:#eef1ff;
+  border:1px solid #dde3ff;
+  padding:.25rem .85rem;
+  border-radius:999px;
+  font-weight:600;
+  margin-bottom:12px;
+}
+
+/* ---------- Panel ---------- */
+.panel{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:18px 20px;
+  box-shadow:0 1px 2px rgba(22,33,58,.03),
+             0 10px 28px -20px rgba(22,33,58,.28);
+  margin-bottom:16px;
+}
+
+/* ---------- Controls ---------- */
+.controls{
+  display:flex;
+  flex-wrap:wrap;
+  gap:20px 28px;
+  align-items:flex-end;
+}
+
+.mode-group{
+  display:flex;
+  gap:6px;
+  background:#f1f3fa;
+  padding:5px;
+  border-radius:11px;
+}
+
+.mode-btn{
+  border:none;
+  background:transparent;
+  padding:8px 16px;
+  font-size:.88rem;
+  font-family:inherit;
+  font-weight:600;
+  color:var(--ink2);
+  border-radius:8px;
+  cursor:pointer;
+  transition:all .18s ease;
+  white-space:nowrap;
+}
+
+.mode-btn:hover{color:var(--accent);}
+
+.mode-btn.active{
+  background:#fff;
+  color:var(--accent);
+  box-shadow:0 2px 8px -2px rgba(79,70,229,.35);
+}
+
+.slider-group{
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  min-width:170px;
+  flex:1;
+  max-width:240px;
+}
+
+.slider-group label{
+  font-size:.8rem;
+  color:var(--muted);
+  font-weight:600;
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+}
+
+.slider-group label span{
+  color:var(--accent);
+  font-weight:700;
+  font-variant-numeric:tabular-nums;
+}
+
+input[type=range]{
+  -webkit-appearance:none;
+  appearance:none;
+  width:100%;
+  height:5px;
+  border-radius:3px;
+  background:#e4e8f3;
+  outline:none;
+  cursor:pointer;
+}
+
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  appearance:none;
+  width:16px;height:16px;
+  border-radius:50%;
+  background:linear-gradient(140deg,var(--accent),var(--accent2));
+  box-shadow:0 2px 6px -1px rgba(79,70,229,.6);
+  cursor:pointer;
+  transition:transform .15s;
+}
+
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15);}
+
+input[type=range]::-moz-range-thumb{
+  width:16px;height:16px;
+  border:none;
+  border-radius:50%;
+  background:linear-gradient(140deg,var(--accent),var(--accent2));
+  box-shadow:0 2px 6px -1px rgba(79,70,229,.6);
+  cursor:pointer;
+}
+
+.btn-group{display:flex;gap:10px;}
+
+.btn{
+  border:none;
+  padding:10px 22px;
+  font-family:inherit;
+  font-size:.9rem;
+  font-weight:650;
+  border-radius:10px;
+  cursor:pointer;
+  transition:all .18s ease;
+  white-space:nowrap;
+}
+
+.btn-primary{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;
+  box-shadow:0 6px 16px -6px rgba(79,70,229,.8);
+}
+
+.btn-primary:hover{
+  transform:translateY(-1px);
+  box-shadow:0 10px 22px -8px rgba(79,70,229,.9);
+}
+
+.btn-primary:active{transform:translateY(0);}
+
+.btn-ghost{
+  background:#f1f3fa;
+  color:var(--ink2);
+}
+
+.btn-ghost:hover{background:#e8ebf5;color:var(--accent);}
+
+/* ---------- Main grid ---------- */
+.grid-main{
+  display:grid;
+  grid-template-columns:1.65fr 1fr;
+  gap:16px;
+  margin-bottom:16px;
+}
+
+@media(max-width:900px){
+  .grid-main{grid-template-columns:1fr;}
+}
+
+.scene-panel{padding:0;overflow:hidden;}
+
+#scene{
+  display:block;
+  width:100%;
+  height:480px;
+}
+
+@media(max-width:900px){
+  #scene{height:360px;}
+}
+
+/* ---------- Readout ---------- */
+.readout{
+  display:flex;
+  flex-direction:column;
+}
+
+.readout h3{
+  font-size:.85rem;
+  font-weight:700;
+  color:var(--muted);
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  margin-bottom:14px;
+}
+
+.readout-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  flex:1;
+  align-content:start;
+}
+
+.readout-item{
+  background:#f8f9fe;
+  border:1px solid #eef1f9;
+  border-radius:11px;
+  padding:11px 13px;
+}
+
+.readout-item .k{
+  font-size:.72rem;
+  color:var(--muted);
+  font-weight:600;
+  letter-spacing:.03em;
+  margin-bottom:3px;
+  display:block;
+}
+
+.readout-item .v{
+  font-size:1.15rem;
+  font-weight:700;
+  color:var(--ink);
+  font-variant-numeric:tabular-nums;
+  font-family:"SF Mono","Consolas","Menlo",monospace;
+  letter-spacing:-.01em;
+}
+
+.readout-item .v small{
+  font-size:.72rem;
+  font-weight:600;
+  color:var(--muted);
+  margin-left:2px;
+}
+
+.readout-item.accent .v{color:var(--accent);}
+.readout-item.green .v{color:var(--green);}
+.readout-item.red .v{color:var(--red);}
+.readout-item.amber .v{color:var(--amber);}
+.readout-item.blue .v{color:var(--blue);}
+
+/* ---------- Charts ---------- */
+.grid-charts{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  margin-bottom:16px;
+}
+
+@media(max-width:720px){
+  .grid-charts{grid-template-columns:1fr;}
+}
+
+.chart-panel{padding:14px 16px 8px;}
+
+.chart-panel canvas{
+  display:block;
+  width:100%;
+  height:200px;
+}
+
+/* ---------- Formulas ---------- */
+.formula-block{display:none;}
+.formula-block.active{display:block;}
+
+.formula-block h3{
+  font-size:1rem;
+  font-weight:700;
+  color:var(--ink);
+  margin-bottom:12px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.formula-block h3::before{
+  content:"";
+  width:4px;height:17px;
+  border-radius:2px;
+  background:linear-gradient(180deg,var(--accent),var(--accent2));
+}
+
+.formula-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+  gap:12px;
+}
+
+.formula-item{
+  background:linear-gradient(180deg,#fbfcff,#f5f7ff);
+  border:1px solid #e8ecfb;
+  border-radius:12px;
+  padding:12px 14px;
+  text-align:center;
+  overflow-x:auto;
+}
+
+.formula-item .label{
+  font-size:.72rem;
+  color:var(--muted);
+  font-weight:650;
+  letter-spacing:.04em;
+  margin-bottom:6px;
+  text-align:left;
+}
+
+.formula-item mjx-container{
+  margin:0 !important;
+  font-size:105% !important;
+}
+
+/* ---------- Legend ---------- */
+.legend{
+  display:flex;
+  gap:18px;
+  flex-wrap:wrap;
+  margin-top:12px;
+  padding-top:12px;
+  border-top:1px solid var(--line);
+}
+
+.legend-item{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  font-size:.82rem;
+  color:var(--ink2);
+}
+
+.legend-dot{
+  width:22px;
+  height:3px;
+  border-radius:2px;
+  flex:none;
+}
+
+/* ---------- Footer ---------- */
+footer{
+  text-align:center;
+  color:var(--muted);
+  font-size:.82rem;
+  margin-top:26px;
+}
+
+footer .dot{
+  display:inline-block;
+  width:4px;height:4px;
+  border-radius:50%;
+  background:#cbd5e1;
+  margin:0 .55rem;
+  vertical-align:middle;
+}
+
+mjx-container{overflow-x:auto;overflow-y:hidden;max-width:100%;}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="tag">运动学 · 交互仿真</div>
+    <h1>圆周运动仿真</h1>
+    <p>匀速圆周运动 · 非匀速圆周运动 —— 切向速度 / 切向加速度 / 法向加速度实时可视化</p>
+  </header>
+
+  <!-- ================= 控制面板 ================= -->
+  <div class="panel controls">
+    <div class="mode-group">
+      <button class="mode-btn active" data-mode="uniform">匀速圆周运动</button>
+      <button class="mode-btn" data-mode="nonuniform">非匀速圆周运动</button>
+    </div>
+
+    <div class="slider-group">
+      <label>半径 r <span id="r-val">2.0 m</span></label>
+      <input type="range" id="r" min="1" max="4" value="2" step="0.1">
+    </div>
+
+    <div class="slider-group">
+      <label>初始角速度 ω₀ <span id="w0-val">1.5 rad/s</span></label>
+      <input type="range" id="w0" min="0.5" max="3" value="1.5" step="0.1">
+    </div>
+
+    <div class="slider-group" id="alpha-group" style="display:none;">
+      <label>角加速度 α <span id="alpha-val">0.5 rad/s²</span></label>
+      <input type="range" id="alpha" min="0.1" max="2" value="0.5" step="0.1">
+    </div>
+
+    <div class="slider-group">
+      <label>播放速度 <span id="speed-val">1.0×</span></label>
+      <input type="range" id="speed" min="0.2" max="2" value="1" step="0.1">
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-primary" id="play-btn">▶ 播放</button>
+      <button class="btn btn-ghost" id="reset-btn">↺ 重置</button>
+    </div>
+  </div>
+
+  <!-- ================= 场景 + 数据 ================= -->
+  <div class="grid-main">
+    <div class="panel scene-panel">
+      <canvas id="scene"></canvas>
+    </div>
+
+    <div class="panel readout">
+      <h3>实时数据</h3>
+      <div class="readout-grid">
+        <div class="readout-item accent">
+          <span class="k">时间 t</span>
+          <span class="v" id="r-t">0.00<small>s</small></span>
+        </div>
+        <div class="readout-item">
+          <span class="k">角位移 θ</span>
+          <span class="v" id="r-th">0.00<small>rad</small></span>
+        </div>
+        <div class="readout-item">
+          <span class="k">角速度 ω</span>
+          <span class="v" id="r-w">0.0<small>rad/s</small></span>
+        </div>
+        <div class="readout-item green">
+          <span class="k">线速度 v</span>
+          <span class="v" id="r-v">0.0<small>m/s</small></span>
+        </div>
+        <div class="readout-item amber">
+          <span class="k">切向加速度 aₜ</span>
+          <span class="v" id="r-at">0.0<small>m/s²</small></span>
+        </div>
+        <div class="readout-item blue">
+          <span class="k">法向加速度 aₙ</span>
+          <span class="v" id="r-an">0.0<small>m/s²</small></span>
+        </div>
+      </div>
+
+      <div class="legend">
+        <div class="legend-item">
+          <span class="legend-dot" style="background:#10b981;"></span>切向速度 v
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot" style="background:#f59e0b;"></span>切向加速度 aₜ
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot" style="background:#3b82f6;"></span>法向加速度 aₙ
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 图表 ================= -->
+  <div class="grid-charts">
+    <div class="panel chart-panel">
+      <canvas id="chart-v"></canvas>
+    </div>
+    <div class="panel chart-panel">
+      <canvas id="chart-a"></canvas>
+    </div>
+  </div>
+
+  <!-- ================= 公式 ================= -->
+  <div class="panel">
+
+    <!-- 匀速 -->
+    <div class="formula-block active" data-formula="uniform">
+      <h3>匀速圆周运动公式</h3>
+      <div class="formula-grid">
+        <div class="formula-item">
+          <div class="label">角速度（恒定）</div>
+          $$\omega = \omega_0$$
+        </div>
+        <div class="formula-item">
+          <div class="label">线速度</div>
+          $$v = \omega r = \omega_0 r$$
+        </div>
+        <div class="formula-item">
+          <div class="label">切向加速度</div>
+          $$a_t = \frac{dv}{dt} = 0$$
+        </div>
+        <div class="formula-item">
+          <div class="label">法向加速度（向心）</div>
+          $$a_n = \frac{v^2}{r} = \omega^2 r$$
+        </div>
+      </div>
+    </div>
+
+    <!-- 非匀速 -->
+    <div class="formula-block" data-formula="nonuniform">
+      <h3>非匀速圆周运动公式</h3>
+      <div class="formula-grid">
+        <div class="formula-item">
+          <div class="label">角速度与角位移</div>
+          $$\omega = \omega_0 + \alpha t$$
+          $$\theta = \omega_0 t + \tfrac{1}{2}\alpha t^2$$
+        </div>
+        <div class="formula-item">
+          <div class="label">线速度</div>
+          $$v = \omega r = (\omega_0 + \alpha t)\,r$$
+        </div>
+        <div class="formula-item">
+          <div class="label">切向加速度</div>
+          $$a_t = \frac{dv}{dt} = r\alpha$$
+        </div>
+        <div class="formula-item">
+          <div class="label">法向加速度（向心）</div>
+          $$a_n = \frac{v^2}{r} = \omega^2 r$$
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    圆周运动仿真<span class="dot"></span>匀速 · 非匀速<span class="dot"></span>Kinematics Lab
+  </footer>
+
+</div>
+
+<script>
+/* ============================================================
+   状态
+   ============================================================ */
+const state = {
+  mode: 'uniform',   // uniform | nonuniform
+  r: 2,
+  w0: 1.5,
+  alpha: 0.5,
+  speed: 1,
+  t: 0,
+  playing: false,
+  lastTime: 0
+};
+
+let P = null;
+
+/* ============================================================
+   物理参数
+   ============================================================ */
+function computeParams() {
+  const { mode, r, w0, alpha } = state;
+  const a = (mode === 'uniform') ? 0 : alpha;
+
+  let tTotal;
+  if (a < 1e-6) {
+    // 匀速：1 圈
+    tTotal = 2 * Math.PI / w0;
+  } else {
+    // 非匀速：让 ω 从 ω₀ 增大到 2ω₀
+    tTotal = w0 / a;
+    tTotal = Math.max(1.5, Math.min(tTotal, 12));
+  }
+
+  const wEnd = w0 + a * tTotal;
+  const vMax = r * wEnd;
+  const aT = r * a;
+  const aNMax = r * wEnd * wEnd;
+  const aMax = Math.max(aT, aNMax, 1e-6);
+
+  return { mode, r, w0, a, tTotal, vMax, aT, aNMax, aMax };
+}
+
+function stateAt(t) {
+  const p = P;
+  const w = p.w0 + p.a * t;
+  const theta = p.w0 * t + 0.5 * p.a * t * t;
+  const v = p.r * w;
+  const aT = p.r * p.a;
+  const aN = p.r * w * w;
+  return { w, theta, v, aT, aN };
+}
+
+/* ============================================================
+   工具
+   ============================================================ */
+function niceStep(range, count) {
+  const raw = range / count;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const norm = raw / mag;
+  let m;
+  if (norm <= 1) m = 1;
+  else if (norm <= 2) m = 2;
+  else if (norm <= 5) m = 5;
+  else m = 10;
+  return m * mag;
+}
+
+function fitCanvas(canvas) {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const W = Math.max(1, Math.round(rect.width));
+  const H = Math.max(1, Math.round(rect.height));
+  if (canvas.width !== W * dpr || canvas.height !== H * dpr) {
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+  }
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx, W, H };
+}
+
+function drawArrow(ctx, x1, y1, x2, y2, color, width) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const len = Math.hypot(dx, dy);
+  if (len < 1.5) return;
+
+  const ux = dx / len, uy = dy / len;
+  const headLen = Math.min(12, len * 0.42);
+  const headW = headLen * 0.5;
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2 - ux * headLen * 0.85, y2 - uy * headLen * 0.85);
+  ctx.stroke();
+
+  const px = -uy, py = ux;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - ux * headLen + px * headW, y2 - uy * headLen + py * headW);
+  ctx.lineTo(x2 - ux * headLen - px * headW, y2 - uy * headLen - py * headW);
+  ctx.closePath();
+  ctx.fill();
+}
+
+/* ============================================================
+   场景绘制
+   ============================================================ */
+const sceneCanvas = document.getElementById('scene');
+
+function drawScene() {
+  const { ctx, W, H } = fitCanvas(sceneCanvas);
+  ctx.clearRect(0, 0, W, H);
+
+  const cx = W / 2;
+  const cy = H / 2;
+
+  const maxArrowPx = 82;
+  const scale = (Math.min(W, H) / 2 - maxArrowPx - 24) / P.r;
+
+  /* ---- 背景 ---- */
+  const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.7);
+  bg.addColorStop(0, '#fbfcff');
+  bg.addColorStop(1, '#ffffff');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  /* ---- 淡网格 ---- */
+  ctx.strokeStyle = '#f5f7fc';
+  ctx.lineWidth = 1;
+  for (let x = cx % 40; x < W; x += 40) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (let y = cy % 40; y < H; y += 40) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+
+  /* ---- 圆形轨道 ---- */
+  ctx.strokeStyle = '#dbe2ef';
+  ctx.lineWidth = 1.8;
+  ctx.setLineDash([7, 7]);
+  ctx.beginPath();
+  ctx.arc(cx, cy, P.r * scale, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  /* ---- 圆心 ---- */
+  ctx.fillStyle = '#8892a8';
+  ctx.beginPath();
+  ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.font = '13px "Times New Roman", Georgia, serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('O', cx + 9, cy + 5);
+
+  /* ---- 已走过的轨迹 ---- */
+  if (state.t > 0.002) {
+    ctx.strokeStyle = 'rgba(79, 70, 229, 0.5)';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    const N = 120;
+    for (let i = 0; i <= N; i++) {
+      const t = (i / N) * state.t;
+      const s = stateAt(t);
+      const sx = cx + P.r * Math.cos(s.theta) * scale;
+      const sy = cy - P.r * Math.sin(s.theta) * scale;
+      if (i === 0) ctx.moveTo(sx, sy);
+      else ctx.lineTo(sx, sy);
+    }
+    ctx.stroke();
+  }
+
+  /* ---- 当前状态 ---- */
+  const st = stateAt(state.t);
+  const th = st.theta;
+  const px = cx + P.r * Math.cos(th) * scale;
+  const py = cy - P.r * Math.sin(th) * scale;
+
+  /* ---- 半径连线 ---- */
+  ctx.strokeStyle = 'rgba(79, 70, 229, 0.28)';
+  ctx.lineWidth = 1.3;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(px, py);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  /* ---- 屏幕坐标系中的单位向量 ---- */
+  // 切向（沿速度方向）
+  const tHatX = -Math.sin(th);
+  const tHatY = -Math.cos(th);
+  // 法向（指向圆心）
+  const nHatX = -Math.cos(th);
+  const nHatY = Math.sin(th);
+
+  /* ---- 速度矢量 ---- */
+  const vLen = (st.v / P.vMax) * maxArrowPx;
+  if (vLen > 3) {
+    drawArrow(ctx, px, py,
+              px + tHatX * vLen,
+              py + tHatY * vLen,
+              '#10b981', 3.2);
+
+    ctx.fillStyle = '#059669';
+    ctx.font = 'bold 13px "Times New Roman", Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('v',
+                 px + tHatX * (vLen + 14),
+                 py + tHatY * (vLen + 14));
+  }
+
+  /* ---- 切向加速度矢量 ---- */
+  const aTLen = (st.aT / P.aMax) * maxArrowPx * 0.92;
+  if (aTLen > 3) {
+    drawArrow(ctx, px, py,
+              px + tHatX * aTLen,
+              py + tHatY * aTLen,
+              '#f59e0b', 2.8);
+
+    ctx.fillStyle = '#d97706';
+    ctx.font = 'bold 13px "Times New Roman", Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('aₜ',
+                 px + tHatX * (aTLen + 15) + nHatX * 12,
+                 py + tHatY * (aTLen + 15) + nHatY * 12);
+  }
+
+  /* ---- 法向加速度矢量 ---- */
+  const aNLen = (st.aN / P.aMax) * maxArrowPx * 0.92;
+  if (aNLen > 3) {
+    drawArrow(ctx, px, py,
+              px + nHatX * aNLen,
+              py + nHatY * aNLen,
+              '#3b82f6', 2.8);
+
+    ctx.fillStyle = '#2563eb';
+    ctx.font = 'bold 13px "Times New Roman", Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('aₙ',
+                 px + nHatX * (aNLen + 15) + tHatX * 12,
+                 py + nHatY * (aNLen + 15) + tHatY * 12);
+  }
+
+  /* ---- 小球 ---- */
+  ctx.shadowColor = 'rgba(239, 68, 68, 0.55)';
+  ctx.shadowBlur = 16;
+  ctx.fillStyle = '#ef4444';
+  ctx.beginPath();
+  ctx.arc(px, py, 9, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+  ctx.beginPath();
+  ctx.arc(px - 3, py - 3.5, 3, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+/* ============================================================
+   v - t 图
+   ============================================================ */
+const chartV = document.getElementById('chart-v');
+
+function drawVChart() {
+  const { ctx, W, H } = fitCanvas(chartV);
+  ctx.clearRect(0, 0, W, H);
+
+  const padL = 52, padR = 18, padT = 30, padB = 34;
+  const pw = W - padL - padR;
+  const ph = H - padT - padB;
+
+  const xMax = P.tTotal;
+  const yMax = P.vMax * 1.15 || 1;
+
+  const X = t => padL + (t / xMax) * pw;
+  const Y = v => padT + ph - (v / yMax) * ph;
+
+  /* 网格 */
+  ctx.strokeStyle = '#eef1f8';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = padT + (i / 4) * ph;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + pw, y); ctx.stroke();
+  }
+  for (let i = 0; i <= 4; i++) {
+    const x = padL + (i / 4) * pw;
+    ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, padT + ph); ctx.stroke();
+  }
+
+  /* 坐标轴 */
+  ctx.strokeStyle = '#cbd5e1';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(padL, padT);
+  ctx.lineTo(padL, padT + ph);
+  ctx.lineTo(padL + pw, padT + ph);
+  ctx.stroke();
+
+  /* v(t) 曲线 */
+  ctx.strokeStyle = '#10b981';
+  ctx.lineWidth = 2.2;
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  const N = 120;
+  for (let i = 0; i <= N; i++) {
+    const t = (i / N) * xMax;
+    const s = stateAt(t);
+    const sx = X(t), sy = Y(s.v);
+    if (i === 0) ctx.moveTo(sx, sy);
+    else ctx.lineTo(sx, sy);
+  }
+  ctx.stroke();
+
+  /* 当前点 */
+  const st = stateAt(state.t);
+  const cx2 = X(state.t), cy2 = Y(st.v);
+
+  ctx.save();
+  ctx.setLineDash([4, 4]);
+  ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(cx2, cy2); ctx.lineTo(cx2, padT + ph); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx2, cy2); ctx.lineTo(padL, cy2); ctx.stroke();
+  ctx.restore();
+
+  ctx.fillStyle = '#ef4444';
+  ctx.beginPath(); ctx.arc(cx2, cy2, 4.5, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(cx2, cy2, 4.5, 0, Math.PI * 2); ctx.stroke();
+
+  /* 标题与标签 */
+  ctx.fillStyle = '#4a5568';
+  ctx.font = 'bold 12.5px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText('线速度 v — t', padL, padT - 11);
+
+  ctx.fillStyle = '#a0aac0';
+  ctx.font = '11px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('t / s', padL + pw / 2, padT + ph + 8);
+
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(yMax.toFixed(1), padL - 6, padT + 4);
+  ctx.fillText((yMax / 2).toFixed(1), padL - 6, padT + ph / 2);
+  ctx.fillText('0', padL - 6, padT + ph);
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('0', padL, padT + ph + 6);
+  ctx.textAlign = 'right';
+  ctx.fillText(xMax.toFixed(1), padL + pw, padT + ph + 6);
+}
+
+/* ============================================================
+   a - t 图
+   ============================================================ */
+const chartA = document.getElementById('chart-a');
+
+function drawAChart() {
+  const { ctx, W, H } = fitCanvas(chartA);
+  ctx.clearRect(0, 0, W, H);
+
+  const padL = 52, padR = 18, padT = 30, padB = 34;
+  const pw = W - padL - padR;
+  const ph = H - padT - padB;
+
+  const xMax = P.tTotal;
+  const yMax = P.aMax * 1.15 || 1;
+
+  const X = t => padL + (t / xMax) * pw;
+  const Y = a => padT + ph - (a / yMax) * ph;
+
+  /* 网格 */
+  ctx.strokeStyle = '#eef1f8';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = padT + (i / 4) * ph;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + pw, y); ctx.stroke();
+  }
+  for (let i = 0; i <= 4; i++) {
+    const x = padL + (i / 4) * pw;
+    ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, padT + ph); ctx.stroke();
+  }
+
+  /* 坐标轴 */
+  ctx.strokeStyle = '#cbd5e1';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(padL, padT);
+  ctx.lineTo(padL, padT + ph);
+  ctx.lineTo(padL + pw, padT + ph);
+  ctx.stroke();
+
+  /* aₜ 曲线（橙色） */
+  ctx.strokeStyle = '#f59e0b';
+  ctx.lineWidth = 2.2;
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  const N = 120;
+  for (let i = 0; i <= N; i++) {
+    const t = (i / N) * xMax;
+    const s = stateAt(t);
+    const sx = X(t), sy = Y(s.aT);
+    if (i === 0) ctx.moveTo(sx, sy);
+    else ctx.lineTo(sx, sy);
+  }
+  ctx.stroke();
+
+  /* aₙ 曲线（蓝色，二次） */
+  ctx.strokeStyle = '#3b82f6';
+  ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  for (let i = 0; i <= N; i++) {
+    const t = (i / N) * xMax;
+    const s = stateAt(t);
+    const sx = X(t), sy = Y(s.aN);
+    if (i === 0) ctx.moveTo(sx, sy);
+    else ctx.lineTo(sx, sy);
+  }
+  ctx.stroke();
+
+  /* 图例 */
+  ctx.font = 'bold 11.5px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  const ly = padT + 14;
+
+  ctx.strokeStyle = '#f59e0b';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(padL + pw - 108, ly); ctx.lineTo(padL + pw - 90, ly); ctx.stroke();
+  ctx.fillStyle = '#d97706';
+  ctx.fillText('aₜ', padL + pw - 84, ly);
+
+  ctx.strokeStyle = '#3b82f6';
+  ctx.beginPath(); ctx.moveTo(padL + pw - 50, ly); ctx.lineTo(padL + pw - 32, ly); ctx.stroke();
+  ctx.fillStyle = '#2563eb';
+  ctx.fillText('aₙ', padL + pw - 26, ly);
+
+  /* 当前点 */
+  const st = stateAt(state.t);
+  const cxa = X(state.t);
+
+  // aₜ 点
+  const cyT = Y(st.aT);
+  // aₙ 点
+  const cyN = Y(st.aN);
+
+  ctx.save();
+  ctx.setLineDash([4, 4]);
+  ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(cxa, padT); ctx.lineTo(cxa, padT + ph); ctx.stroke();
+  ctx.restore();
+
+  ctx.fillStyle = '#f59e0b';
+  ctx.beginPath(); ctx.arc(cxa, cyT, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(cxa, cyT, 4, 0, Math.PI * 2); ctx.stroke();
+
+  ctx.fillStyle = '#3b82f6';
+  ctx.beginPath(); ctx.arc(cxa, cyN, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(cxa, cyN, 4, 0, Math.PI * 2); ctx.stroke();
+
+  /* 标题与标签 */
+  ctx.fillStyle = '#4a5568';
+  ctx.font = 'bold 12.5px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText('加速度 a — t', padL, padT - 11);
+
+  ctx.fillStyle = '#a0aac0';
+  ctx.font = '11px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('t / s', padL + pw / 2, padT + ph + 8);
+
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(yMax.toFixed(1), padL - 6, padT + 4);
+  ctx.fillText((yMax / 2).toFixed(1), padL - 6, padT + ph / 2);
+  ctx.fillText('0', padL - 6, padT + ph);
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('0', padL, padT + ph + 6);
+  ctx.textAlign = 'right';
+  ctx.fillText(xMax.toFixed(1), padL + pw, padT + ph + 6);
+}
+
+/* ============================================================
+   数据面板
+   ============================================================ */
+const rEl = {
+  t:  document.getElementById('r-t'),
+  th: document.getElementById('r-th'),
+  w:  document.getElementById('r-w'),
+  v:  document.getElementById('r-v'),
+  at: document.getElementById('r-at'),
+  an: document.getElementById('r-an')
+};
+
+function updateReadout() {
+  const st = stateAt(state.t);
+  const thMod = ((st.theta % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+
+  rEl.t.innerHTML  = state.t.toFixed(2) + '<small>s</small>';
+  rEl.th.innerHTML = thMod.toFixed(2) + '<small>rad</small>';
+  rEl.w.innerHTML  = st.w.toFixed(2) + '<small>rad/s</small>';
+  rEl.v.innerHTML  = st.v.toFixed(2) + '<small>m/s</small>';
+  rEl.at.innerHTML = st.aT.toFixed(2) + '<small>m/s²</small>';
+  rEl.an.innerHTML = st.aN.toFixed(2) + '<small>m/s²</small>';
+}
+
+/* ============================================================
+   主循环
+   ============================================================ */
+function tick(now) {
+  if (!state.lastTime) state.lastTime = now;
+  const dt = Math.min((now - state.lastTime) / 1000, 0.05);
+  state.lastTime = now;
+
+  if (state.playing) {
+    state.t += dt * state.speed;
+    if (state.t >= P.tTotal) {
+      state.t = P.tTotal;
+      state.playing = false;
+      updatePlayButton();
+    }
+  }
+
+  drawScene();
+  drawVChart();
+  drawAChart();
+  updateReadout();
+
+  requestAnimationFrame(tick);
+}
+
+/* ============================================================
+   UI
+   ============================================================ */
+const playBtn = document.getElementById('play-btn');
+const resetBtn = document.getElementById('reset-btn');
+
+function updatePlayButton() {
+  if (state.playing) {
+    playBtn.textContent = '⏸ 暂停';
+  } else if (state.t >= P.tTotal - 1e-6) {
+    playBtn.textContent = '↻ 重播';
+  } else {
+    playBtn.textContent = '▶ 播放';
+  }
+}
+
+function resetSim() {
+  state.t = 0;
+  state.playing = false;
+  state.lastTime = 0;
+  updatePlayButton();
+}
+
+playBtn.addEventListener('click', () => {
+  if (state.t >= P.tTotal - 1e-6) state.t = 0;
+  state.playing = !state.playing;
+  state.lastTime = 0;
+  updatePlayButton();
+});
+
+resetBtn.addEventListener('click', resetSim);
+
+/* ---- 模式切换 ---- */
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    state.mode = btn.dataset.mode;
+
+    document.getElementById('alpha-group').style.display =
+      state.mode === 'nonuniform' ? 'flex' : 'none';
+
+    document.querySelectorAll('.formula-block').forEach(fb => {
+      fb.classList.toggle('active', fb.dataset.formula === state.mode);
+    });
+
+    P = computeParams();
+    resetSim();
+  });
+});
+
+/* ---- 滑块 ---- */
+function bindSlider(id, key, fmt) {
+  const el = document.getElementById(id);
+  const out = document.getElementById(id + '-val');
+  el.addEventListener('input', () => {
+    state[key] = parseFloat(el.value);
+    out.textContent = fmt(state[key]);
+    P = computeParams();
+    resetSim();
+  });
+}
+
+bindSlider('r',     'r',     v => v.toFixed(1) + ' m');
+bindSlider('w0',    'w0',    v => v.toFixed(1) + ' rad/s');
+bindSlider('alpha', 'alpha', v => v.toFixed(1) + ' rad/s²');
+bindSlider('speed', 'speed', v => v.toFixed(1) + '×');
+
+/* ---- 窗口大小变化 ---- */
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    drawScene();
+    drawVChart();
+    drawAChart();
+  }, 120);
+});
+
+/* ============================================================
+   启动
+   ============================================================ */
+P = computeParams();
+updatePlayButton();
+requestAnimationFrame(tick);
+</script>
+
+</body>
+</html>

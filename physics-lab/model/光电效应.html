@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>光电效应 · 探索与演示</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f7fc;--card:#fff;--ink:#1a2238;--ink2:#4a5568;
+  --muted:#8892a8;--accent:#4f46e5;--accent2:#7c6cf5;--line:#e6eaf3;
+  --green:#059669;--red:#e0533d;--amber:#d97706;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",
+  "Microsoft YaHei",sans-serif;background:var(--bg);
+  background-image:radial-gradient(900px 500px at 10% -10%,#e7ebff 0,transparent 60%),
+  radial-gradient(700px 500px at 95% 0,#f1e9ff 0,transparent 55%);
+  background-attachment:fixed;color:var(--ink);min-height:100vh;
+  padding:26px 16px 56px;line-height:1.65}
+.wrap{max-width:1200px;margin:0 auto}
+header{text-align:center;margin-bottom:18px}
+header .tag{display:inline-block;font-size:.74rem;letter-spacing:.14em;
+  color:var(--accent);background:#eef1ff;border:1px solid #dde3ff;
+  padding:.25rem .85rem;border-radius:999px;font-weight:600;margin-bottom:10px}
+header h1{font-size:clamp(1.5rem,3.4vw,2.1rem);font-weight:750;
+  color:#2b2e70;letter-spacing:-.02em}
+header p{color:var(--muted);font-size:.95rem}
+.modebar{display:flex;gap:10px;justify-content:center;margin-bottom:18px;flex-wrap:wrap}
+.mode-btn{border:1.5px solid var(--line);background:#fff;color:var(--ink2);
+  padding:12px 30px;border-radius:14px;font-size:1rem;font-weight:700;
+  cursor:pointer;transition:.2s;font-family:inherit}
+.mode-btn small{display:block;font-weight:600;font-size:.76rem;color:var(--muted);margin-top:2px}
+.mode-btn.on{background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;border-color:transparent;box-shadow:0 10px 24px -8px rgba(79,70,229,.7)}
+.mode-btn.on small{color:#e7eaff}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:16px 18px;box-shadow:0 1px 2px rgba(22,33,58,.03),
+  0 10px 28px -20px rgba(22,33,58,.28);margin-bottom:15px}
+.h-label{font-size:.78rem;font-weight:750;color:var(--accent);
+  letter-spacing:.08em;margin-bottom:10px}
+canvas{display:block;width:100%}
+canvas.circ{height:480px}
+canvas.chart{width:640px;max-width:100%;height:auto;margin:0 auto;cursor:crosshair}
+.hide{display:none}
+.stepper{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.stp{flex:1;min-width:150px;background:#f2f4fb;border:1.5px solid var(--line);
+  border-radius:12px;padding:10px 12px;font-size:.86rem;color:var(--muted);transition:.2s}
+.stp b{display:block;font-size:.78rem;letter-spacing:.03em;margin-bottom:3px}
+.stp.done{border-color:var(--green);background:#ecfbf4}
+.stp.done b{color:var(--green)}
+.stp.on{border-color:var(--accent);background:#eef1ff}
+.stp.on b{color:var(--accent)}
+.stp .ico{float:right;font-weight:800}
+.tabs{display:inline-flex;gap:6px;background:#f1f3fa;padding:4px;border-radius:11px;
+  margin-bottom:14px}
+.tab-btn{border:none;background:transparent;padding:8px 22px;border-radius:8px;
+  font-family:inherit;font-size:.9rem;font-weight:650;color:var(--ink2);cursor:pointer}
+.tab-btn.on{background:#fff;color:var(--accent);box-shadow:0 2px 8px rgba(22,33,58,.12)}
+.controls{display:flex;flex-wrap:wrap;gap:16px 20px;align-items:flex-end}
+.grp{display:flex;flex-direction:column;gap:5px;min-width:140px;flex:1;max-width:230px}
+.grp label{font-size:.8rem;color:var(--muted);font-weight:600;
+  display:flex;justify-content:space-between}
+.grp label span{color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums}
+.grp select{padding:8px 10px;border:1px solid var(--line);border-radius:10px;
+  font-family:inherit;font-size:.9rem;color:var(--ink2);background:#fff;width:100%}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;
+  border-radius:3px;background:#e4e8f3;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;
+  border-radius:50%;background:linear-gradient(140deg,var(--accent),var(--accent2));
+  box-shadow:0 2px 6px -1px rgba(79,70,229,.6);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:17px;height:17px;border:none;border-radius:50%;
+  background:linear-gradient(140deg,var(--accent),var(--accent2));cursor:pointer}
+.volrow{margin:14px 0 2px}
+.volrow label{font-size:.8rem;color:var(--muted);font-weight:600;display:flex;
+  justify-content:space-between}
+.volrow label b{color:var(--accent)}
+.vscale{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted)}
+.btn{border:none;padding:10px 18px;font-family:inherit;font-size:.9rem;
+  font-weight:650;border-radius:10px;cursor:pointer;transition:all .15s}
+.btn-add{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;
+  box-shadow:0 6px 16px -6px rgba(79,70,229,.8)}
+.btn-add2{background:#059669;color:#fff;box-shadow:0 6px 16px -6px rgba(5,150,105,.7)}
+.btn-ghost{background:#f1f3fa;color:var(--ink2)}
+.btn:hover{transform:translateY(-1px)}
+.btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+.scanrow{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;
+  background:#f4f6ff;border:1px solid #dde3ff;border-radius:11px;
+  padding:10px 14px;margin-top:12px;font-size:.82rem}
+.scanrow .sr{color:var(--accent);font-weight:700}
+.scanrow label{display:inline-flex;align-items:center;gap:6px;color:var(--ink2);font-weight:600}
+.scanrow input[type=number]{width:74px;padding:5px 8px;border:1px solid var(--line);
+  border-radius:8px;font-family:inherit;font-size:.86rem;color:var(--accent);
+  font-variant-numeric:tabular-nums;background:#fff}
+.guide{margin-top:12px;background:#f8faff;border:1px solid var(--line);
+  border-radius:12px;padding:11px 14px;font-size:.88rem;color:var(--ink2);line-height:1.7}
+.guide b{color:var(--accent)}
+.meter{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+.mbox{flex:1;min-width:150px;background:#fff;border:1.5px solid var(--line);
+  border-radius:12px;padding:10px 14px;text-align:center}
+.mbox .t{font-size:.72rem;color:var(--muted)}
+.mbox .v{font-size:1.3rem;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums}
+.mbox.cur .v{color:var(--green)}
+.tbl{background:#fafbff;border:1px solid var(--line);border-radius:12px;
+  overflow:auto;height:280px}
+.tbl h4{font-size:.82rem;color:var(--accent);padding:10px 14px 6px;
+  position:sticky;top:0;background:#fafbff;z-index:1}
+table{width:100%;border-collapse:collapse;font-size:.84rem}
+th,td{padding:7px 12px;text-align:center;border-bottom:1px solid var(--line);
+  font-variant-numeric:tabular-nums}
+th{color:var(--muted);font-weight:650;background:#f4f6fc;
+  position:sticky;top:30px;z-index:1}
+td{color:var(--ink2)}
+.empty{padding:16px;text-align:center;color:var(--muted);font-size:.84rem}
+.plot-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:stretch}
+.plot-half{display:flex;flex-direction:column;gap:10px;min-height:0}
+.plot-half>.panel{margin:0;flex:1}
+.fcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.fcard{background:#f8faff;border:1px solid var(--line);border-radius:13px;padding:13px 15px}
+.fcard .ft{font-size:.8rem;font-weight:750;color:var(--accent);letter-spacing:.05em;margin-bottom:7px}
+.fcard .fm{font-size:1.02rem;font-weight:750;color:var(--ink);
+  font-family:Georgia,"Times New Roman",serif;margin-bottom:6px}
+.fcard .fm .hl{color:var(--green)}
+.fcard .fd{font-size:.83rem;color:var(--ink2)}
+.fcard .fd b{color:var(--ink)}
+.fcard .box{border:1.6px solid var(--accent);border-radius:9px;padding:6px 10px;margin-top:8px;
+  font-size:1.08rem;font-family:Georgia,"Times New Roman",serif;font-weight:750;
+  color:var(--accent);text-align:center}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.chip{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);
+  background:#fafbff;padding:6px 12px;border-radius:999px;font-size:.82rem;
+  color:var(--ink2);cursor:pointer;transition:.15s}
+.chip .dot{width:11px;height:11px;border-radius:50%;flex:none}
+.chip.on{border-color:var(--accent);background:#eef1ff}
+.chip .x{font-weight:800;color:var(--muted);padding:0 3px}
+.chip .x:hover{color:var(--red)}
+.result-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));
+  gap:10px;margin-top:12px}
+.rbox{background:#f8faff;border:1px solid var(--line);border-radius:12px;padding:9px 12px}
+.rbox .t{font-size:.68rem;color:var(--muted);letter-spacing:.04em}
+.rbox .v{font-size:1.02rem;font-weight:750;color:var(--accent);font-variant-numeric:tabular-nums}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.82rem;color:var(--ink2);margin-bottom:6px}
+.legend i{display:inline-block;width:18px;height:9px;border-radius:2px;
+  vertical-align:-1px;margin-right:5px}
+.note{font-size:.83rem;color:var(--muted);margin-top:8px;line-height:1.7}
+.note b{color:var(--ink2)}
+@media(max-width:880px){.plot-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="tag">量子物理 · QUANTUM</div>
+    <h1>光电效应</h1>
+    <p>探索模式引导测遏止电压/饱和电流并绘图；演示模式直接对比材料·波长·光强</p>
+  </header>
+
+  <div class="modebar">
+    <button class="mode-btn on" id="modeExplore">🔬 探索模式
+      <small>跟着步骤做实验，测遏止电压并绘图</small></button>
+    <button class="mode-btn" id="modeDemo">📊 演示模式
+      <small>多曲线对比 + 动画 + 公式</small></button>
+  </div>
+
+  <!-- ========== 探索模式 ========== -->
+  <div id="explore">
+    <div class="panel">
+      <div class="h-label">◆ 实验步骤（引导）</div>
+      <div class="stepper">
+        <div class="stp on" id="st1"><span class="ico">1</span><b>选择参数</b>阴极材料/波长/光强</div>
+        <div class="stp" id="st2"><span class="ico">2</span><b>照射与调压</b>加反向电压测遏止电压</div>
+        <div class="stp" id="st3"><span class="ico">3</span><b>换波长再测</b>多组 U_c</div>
+        <div class="stp" id="st4"><span class="ico">4</span><b>查看绘图</b>数据表 + 特性图</div>
+      </div>
+      <div class="tabs">
+        <button class="tab-btn on" id="expTabBench">实验台</button>
+        <button class="tab-btn" id="expTabPlot">绘图</button>
+      </div>
+
+      <div id="expBench">
+        <canvas id="eTube" class="circ"></canvas>
+
+        <div class="controls" style="margin-top:8px">
+          <div class="grp"><label>阴极材料（逸出功 W₀）</label>
+            <select id="metalE">
+              <option value="2.10">铯 Cs · 2.10 eV</option>
+              <option value="2.30">钾 K · 2.30 eV</option>
+              <option value="2.80">钙 Ca · 2.80 eV</option>
+              <option value="4.07">镉 Cd · 4.07 eV</option>
+              <option value="4.30">锌 Zn · 4.30 eV</option>
+              <option value="5.10">钨 W · 5.10 eV</option>
+            </select></div>
+          <div class="grp"><label>波长 λ <span id="wlElE">532 nm</span></label>
+            <input type="range" id="wlE" min="200" max="800" step="1" value="532"></div>
+          <div class="grp"><label>光功率 P <span id="intElE">1.0 mW</span></label>
+            <input type="range" id="intE" min="0.2" max="8" step="0.1" value="1"></div>
+        </div>
+
+        <div class="volrow">
+          <label>施加电压 U（左=反向减速，右=正向加速）<b id="usl">0.00 V</b></label>
+          <input type="range" id="uSlider" min="-4" max="4" step="0.01" value="0">
+          <div class="vscale"><span>−4 V（反向）</span><span>0（零压）</span><span>+4 V（正向）</span></div>
+        </div>
+
+        <div class="scanrow">
+          <span class="sr">⚡ 自动采样（编程式扫描）：</span>
+          <label>起始 U <input type="number" id="sFrom" step="0.1" value="-2.5"></label>
+          <label>终止 U <input type="number" id="sTo" step="0.1" value="3"></label>
+          <label>步长 <input type="number" id="sStep" step="0.05" value="0.1"></label>
+          <span style="color:var(--muted)">从反向自动扫到正向，逐点采集 i；反向段电流归零处自动记遏止电压。</span>
+        </div>
+
+        <div class="btns">
+          <button class="btn btn-add" id="startBtn">▶ 开始照射</button>
+          <button class="btn btn-add" id="autoBtn">⚡ 自动采样</button>
+          <button class="btn btn-add2" id="recBtn">✓ 记录遏止电压</button>
+          <button class="btn btn-add2" id="samBtn">❊ 采样 I–U 点</button>
+          <button class="btn btn-ghost" id="plotBtn">查看绘图 →</button>
+        </div>
+
+        <div class="meter">
+          <div class="mbox cur"><div class="t">光电流 i（电流表 A）</div>
+            <div class="v" id="mI">0 µA</div></div>
+          <div class="mbox"><div class="t">光电管端电压 U（电压表 V）</div>
+            <div class="v" id="mU">0 V</div></div>
+          <div class="mbox"><div class="t">已记录遏止电压组数</div>
+            <div class="v" id="mN">0</div></div>
+        </div>
+
+        <div class="guide" id="guideBox"></div>
+      </div>
+
+      <div id="expPlot" class="hide">
+        <div class="plot-grid">
+          <div class="plot-half">
+            <div class="panel">
+              <div class="h-label">◆ (a) 遏止电压 U_c – 频率 ν</div>
+              <canvas id="eUc" class="chart"></canvas>
+              <div class="note" id="eUcNote">记录至少 2 组后拟合直线，斜率≈h/e。</div>
+            </div>
+          </div>
+          <div class="plot-half">
+            <div class="panel">
+              <div class="h-label">◆ (b) 光电流 i – 电压 U（负半轴反向，标饱和电流）</div>
+              <canvas id="eIV" class="chart"></canvas>
+              <div class="note" id="eIVNote">正压加到足够大电流趋于饱和。</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="plot-grid">
+          <div class="plot-half">
+            <div class="tbl"><h4>遏止电压记录（同一材料，换波长）</h4>
+              <table><thead><tr><th>#</th><th>λ/nm</th><th>ν/10¹⁴Hz</th><th>U_c/V</th></tr></thead>
+              <tbody id="tuc"></tbody></table></div>
+          </div>
+          <div class="plot-half">
+            <div class="tbl"><h4>I–U 采样点（调压采集）</h4>
+              <table><thead><tr><th>#</th><th>U/V</th><th>i/µA</th></tr></thead>
+              <tbody id="tiu"></tbody></table></div>
+          </div>
+        </div>
+
+        <div class="btns" style="justify-content:center;margin-top:4px">
+          <button class="btn btn-add2" id="expCsv">⬇ 导出 CSV</button>
+          <button class="btn btn-ghost" id="expClear">清空数据</button>
+          <button class="btn btn-ghost" id="expBack">← 回实验台</button>
+        </div>
+
+        <div class="panel">
+          <div class="h-label">◆ 实验结论（根据本次测量数据自动总结）</div>
+          <div id="expConclusion" class="guide" style="margin-top:0">
+            完成测量后，此处将根据 U_c–ν 拟合与 i–U 曲线自动生成结论。
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 演示模式 ========== -->
+  <div id="demo" class="hide">
+    <div class="panel">
+      <div class="h-label">◆ 实验装置与完整电路（动画演示）</div>
+      <canvas id="dTube" class="circ"></canvas>
+      <div class="note">单色光由左<b>窗口</b>斜入，照射右方半圆<b>阴极 K</b>内表面，光电子 <b>K→A</b>；
+      <b>V</b> 并联测管压、<b>A</b> 串联测光电流；电源+滑动变阻器分压，换向可加反向电压测遏止电压。</div>
+    </div>
+
+    <div class="panel">
+      <div class="h-label">◆ 添加对比曲线（不同材料 / 波长 / 光强）</div>
+      <div class="controls">
+        <div class="grp"><label>金属（逸出功 W₀）</label>
+          <select id="metal">
+            <option value="2.10">铯 Cs · 2.10 eV</option>
+            <option value="2.30">钾 K · 2.30 eV</option>
+            <option value="2.80">钙 Ca · 2.80 eV</option>
+            <option value="4.07">镉 Cd · 4.07 eV</option>
+            <option value="4.30">锌 Zn · 4.30 eV</option>
+            <option value="5.10">钨 W · 5.10 eV</option>
+          </select></div>
+        <div class="grp"><label>波长 λ <span id="dWl">532 nm</span></label>
+          <input type="range" id="dwl" min="200" max="800" step="1" value="532"></div>
+        <div class="grp"><label>光功率 P <span id="dInt">1.0 mW</span></label>
+          <input type="range" id="dint" min="0.2" max="8" step="0.1" value="1"></div>
+        <button class="btn btn-add" id="addBtn">➕ 添加曲线</button>
+        <button class="btn btn-ghost" id="clearBtn">清空</button>
+      </div>
+      <div class="chips" id="chips"></div>
+      <div class="result-grid" id="results"></div>
+    </div>
+
+    <div class="panel">
+      <div class="h-label">◆ (a) 截止电压 U_c – 频率 ν（标记各材料截止频率 ν₀）</div>
+      <div class="legend" id="gUcLegend"></div>
+      <canvas id="gUc" class="chart"></canvas>
+      <div class="note" id="gUcRead">悬停查看任意频率处各材料 U_c 读数。</div>
+    </div>
+
+    <div class="panel">
+      <div class="h-label">◆ (b) 光电流 i – 电压 U（标记遏止电压与饱和光电流）</div>
+      <div class="legend" id="gIVLegend"></div>
+      <canvas id="gIV" class="chart"></canvas>
+      <div class="note" id="gIVRead">悬停查看该电压下各曲线光电流（µA）。</div>
+    </div>
+
+    <div class="panel">
+      <div class="h-label">◆ 核心公式与推导</div>
+      <div class="fcards">
+        <div class="fcard">
+          <div class="ft">爱因斯坦光电方程</div>
+          <div class="fm">hν = W₀ + ½mv²<sub>max</sub></div>
+          <div class="fd">光子整体被一个电子吸收；克服逸出功后余下为最大初动能。</div>
+        </div>
+        <div class="fcard">
+          <div class="ft">遏止电压 – 频率</div>
+          <div class="fm">eU_c = hν − W₀</div>
+          <div class="box">U_c = (h/e)·(ν − ν₀)</div>
+          <div class="fd">斜率 h/e 普适；与 ν 轴交点即截止频率 ν₀=W₀/h。</div>
+        </div>
+        <div class="fcard">
+          <div class="ft">饱和光电流推导</div>
+          <div class="fm">P = n<sub>φ</sub>hν, i<sub>sat</sub> = eη·(P/hν)</div>
+          <div class="fd">i<sub>sat</sub> = eη·P·λ/(hc)：固定功率 P 时，每秒光子数 n<sub>φ</sub>=P/(hν)∝λ，
+            故 i<sub>sat</sub> ∝ 光功率 P · 波长 λ；η 为金属内量子效率（材料决定），
+            故<b>不同金属、同一 P/λ 下饱和光电流也不同</b>。材料还决定截止频率 ν₀=W₀/h（hν&lt;ν₀ 不产生电流）。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const HCEV=1240, HE_U=4.1357e-15, SLOPE=HE_U*1e14;
+const METALS={2.10:'铯 Cs',2.30:'钾 K',2.80:'钙 Ca',
+              4.07:'镉 Cd',4.30:'锌 Zn',5.10:'钨 W'};
+const PALETTE=['#4f46e5','#e0533d','#059669','#d97706','#7c3aed','#2563eb',
+               '#db2777','#0891b2','#65a30d','#b45309'];
+const W=900, CH=680;   // CH：图表缓冲高，配合 640px 显示宽使绘图区长宽比约 1.3 协调
+let frame=0;
+
+function vnu(nm){return HCEV/(nm*HE_U*1e14);}   // ν=hc/(λ·h) 与演示 SLOPE 自洽，h 可精确还原 6.626
+/* 饱和光电流：i_sat = eη·(P/hν) = eη·P·λ/(hc)，单位 µA。
+   P 用 mW、λ 用 nm；0.8059 = e·1e-3·1e-9/(hc)×1e6。
+   η=金属内量子效率（材料相关）：同 P、λ 下饱和电流随材料不同；
+   材料还经 W₀ 决定截止频率 ν₀=W₀/h（hν<W₀ 时光电流为 0）。 */
+const ETA={2.10:0.92,2.30:0.85,2.80:0.76,4.07:0.62,4.30:0.55,5.10:0.46};
+function IsatP(PmW,nm,eta){return 0.8059*eta*PmW*nm;}
+function mkCurve(W0,nm,P){
+  const E=1240/nm,ek=E-W0,on=ek>0,eta=ETA[W0]||1;
+  return {W0,lambda:nm,power:P,E,ek,on,eta,Isat:on?IsatP(P,nm,eta):0,
+    f0:2.419*W0,color:'#4f46e5'};
+}
+function curAt(U,c){
+  if(!c||!c.on)return 0;
+  if(U>=0)return c.Isat;
+  if(U<=-c.ek)return 0;
+  const t=(U+c.ek)/c.ek,s=t*t*(3-2*t);return c.Isat*s;
+}
+
+/* ============ 电路图（教材接法：窗口左→A左，半圆K右受光，e⁻ K→A）
+   管内画电场线E、电子受力F=−eE、逐点动能E_k；遏止时到A侧动能→0 ============ */
+function drawTube(cx2,H,o){
+  cx2.clearRect(0,0,W,H);
+  const c=o.focus, light=o.light, U=(o.bias=o.bias||0);
+  const Asgn=U>0.03?'+':(U<-0.03?'−':'0');   // A-K 端电压极性随 U 翻转
+  const Ksgn=U>0.03?'−':(U<-0.03?'+':'0');
+  const emit=!!(c&&c.on&&light);
+  // 光源 + 光线
+  cx2.fillStyle='#f59e0b';cx2.beginPath();cx2.arc(74,58,15,0,6.29);cx2.fill();
+  cx2.fillStyle='#fff6dd';cx2.beginPath();cx2.arc(74,58,7,0,6.29);cx2.fill();
+  cx2.fillStyle='#5b6478';cx2.font='11px sans-serif';cx2.textAlign='center';
+  cx2.fillText('光源（单色光）',74,90);
+  // 光电管（真空玻璃泡，左上开窗受光）
+  const TX=198,TY=100,TW=352,TH=174;
+  const tubG=cx2.createLinearGradient(TX,TY,TX+TW,TY+TH);
+  tubG.addColorStop(0,'rgba(244,249,255,.94)');tubG.addColorStop(1,'rgba(226,238,252,.94)');
+  cx2.fillStyle=tubG;cx2.strokeStyle='#aebbd6';cx2.lineWidth=2.4;
+  cx2.beginPath();cx2.roundRect(TX,TY,TW,TH,18);cx2.fill();cx2.stroke();
+  // 玻璃高光（左上斜带 + 底沿反光），增强石英泡质感
+  cx2.strokeStyle='rgba(255,255,255,.72)';cx2.lineWidth=4;
+  cx2.beginPath();cx2.moveTo(TX+46,TY+9);cx2.lineTo(TX+16,TY+40);cx2.stroke();
+  cx2.strokeStyle='rgba(127,178,218,.45)';cx2.lineWidth=1.6;
+  cx2.beginPath();cx2.moveTo(TX+8,TY+TH-10);cx2.lineTo(TX+TW-20,TY+TH-4);cx2.stroke();
+  cx2.fillStyle='#5b6478';cx2.font='12px sans-serif';cx2.textAlign='center';
+  cx2.fillText('光电管（真空·石英泡）',TX+TW/2,TY-8);
+  // 窗口（左上·倾斜透光窗，光束斜入射至阴极凹面内部）
+  cx2.save();cx2.translate(234,146);cx2.rotate(0.5);
+  cx2.fillStyle='rgba(160,214,248,.5)';cx2.strokeStyle='#7fb2da';cx2.lineWidth=1.7;
+  cx2.beginPath();cx2.rect(-10,-54,20,108);cx2.fill();cx2.stroke();
+  cx2.restore();
+  cx2.fillStyle='#5b6478';cx2.font='10px sans-serif';cx2.textAlign='left';
+  cx2.fillText('窗口(光斜入)',TX-6,TY+4);
+  // 阳极 A（左·细棒极，上下带横撑）
+  const AX=246;
+  cx2.strokeStyle='#d97706';cx2.lineWidth=2.6;
+  cx2.beginPath();cx2.moveTo(AX,TY+30);cx2.lineTo(AX,TY+TH-24);cx2.stroke();
+  cx2.lineWidth=2;
+  cx2.beginPath();cx2.moveTo(AX-13,TY+40);cx2.lineTo(AX+13,TY+40);       // 上横撑
+  cx2.moveTo(AX-13,TY+TH-34);cx2.lineTo(AX+13,TY+TH-34);                 // 下横撑
+  cx2.stroke();
+  cx2.fillStyle='#d97706';cx2.font='700 14px sans-serif';cx2.textAlign='center';
+  cx2.fillText('A 阳极('+Asgn+')',AX,TY-24);
+  // 阴极 K（右·凹面杯形，开口朝左受光）——参考教材接法
+  const KX=478,KY=188,KR=52;
+  const cup=cx2.createLinearGradient(KX-KR,KY,KX+KR,KY);
+  cup.addColorStop(0,'rgba(150,120,255,.42)');cup.addColorStop(.45,'rgba(120,88,246,.16)');
+  cup.addColorStop(1,'rgba(96,66,224,.42)');
+  cx2.fillStyle=cup;cx2.strokeStyle='#6c47df';cx2.lineWidth=2.6;
+  cx2.beginPath();cx2.arc(KX,KY,KR,-Math.PI/2,Math.PI/2,false);
+  cx2.lineTo(KX,KY+KR);cx2.closePath();cx2.fill();cx2.stroke();
+  // 凹面内侧受光面（左侧内弧高光）
+  cx2.strokeStyle='rgba(255,255,255,.55)';cx2.lineWidth=1.6;cx2.setLineDash([6,5]);
+  cx2.beginPath();cx2.arc(KX,KY,KR-12,-Math.PI/2,Math.PI/2,false);cx2.stroke();
+  cx2.setLineDash([]);
+  cx2.fillStyle='#6c47df';cx2.font='700 14px sans-serif';cx2.textAlign='center';
+  cx2.fillText('K 阴极('+Ksgn+')',KX-2,KY-KR-12);
+  // 入射光带 → 阴极凹面内部
+  if(emit){
+    cx2.strokeStyle='rgba(245,158,11,.85)';cx2.lineWidth=1.6;
+    for(let i=0;i<5;i++){
+      const ty=KY-36+i*18;
+      if(ty>KY-KR+8&&ty<KY+KR-8){
+        cx2.beginPath();cx2.moveTo(74,54);cx2.lineTo(KX-KR+4,ty);
+        cx2.stroke();
+      }
+    }
+  }
+  // 管内匀强电场 E（始终可见；方向随 U 而变，密度/箭头数随 |U|）
+  {
+    const Epos=U>0;                    // U>0：A高势→K，E指向右
+    const xa=AX+16,xk=KX-KR-8;
+    const ys=[150,178,204,228];
+    const aU=Math.abs(U);
+    const on=(aU>=0.03);               // 有管压 → 青色场线；无压 → 浅灰 E=0 示意
+    const scol=on?'#0e7490':'#9aa7c2';
+    const alpha=on?Math.min(1,0.35+aU*0.35):0.55;
+    const n=on?Math.max(1,Math.min(4,Math.round(aU*1.6))):1; // 箭头数随|U|
+    cx2.globalAlpha=alpha;
+    cx2.strokeStyle=scol;cx2.lineWidth=1.6;cx2.setLineDash([8,4]);
+    ys.forEach(y=>{
+      const xs=Epos?xa:xk,xe=Epos?xk:xa,dir=Epos?1:-1;
+      cx2.beginPath();cx2.moveTo(xs,y);cx2.lineTo(xe,y);cx2.stroke();
+      for(let s=1;s<=n;s++){
+        const fx=xs+(xe-xs)*s/(n+1);
+        cx2.beginPath();cx2.moveTo(fx-dir*7,y);
+        cx2.lineTo(fx,y-3.5);cx2.lineTo(fx+dir*7,y);
+        cx2.lineTo(fx,y+3.5);cx2.closePath();
+        cx2.fillStyle=scol;cx2.fill();
+      }
+    });
+    cx2.setLineDash([]);
+    cx2.globalAlpha=1;
+    cx2.fillStyle=on?'#0e7490':'#64748b';cx2.font='600 12px sans-serif';cx2.textAlign='center';
+    cx2.fillText(on
+      ?('电场 E'+(Epos?'（A→K，指右）':'（K→A·反向减速）')+' · 密度随|U|')
+      :'管内电场 E=0：加管压后此处显示青色匀强电场线（箭头数随|U|）',
+      (xa+xk)/2,TY+TH-26);
+  }
+  // 光电子 K→A（轨迹淡影 + 受力 F=−eE 与电场 E 恒反向 + 逐点动能 E_k）
+  if(emit){
+    for(let i=0;i<3;i++){
+      const t=(frame*1.6+i*135)%150,frac=t/150;
+      const ty=KY-46+(i*56)%96;
+      const x0=KX-KR+3,x1=AX+8,x=x0+(x1-x0)*frac;
+      // 轨迹淡影
+      cx2.strokeStyle='rgba(37,99,235,.28)';cx2.lineWidth=1.4;
+      cx2.beginPath();cx2.moveTo(x0,ty);cx2.lineTo(x,ty);cx2.stroke();
+      // 电子
+      cx2.fillStyle='#2563eb';cx2.beginPath();cx2.arc(x,ty,5,0,6.29);
+      cx2.fill();
+      cx2.fillStyle='#fff';cx2.font='700 9px sans-serif';cx2.textAlign='center';
+      cx2.fillText('e⁻',x,ty+3);
+      if(U!==0){                          // 受力 F=−eE（恒与电场 E 反向）
+        const fdir=U>0?-1:1;
+        const flen=Math.min(18,Math.abs(U)/Math.max(0.25,c.ek)*15+7);
+        const bx=x,by=ty+15;
+        cx2.strokeStyle='#e0533d';cx2.lineWidth=2.2;
+        cx2.beginPath();cx2.moveTo(bx,by);
+        cx2.lineTo(bx+fdir*flen,by-1);
+        cx2.lineTo(bx+fdir*flen-4*fdir,by-3);
+        cx2.moveTo(bx+fdir*flen,by-1);
+        cx2.lineTo(bx+fdir*flen-4*fdir,by+1);
+        cx2.stroke();
+      }
+      const ek=U<=0
+        ?Math.max(0,c.ek-Math.abs(U)*frac)
+        :(c.ek+Math.abs(U)*frac);
+      cx2.fillStyle='#059669';cx2.font='700 10px sans-serif';
+      cx2.fillText('E_k='+ek.toFixed(2)+'eV',x,ty-20);
+    }
+    if(U<0&&Math.abs(U)>=c.ek-0.05){      // 遏止：到达侧动能→0
+      cx2.strokeStyle='#e0533d';cx2.lineWidth=1.6;cx2.setLineDash([5,4]);
+      cx2.beginPath();cx2.moveTo(AX-10,TY+30);cx2.lineTo(AX+6,TY+TH-2);
+      cx2.stroke();cx2.setLineDash([]);
+      cx2.fillStyle='#e0533d';cx2.font='700 12px sans-serif';cx2.textAlign='left';
+      cx2.fillText('遏止电压：电子抵达 A 附近动能→0',AX+12,TY+TH-8);
+    }
+  }
+  // ===== 外电路（教材"甲"图·分压式接法）=====
+  // 光电管 A左·K右，e⁻ K→A；电流表串联于右(K)支路测光电流、电压表并联测 U_AK；
+  // 底部滑动变阻器两端接电源+/−、滑片输出可调管压；K 经总开关接电源负端。
+  const Aex=AX,Kex=KX;                 // A/K 垂直线（与管内电极同列）
+  const yV=292,Vc=362;                 // 电压表（并联跨 A-K）
+  const yA=322;                        // A→滑片 引线高度
+  const sl=372;                        // 滑片 x（取 < Kex，避免与 K 支路交叉）
+  const yAmm=337;                      // 电流表（串联 K 支路）圆心 y
+  const yKret=446;                     // K 接地返回行（→总开关→电池−）
+  const rY=424,rL=250,rR=440;          // 滑动变阻器：两端固定端/rY 为电阻体中轴线
+  const bY=438,bm=300,bp=405;          // 电池：负极端 − 左 / 正极端 + 右
+  // --- A 支路（左竖线）→ 滑片引线 ---
+  cx2.strokeStyle='#33415c';cx2.lineWidth=2.2;
+  cx2.beginPath();cx2.moveTo(Aex,258);cx2.lineTo(Aex,yA);cx2.stroke();
+  cx2.beginPath();cx2.moveTo(Aex,yA);cx2.lineTo(sl,yA);cx2.stroke();
+  // --- K 支路（右竖线，中间串联电流表 A）---
+  cx2.beginPath();cx2.moveTo(Kex,240);cx2.lineTo(Kex,yAmm-15);cx2.stroke();
+  cx2.beginPath();cx2.moveTo(Kex,yAmm+15);cx2.lineTo(Kex,yKret);cx2.stroke();
+  // --- 电压表 V：并联跨接 A、K 两竖支路 ---
+  cx2.fillStyle='#fff';cx2.strokeStyle='#4f46e5';cx2.lineWidth=2.5;
+  cx2.beginPath();cx2.arc(Vc,yV,16,0,6.29);cx2.fill();cx2.stroke();
+  cx2.fillStyle='#4f46e5';cx2.font='700 15px sans-serif';cx2.textAlign='center';
+  cx2.fillText('V',Vc,yV+5.5);
+  cx2.strokeStyle='#33415c';cx2.lineWidth=2;
+  cx2.beginPath();cx2.moveTo(Aex,yV);cx2.lineTo(Vc-16,yV);cx2.stroke();   // 并联→A
+  cx2.beginPath();cx2.moveTo(Vc+16,yV);cx2.lineTo(Kex,yV);cx2.stroke();   // 并联→K
+  cx2.fillStyle='#4f46e5';cx2.font='10px sans-serif';
+  cx2.fillText('电压表 V（并联测管压 U_AK）',Vc,yV+36);
+  // --- 电流表 A：串联于 K 支路（测光电流）---
+  cx2.fillStyle='#fff';cx2.strokeStyle='#059669';cx2.lineWidth=2.5;
+  cx2.beginPath();cx2.arc(Kex,yAmm,15,0,6.29);cx2.fill();cx2.stroke();
+  cx2.fillStyle='#059669';cx2.font='700 14px sans-serif';cx2.textAlign='center';
+  cx2.fillText('A',Kex,yAmm+5);
+  cx2.fillStyle='#5b6478';cx2.font='10px sans-serif';
+  cx2.fillText('串联于 K 支路·i='+o.current+' µA',Kex,yAmm+33);
+  // --- K 支路 → 总开关 → 电池负端 ---
+  const swL=410,swR=352;               // 开关两接触点（断开位）
+  cx2.strokeStyle='#33415c';cx2.lineWidth=2;
+  cx2.beginPath();cx2.moveTo(Kex,yKret);cx2.lineTo(swL,yKret);cx2.stroke();
+  cx2.lineWidth=2.4;
+  cx2.beginPath();cx2.moveTo(swR,yKret);cx2.lineTo(swL,yKret-12);cx2.stroke(); // 闸刀
+  cx2.fillStyle='#33415c';
+  cx2.beginPath();cx2.arc(swL,yKret,3.4,0,6.29);cx2.fill();
+  cx2.beginPath();cx2.arc(swR,yKret,3.4,0,6.29);cx2.fill();
+  cx2.fillStyle='#5b6478';cx2.font='10px sans-serif';cx2.textAlign='center';
+  cx2.fillText('开关',(swL+swR)/2,yKret+16);
+  cx2.strokeStyle='#33415c';cx2.lineWidth=2;
+  cx2.beginPath();cx2.moveTo(swL,yKret);cx2.lineTo(bm,yKret);cx2.stroke();
+  cx2.beginPath();cx2.moveTo(bm,yKret);cx2.lineTo(bm,bY);cx2.stroke();       // →电池−
+  // --- 滑动变阻器（分压接法：两端接电源+/−，滑片输出可调管压）---
+  cx2.fillStyle='#8a5a1c';cx2.fillRect(rL,rY-3,rR-rL,6);                    // 电阻体
+  cx2.fillStyle='#33415c';
+  cx2.fillRect(rL-4,rY-9,6,18);cx2.fillRect(rR-2,rY-9,6,18);                // 两端固定端子
+  cx2.strokeStyle='#33415c';cx2.lineWidth=2;
+  cx2.beginPath();cx2.moveTo(rL,rY);cx2.lineTo(rL,bY);cx2.stroke();         // 左端→电池−
+  cx2.beginPath();cx2.moveTo(rL,bY);cx2.lineTo(bm,bY);cx2.stroke();
+  cx2.beginPath();cx2.moveTo(rR,rY);cx2.lineTo(rR,bY);cx2.stroke();         // 右端→电池+
+  cx2.beginPath();cx2.moveTo(rR,bY);cx2.lineTo(bp,bY);cx2.stroke();
+  // --- 滑片：输出可调管压 → 上接 A 引线 ---
+  cx2.beginPath();cx2.moveTo(sl,rY+3);cx2.lineTo(sl,yA);cx2.stroke();
+  cx2.fillStyle='#5b6478';cx2.font='10px sans-serif';cx2.textAlign='center';
+  cx2.fillText('滑动端(分压·输出可调管压 U)',(rL+rR)/2,rY-18);
+  cx2.fillStyle=U<0?'#e0533d':'#5b6478';cx2.font='10px sans-serif';cx2.textAlign='left';
+  cx2.fillText('滑过中点→反向减速·测遏止电压',sl+10,408);
+  // --- 电池（−左 +右）---
+  cx2.fillStyle='#33415c';
+  cx2.fillRect(bm-6,bY-5,12,10);          // 负极端（长线·左）
+  cx2.fillRect(bp-4,bY-2,11,4);           // 正极端（短线·右）
+  cx2.fillStyle='#e0533d';cx2.font='700 13px sans-serif';cx2.textAlign='center';
+  cx2.fillText('−',bm,bY+26);cx2.fillText('+',bp,bY+26);
+  cx2.fillStyle='#5b6478';cx2.font='10px sans-serif';
+  cx2.fillText('电源（变阻器两端接其 +/−，K 经开关接负端）',(rL+rR)/2+8,bY+14);
+  // 状态 + 底部图例
+  cx2.fillStyle='#4f46e5';cx2.font='700 12px sans-serif';cx2.textAlign='left';
+  cx2.fillText('管压 U='+(U>0?'+':'')+U.toFixed(2)+' V · '+
+    (U>0.03?'正向：A(+)>K(−)，加速电子 K→A'
+           :U<-0.03?'反向：K(+)>A(−)，减速·可测遏止'
+                    :'零压：A=K（E=0）'),TX+10,24);
+  cx2.fillStyle='#5b6478';cx2.font='11px sans-serif';cx2.textAlign='center';
+  cx2.fillText('青色=电场 E 方向；红箭=F=−eE 受力；绿字=电子实时动能 E_k；遏止时至 A 侧 E_k→0',
+    450,472);
+}
+
+/* ============ 探索模式 ============ */
+const et=document.getElementById('eTube'),ex=et.getContext('2d');
+const eu=document.getElementById('eUc'),eux=eu.getContext('2d');
+const ei=document.getElementById('eIV'),eix=ei.getContext('2d');
+et.width=W;et.height=480;eu.width=W;eu.height=CH;ei.width=W;ei.height=CH;
+const metalE=document.getElementById('metalE'),wlE=document.getElementById('wlE'),
+  intE=document.getElementById('intE'),uSlider=document.getElementById('uSlider'),
+  guideBox=document.getElementById('guideBox'),
+  mI=document.getElementById('mI'),mU=document.getElementById('mU'),
+  mN=document.getElementById('mN'),usl=document.getElementById('usl'),
+  wlElE=document.getElementById('wlElE'),intElE=document.getElementById('intElE');
+let exp={W0:2.1,lambda:532,power:1,U:0,light:false};
+let expCur=mkCurve(exp.W0,exp.lambda,exp.power);
+let ucData=[],iuData=[],phase=1;
+
+function recomputeExp(){expCur=mkCurve(exp.W0,exp.lambda,exp.power);
+  wlElE.textContent=exp.lambda+' nm';intElE.textContent=exp.power.toFixed(1)+' mW';}
+function liveI(){return curAt(exp.U,expCur);}
+function setPhase(p){
+  phase=p;
+  [['st1',1],['st2',2],['st3',3],['st4',4]].forEach(([id,n])=>{
+    const el=document.getElementById(id);
+    el.className='stp'+(p===n?' on':(p>n?' done':''));});
+  updateGuide();
+}
+function updateGuide(){
+  const nu=vnu(exp.lambda);
+  if(phase===1){
+    guideBox.innerHTML='<b>第 1 步 · 选择参数：</b>选好阴极金属、波长 λ 与光功率 P（mW），然后点击 <b>「▶ 开始照射」</b>。'+
+      '<br>当前：'+METALS[exp.W0]+'，λ='+exp.lambda+' nm，ν='+nu.toFixed(2)+'×10¹⁴Hz，W₀='+
+      exp.W0.toFixed(2)+' eV → '+(expCur.on?'<span class="hl">可产生光电效应</span>':'低于截止频率（ν₀='+
+      expCur.f0.toFixed(2)+'×10¹⁴Hz），不会产生光电流');
+  }else if(phase>=2&&phase<=3){
+    const atZero=exp.U<0&&Math.abs(exp.U)>=expCur.ek-0.01;
+    guideBox.innerHTML='<b>第 2/3 步 · 调压测量：</b>拖动下面 <b>「施加电压 U」</b> 滑块。'+
+      '• <b>左移（反向 U&lt;0）</b> 会减速光电子：把光电流调到刚为 0 处，点 <b>「✓ 记录遏止电压」</b>'
+      +(expCur.on?('（此时 U_c≈'+expCur.ek.toFixed(2)+' V）'):'')+'。'+
+      '• <b>右移（正向）</b> 加速，电流趋于<b>饱和光电流</b>（≈'+expCur.Isat.toFixed(0)+' µA），可点 <b>「❊ 采样 I–U 点」</b>。'+
+      '<br>• 更省事：直接点 <b>「⚡ 自动采样」</b>，程序自动从反向扫到正向，逐点采集并自动记录遏止电压。'+
+      '<br>«第 3 步» 改上方<b>波长 λ</b>再重复，就能积累多组 U_c（已记 '+ucData.length+' 组）。'+
+      (atZero&&expCur.on?'<br><span class="hl">✓ 当前已达遏止电压（电流为 0）。</span>':'');
+  }else{
+    guideBox.innerHTML='<b>第 4 步 · 查看绘图：</b>点击上方「绘图」标签页。左侧为实测数据表，右侧为 '+
+      '<b>U_c–ν</b> 与 <b>i–U</b> 特性图（自动拟合斜率≈h/e）。';
+  }
+}
+function setXTab(tab){
+  const b=document.getElementById('expBench'),p=document.getElementById('expPlot');
+  document.getElementById('expTabBench').className='tab-btn'+(tab==='bench'?' on':'');
+  document.getElementById('expTabPlot').className='tab-btn'+(tab==='plot'?' on':'');
+  b.classList.toggle('hide',tab!=='bench');
+  p.classList.toggle('hide',tab!=='plot');
+}
+function drawExplore(){
+  drawTube(ex,480,{focus:expCur,light:exp.light,bias:exp.U,
+    current:expCur&&exp.light?liveI().toFixed(1):'0'});
+  mU.textContent=(exp.U>0?'+':'')+exp.U.toFixed(2)+' V';
+  mI.textContent=(exp.light?liveI():0).toFixed(1)+' µA';
+  usl.textContent=(exp.U>0?'+':'')+exp.U.toFixed(2)+' V';
+  mN.textContent=ucData.length;
+}
+function startLight(){exp.light=true;if(phase===1)setPhase(2);setXTab('bench');
+  drawExplore();updateGuide();}
+function recordUc(){
+  if(!exp.light){guideBox.innerHTML='<b>提示：</b>请先点击「▶ 开始照射」。';return;}
+  if(!expCur.on){guideBox.innerHTML='<b>提示：</b>当前 ν&lt;ν₀（ν₀='+
+    expCur.f0.toFixed(2)+'×10¹⁴Hz）不会产生光电流，请改用更短波长。';return;}
+  if(exp.U>=-0.001){
+    guideBox.innerHTML='<b>提示：</b>请先拖动滑块到<b>反向（负电压）</b>使光电流≈0，再来记录。';
+    drawExplore();return;}
+  const uc=Math.min(-exp.U,expCur.ek+1e-9);
+  ucData.push({lambda:exp.lambda,nu:vnu(exp.lambda),Uc:uc});
+  if(phase<3)setPhase(3);else updateGuide();
+  setETabBack();
+  renderPlotData();mN.textContent=ucData.length;drawExplore();
+  guideBox.innerHTML='<b>✓ 已记录遏止电压 U_c='+uc.toFixed(2)+' V</b>（λ='+exp.lambda+' nm，ν='+
+    vnu(exp.lambda).toFixed(2)+'×10¹⁴Hz）。可改波长继续测量，或到「绘图」页查看。';
+}
+function setETabBack(){}
+function sampleIU(){
+  if(!exp.light){guideBox.innerHTML='<b>提示：</b>请先「开始照射」。';return;}
+  iuData.push({U:+exp.U.toFixed(3),i:Math.round(liveI()*10)/10});
+  renderPlotData();
+  guideBox.innerHTML='<b>❊ 已采样 I–U 点：</b>U='+exp.U.toFixed(2)+' V，i='+liveI().toFixed(1)+
+    ' µA。可继续调压采样描出整条 i–U 曲线（正向会饱和）。';
+}
+function renderPlotData(){renderTuc();renderTiu();draw_eUc();draw_eIV();renderConclusion();}
+
+/* 实验结论：根据本次实测数据自动总结 */
+function renderConclusion(){
+  const el=document.getElementById('expConclusion');
+  const pts=ucData.slice().sort((a,b)=>a.nu-b.nu);
+  const parts=[];
+  if(pts.length>=2){
+    const mx=pts.reduce((a,p)=>a+p.nu,0)/pts.length,
+      my=pts.reduce((a,p)=>a+p.Uc,0)/pts.length;
+    let num=0,den=0;
+    pts.forEach(p=>{num+=(p.nu-mx)*(p.Uc-my);den+=(p.nu-mx)*(p.nu-mx);});
+    const slope=den?num/den:0,itc=my-slope*mx;
+    const n0=slope?(-itc/slope):mx;
+    const h34=16.02176634*slope, W0ev=slope*Math.max(0,n0);
+    parts.push('<b>1) 遏止电压与频率成正比（同一材料）：</b>U_c–ν 拟合为一条直线，'+
+      '斜率 k='+slope.toFixed(3)+' V/10¹⁴Hz，与 ν 轴交于 ν₀≈'+Math.max(0,n0).toFixed(2)+'×10¹⁴Hz。'+
+      '<br>　· 直线方程 U_c = k·ν − k·ν₀，与爱因斯坦方程 eU_c = hν − W₀ 对应，故 <b>k = h/e</b>；'+
+      '<br>　· 由此反推 <b>h ≈ '+h34.toFixed(2)+'×10⁻³⁴ J·s</b>（理论 6.626×10⁻³⁴ J·s），'+
+      '<b>W₀ ≈ '+W0ev.toFixed(2)+' eV</b>（设定值 '+exp.W0.toFixed(2)+' eV）。');
+    parts.push('<b>2) 截止频率 ν₀ = W₀/h：</b>当 ν&lt;ν₀（λ&gt;λ₀='+(1240/exp.W0).toFixed(0)+' nm）时，'+
+      '光子能量不足以克服逸出功，无论光强多大都<b>不产生光电流</b>——光电效应存在红限。');
+  }else{
+    parts.push('<b>1) 遏止电压：</b>施加反向电压可把光电流压到零，该电压（绝对值）即为遏止电压 U_c。'+
+      (pts.length?'已记录 '+pts.length+' 组：再测 1 组不同波长的 U_c 即可拟合直线验证 U_c∝ν。'
+        :'请回实验台换 2 个以上波长各记录一组 U_c，即可拟合直线验证 U_c∝ν。'));
+  }
+  if(iuData.length){
+    const im=Math.max.apply(null,iuData.map(p=>p.i));
+    const um=iuData.map(p=>p.U).reduce((a,b)=>Math.max(a,b),-99);
+    parts.push('<b>3) 饱和光电流：</b>正向电压加到足够大时，光电流趋于稳定值（实测最大 i≈'+
+      im.toFixed(1)+' µA，出现在 U='+um.toFixed(2)+' V），说明<b>单位时间到达阳极的光电子数达到上限</b>；'+
+      '饱和电流随光强 P 增强、波长 λ 增大而增大（i_sat∝P·λ·η）。');
+    parts.push('<b>4) 反向电压抑制：</b>反向电压只减速电子、不改变光电子的发射，故<b>遏止电压与光强无关</b>，'+
+      '只由光子能量 hν 与逸出功 W₀ 之差决定。');
+  }else{
+    parts.push('<b>3) 饱和光电流：</b>回实验台做一次自动采样（⚡）即可看到：正向电压增大时电流上升并趋于饱和，'+
+      '反向电压增大时电流下降至零。');
+  }
+  parts.push('<b>5) 综合结论：</b>光电效应证明光具有<b>粒子性</b>——光子的能量 E=hν 被电子整体吸收，'+
+    '电子动能 E_k=hν−W₀，与光强无关（光强只决定单位时间的光子数，即电流大小）。');
+  el.innerHTML=parts.join('<br><br>');
+}
+
+/* 编程式自动采样：按设定范围从反向→正向逐点采集 i–U，并自动识别遏止电压 */
+let scanTimer=null;
+/* 从实测 i–U 点中精确定位“光电流恰好归零”的电压（绝对值）= 遏止电压 Uc */
+function calibrateUc(){
+  if(!expCur.on||iuData.length<3)return;
+  const sorted=iuData.slice().sort((a,b)=>a.U-b.U);
+  let idx=-1;
+  // 升序下 i–U 是“0(负压)→增长→饱和”：首个非零点之前的零点即反向归零临界
+  for(let k=1;k<sorted.length;k++){
+    if(sorted[k].i>0&&sorted[k-1].i===0){idx=k;break;}
+  }
+  if(idx<0)return;
+  const Upos=sorted[idx].U;   // 电流首次非零的电压（归零临界的上界）
+  if(ucData.findIndex(d=>Math.abs(d.lambda-exp.lambda)<1&&
+                       Math.abs(d.W0-exp.W0)<1e-9)>=0)return;
+  // 从首个非零点向左密扫（0.001V，电流分辨率 0.001µA），精确定位光电流恰好归零处
+  const fine=[];let U=Upos, zeroU=null;
+  for(let n=0;n<=160;n++){
+    const u=Math.round(U*1000)/1000;
+    const i=Math.round(curAt(u,expCur)*1000)/1000;
+    fine.push({U:u,i:i});
+    if(i===0){zeroU=u;break;}
+    U=Math.round((u-0.001)*1000)/1000;
+  }
+  const UcAbs=Math.abs(zeroU!=null?zeroU:Upos);
+  iuData=iuData.filter(p=>p.U>=Upos).concat(fine);
+  ucData.push({lambda:exp.lambda,nu:vnu(exp.lambda),Uc:Math.round(UcAbs*1000)/1000,W0:exp.W0});
+  mN.textContent=ucData.length;
+}
+function autoScan(){
+  if(scanTimer){guideBox.innerHTML='<b>提示：</b>正在采样中，请稍候…';return;}
+  const from=parseFloat(document.getElementById('sFrom').value)||-2.5,
+        to=parseFloat(document.getElementById('sTo').value)||3,
+        step=parseFloat(document.getElementById('sStep').value)||0.1;
+  if(step<=0){guideBox.innerHTML='<b>提示：</b>步长需 &gt; 0。';return;}
+  if(!expCur.on){guideBox.innerHTML='<b>提示：</b>当前 ν&lt;ν₀ 不会产生光电流，请改用更短波长。';return;}
+  exp.light=true;
+  if(phase<2)setPhase(2);
+  iuData=[]; // 本次扫描重绘干净曲线
+  let U=from;
+  guideBox.innerHTML='<b>⚡ 自动采样中…</b>电压从 U='+from+' V 扫向 '+to+' V（步长 '+step+
+    ' V），逐点采集光电流；反向段电流归零处将自动记录遏止电压。';
+  scanTimer=setInterval(()=>{
+    exp.U=Math.round(U*100)/100;
+    uSlider.value=exp.U;
+    iuData.push({U:exp.U,i:Math.round(curAt(exp.U,expCur)*1000)/1000});
+    drawExplore();renderTiu();
+    U+=step;
+    if(U>to+(step>0?1e-6:0)){clearInterval(scanTimer);scanTimer=null;finishScan();}
+  },90);
+}
+function finishScan(){
+  calibrateUc();
+  renderPlotData();
+  guideBox.innerHTML='<b>✓ 自动采样完成：</b>共采集 '+iuData.length+' 个 I–U 点；'+
+    (ucData.length?'已自动记录 <b>'+ucData.length+' 组遏止电压</b>（取光电流恰好归零处，密扫精确）。'+
+      '到「绘图」查看 U_c–ν 直线，并据此估算普朗克常数与逸出功。'
+    :'本次反向段未新增遏止电压点（该波长已记录过，或需更反向的扫描起点）。');
+  drawExplore();
+}
+function renderTuc(){
+  const tb=document.getElementById('tuc');
+  const rows=ucData.slice().sort((a,b)=>a.lambda-b.lambda);
+  tb.innerHTML=rows.length?rows.map((d,i)=>
+    `<tr><td>${i+1}</td><td>${d.lambda}</td><td>${d.nu.toFixed(2)}</td>`+
+    `<td>${d.Uc.toFixed(3)}</td></tr>`).join(''):
+    '<tr><td colspan="4" class="empty">尚未记录遏止电压（回实验台测 U_c）</td></tr>';
+}
+function renderTiu(){
+  const tb=document.getElementById('tiu');
+  const rows=iuData.slice().sort((a,b)=>a.U-b.U);
+  tb.innerHTML=rows.length?rows.map((d,i)=>
+    `<tr><td>${i+1}</td><td>${d.U>0?'+':''}${d.U.toFixed(2)}</td><td>${d.i.toFixed(1)}</td></tr>`)
+    .join(''):
+    '<tr><td colspan="3" class="empty">尚未采样 I–U 点</td></tr>';
+}
+function draw_eUc(){
+  eux.clearRect(0,0,W,CH);
+  const pad={l:58,r:26,t:36,b:44},Wd=W-pad.l-pad.r,Hd=CH-pad.t-pad.b;
+  const Xmax=16;
+  // 先拟合（≥2 组），用于纵轴范围与结果标注
+  const pts=ucData.slice().sort((a,b)=>a.nu-b.nu);
+  let slope=0,itc=0,n0=0,h34=0,W0ev=0,fit=pts.length>=2;
+  if(fit){
+    const mx=pts.reduce((a,p)=>a+p.nu,0)/pts.length,
+      my=pts.reduce((a,p)=>a+p.Uc,0)/pts.length;
+    let num=0,den=0;
+    pts.forEach(p=>{num+=(p.nu-mx)*(p.Uc-my);den+=(p.nu-mx)*(p.nu-mx);});
+    slope=den?num/den:0;itc=my-slope*mx;
+    n0=slope?(-itc/slope):mx;          // ν₀=−b/k：直线与ν轴交点(U_c=0)
+    h34=16.02176634*slope;             // h(×10⁻³⁴ J·s)=e·斜率(V/10¹⁴Hz)·10⁻¹⁴·10³⁴
+    W0ev=slope*Math.max(0,n0);         // W₀/eV=斜率·ν₀（e 约去）
+  }
+  // 纵轴范围自适应：包含数据点与截距 b（=−W₀/e）
+  const maxUc=pts.length?Math.max.apply(null,pts.map(d=>d.Uc)):0;
+  const lo=Math.min(0,fit?itc*1.15:0), hi=Math.max(maxUc*1.35,fit?-itc*0.6:0,1.2);
+  const Ub=Math.min(-1,Math.floor(lo)), Ut=Math.max(2,Math.ceil(hi*2)/2);
+  const X=n=>pad.l+n/Xmax*Wd, Y=v=>pad.t+(Ut-v)/(Ut-Ub)*Hd;
+  const color='#4f46e5';
+  // 淡网格
+  eux.strokeStyle='#eef1f7';eux.lineWidth=1;
+  for(let n=0;n<=Xmax;n+=2){eux.beginPath();eux.moveTo(X(n),pad.t);eux.lineTo(X(n),pad.t+Hd);eux.stroke();}
+  for(let v=Ub;v<=Ut;v++){eux.beginPath();eux.moveTo(pad.l,Y(v));eux.lineTo(pad.l+Wd,Y(v));eux.stroke();}
+  const zY=Y(0);
+  // 坐标轴：ν=0（纵轴）与 U_c=0（横轴）
+  eux.strokeStyle='#4a5568';eux.lineWidth=1.8;
+  eux.beginPath();eux.moveTo(X(0),pad.t);eux.lineTo(X(0),pad.t+Hd);eux.stroke();
+  eux.beginPath();eux.moveTo(pad.l,zY);eux.lineTo(pad.l+Wd,zY);eux.stroke();
+  // 轴刻度短线
+  eux.strokeStyle='#5b6478';eux.lineWidth=1;
+  for(let n=0;n<=Xmax;n++){eux.beginPath();eux.moveTo(X(n),zY-3);eux.lineTo(X(n),zY+3);eux.stroke();}
+  for(let v=Ub;v<=Ut;v++){eux.beginPath();eux.moveTo(X(0)-3,Y(v));eux.lineTo(X(0)+3,Y(v));eux.stroke();}
+  // 刻度标签（纵轴步进随范围自适应）
+  const vStep=Ut-Ub<=5?1:(Ut-Ub<=10?2:4);
+  eux.fillStyle='#8892a8';eux.font='13px sans-serif';eux.textAlign='center';
+  for(let n=0;n<=Xmax;n+=2)eux.fillText(n,X(n),zY+15);
+  eux.textAlign='right';
+  for(let v=Math.ceil(Ub/vStep)*vStep;v<=Ut;v+=vStep)eux.fillText(v,X(0)-7,Y(v)+4);
+  // 轴名
+  eux.fillStyle='#5b6478';eux.font='600 15px sans-serif';
+  eux.textAlign='left';eux.fillText('U_c / V',pad.l-2,18);
+  eux.fillStyle='#5b6478';eux.textAlign='center';
+  eux.fillText('频率 ν / ×10¹⁴ Hz',pad.l+Wd/2,CH-4);
+  // 数据点
+  pts.forEach(d=>{eux.fillStyle=color;eux.strokeStyle='#fff';eux.lineWidth=1.4;
+    eux.beginPath();eux.arc(X(d.nu),Y(d.Uc),4,0,6.29);eux.fill();eux.stroke();});
+  if(fit){
+    // 拟合直线（从 ν=0 延伸到图右端）
+    eux.strokeStyle=color;eux.lineWidth=2;eux.setLineDash([6,4]);
+    eux.beginPath();eux.moveTo(X(0),Y(itc));eux.lineTo(X(Xmax),Y(slope*Xmax+itc));eux.stroke();
+    eux.setLineDash([]);
+    // 截距交点（ν=0 处，即 −W₀/e）
+    eux.fillStyle='#e0533d';
+    eux.beginPath();eux.arc(X(0),Y(itc),4.5,0,6.29);eux.fill();
+    eux.font='700 13px sans-serif';eux.textAlign='left';
+    eux.fillText('截距 b='+itc.toFixed(2)+' V（=−W₀/e）',X(0)+8,Y(itc)-8);
+    // ν₀ 交点（U_c=0 处）
+    eux.strokeStyle='#e0533d';eux.lineWidth=1.8;
+    eux.beginPath();eux.arc(X(n0),Y(0),5,0,6.29);eux.stroke();
+    eux.fillStyle='#e0533d';eux.textAlign='center';
+    eux.fillText('ν₀≈'+Math.max(0,n0).toFixed(2)+'×10¹⁴Hz',X(n0),Y(0)+20);
+    // 顶部结果标注
+    eux.font='700 13px sans-serif';eux.textAlign='left';
+    eux.fillStyle='#e0533d';
+    eux.fillText('拟合直线 U_c='+slope.toFixed(3)+'ν'+(itc>=0?'+':'−')+Math.abs(itc).toFixed(2),pad.l+10,pad.t+16);
+    eux.fillStyle='#059669';
+    eux.fillText('→ h≈'+h34.toFixed(3)+'×10⁻³⁴ J·s，W₀≈'+W0ev.toFixed(2)+' eV',pad.l+10,pad.t+34);
+    document.getElementById('eUcNote').innerHTML='最小二乘拟合：<b>k='+slope.toFixed(3)+
+      ' V/10¹⁴Hz</b>（=h/e），<b>截距 b='+itc.toFixed(2)+' V</b>（=−W₀/e），ν₀≈'+
+      Math.max(0,n0).toFixed(2)+'×10¹⁴Hz → <b>h≈'+h34.toFixed(3)+'×10⁻³⁴ J·s</b>、'+
+      '<b>W₀≈'+W0ev.toFixed(2)+' eV</b>（设定 '+exp.W0.toFixed(2)+' eV）。'+
+      '由 U_c=(h/e)ν−W₀/e 反推；ν=3000/λ（×10¹⁴Hz）、E=1240/λ（eV）为教材近似。';
+  }else{
+    document.getElementById('eUcNote').textContent='记录至少 2 组遏止电压后自动拟合，斜率≈h/e。';
+  }
+}
+function draw_eIV(){
+  eix.clearRect(0,0,W,CH);
+  if(!iuData.length){
+    eix.fillStyle='#8892a8';eix.font='15px sans-serif';eix.textAlign='center';
+    eix.fillText('回「实验台」加压并点「采样 I–U 点」后显示曲线',W/2,CH/2);return;}
+  const pad={l:56,r:24,t:34,b:44},Wd=W-pad.l-pad.r,Hd=CH-pad.t-pad.b;
+  const pts=iuData.slice().sort((a,b)=>a.U-b.U);
+  const Xmin=Math.min(-0.8,...pts.map(p=>p.U))-0.2, Xmax=Math.max(1.2,...pts.map(p=>p.U))+0.2;
+  const ImaxV=Math.max(80,(Math.max.apply(null,pts.map(p=>p.i))||0))*1.15;
+  const X=n=>pad.l+(n-Xmin)/(Xmax-Xmin)*Wd, Y=v=>pad.t+(1-v/ImaxV)*Hd;
+  eix.strokeStyle='#eef1f7';eix.lineWidth=1;
+  for(let k=0;k<=5;k++){const yv=ImaxV*k/5;eix.beginPath();eix.moveTo(pad.l,Y(yv));
+    eix.lineTo(pad.l+Wd,Y(yv));eix.stroke();}
+  for(let i=0;i<=8;i++){const u=(Xmax-Xmin)*i/8+Xmin;eix.beginPath();eix.moveTo(X(u),pad.t);
+    eix.lineTo(X(u),pad.t+Hd);eix.stroke();}
+  const zY=Y(0);
+  eix.strokeStyle='#7f8aa6';eix.lineWidth=1.4;
+  eix.beginPath();eix.moveTo(pad.l,zY);eix.lineTo(pad.l+Wd,zY);eix.stroke();
+  eix.strokeStyle='#bfc8dd';eix.lineWidth=1.2;eix.setLineDash([5,4]);
+  const zX=X(0);eix.beginPath();eix.moveTo(zX,pad.t);eix.lineTo(zX,pad.t+Hd);eix.stroke();eix.setLineDash([]);
+  eix.fillStyle='#8892a8';eix.font='13px sans-serif';eix.textAlign='center';
+  for(let i=0;i<=8;i++){const u=Math.round(((Xmax-Xmin)*i/8+Xmin)*100)/100;
+    eix.fillText((u>0?'+':'')+u,X(u),zY+15);}
+  eix.fillText('电压 U / V（负半轴反向）',pad.l+Wd/2,CH-2);
+  eix.textAlign='right';eix.fillStyle='#5b6478';eix.font='15px sans-serif';
+  eix.fillText('i / µA',pad.l-8,28);
+  const color='#4f46e5';
+  pts.forEach(p=>{eix.fillStyle=color;eix.strokeStyle='#fff';eix.lineWidth=1.4;
+    eix.beginPath();eix.arc(X(p.U),Y(p.i),3.6,0,6.29);eix.fill();eix.stroke();});
+  if(pts.length>=2){
+    eix.strokeStyle=color;eix.lineWidth=2;
+    eix.beginPath();eix.moveTo(X(pts[0].U),Y(pts[0].i));
+    pts.forEach(p=>eix.lineTo(X(p.U),Y(p.i)));eix.stroke();}
+  const sat=Math.max.apply(null,pts.map(p=>p.i));
+  eix.strokeStyle='#059669';eix.lineWidth=1.2;eix.setLineDash([6,4]);
+  eix.beginPath();eix.moveTo(pad.l,Y(sat));eix.lineTo(pad.l+Wd,Y(sat));eix.stroke();eix.setLineDash([]);
+  eix.fillStyle='#059669';eix.font='600 13px sans-serif';eix.textAlign='left';
+  eix.fillText('饱和光电流 ≈ '+sat.toFixed(0)+' µA',pad.l+8,Y(sat)-8);
+  document.getElementById('eIVNote').innerHTML='实点为采样数据；绿虚线标记<b>饱和光电流</b>（≈'+
+    sat.toFixed(0)+' µA）；反向归零点的横坐标差值即遏止电压区。';
+}
+
+/* 探索事件 */
+metalE.onchange=()=>{exp.W0=+metalE.value;recomputeExp();updateGuide();
+  if(phase===1)setPhase(1);drawExplore();};
+wlE.oninput=()=>{exp.lambda=+wlE.value;recomputeExp();updateGuide();drawExplore();};
+intE.oninput=()=>{exp.power=+intE.value;recomputeExp();drawExplore();};
+uSlider.oninput=()=>{exp.U=+uSlider.value;drawExplore();updateGuide();
+  if(phase===1)setPhase(2);};
+document.getElementById('startBtn').onclick=startLight;
+document.getElementById('autoBtn').onclick=autoScan;
+document.getElementById('recBtn').onclick=recordUc;
+document.getElementById('samBtn').onclick=sampleIU;
+document.getElementById('plotBtn').onclick=()=>{setXTab('plot');setPhase(4);renderPlotData();};
+document.getElementById('expTabBench').onclick=()=>setXTab('bench');
+document.getElementById('expTabPlot').onclick=()=>{setXTab('plot');renderPlotData();};
+document.getElementById('expClear').onclick=()=>{ucData=[];iuData=[];renderPlotData();};
+document.getElementById('expBack').onclick=()=>setXTab('bench');
+document.getElementById('expCsv').onclick=exportCsv;
+
+/* 导出 CSV（遏止电压表 + I–U 采样表，带 BOM 防止 Excel 中文乱码） */
+function exportCsv(){
+  const rows=['光电效应实验数据导出  '+new Date().toLocaleString(),'',
+    '遏止电压记录（同一材料，换波长）','λ/nm,ν/×10¹⁴Hz,U_c/V'];
+  ucData.forEach(d=>rows.push([d.lambda,d.nu.toFixed(2),d.Uc.toFixed(3)].join(',')));
+  rows.push('','I–U 采样点','U/V,i/µA');
+  iuData.forEach(d=>rows.push([d.U.toFixed(3),d.i.toFixed(1)].join(',')));
+  const blob=new Blob(['\ufeff'+rows.join('\r\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='光电效应实验数据_'+new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')+'.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/* ============ 演示模式 ============ */
+const dt=document.getElementById('dTube'),dx=dt.getContext('2d');
+const gu=document.getElementById('gUc'),gux=gu.getContext('2d');
+const gi=document.getElementById('gIV'),gix=gi.getContext('2d');
+dt.width=W;dt.height=480;gu.width=W;gu.height=CH;gi.width=W;gi.height=CH;
+const dMetal=document.getElementById('metal'),dwl=document.getElementById('dwl'),
+  dint=document.getElementById('dint'),
+  dWl=document.getElementById('dWl'),dInt=document.getElementById('dInt');
+let CURVES=[],selId=null,nid=1;
+function selD(){return CURVES.find(c=>c.id===selId)||null;}
+function addCurve(){
+  const c=mkCurve(+dMetal.value,+dwl.value,+dint.value);
+  c.id=nid++;c.color=PALETTE[(CURVES.length)%PALETTE.length];
+  CURVES.push(c);if(c.on)selId=c.id;renderChips();renderResults();
+}
+function removeCurve(id){CURVES=CURVES.filter(c=>c.id!==id);
+  if(selId===id)selId=CURVES.length?CURVES[CURVES.length-1].id:null;
+  renderChips();renderResults();}
+function renderChips(){
+  chips.innerHTML=CURVES.map(c=>
+    `<span class="chip${c.id===selId?' on':''}" data-id="${c.id}">
+      <i class="dot" style="background:${c.color}"></i>${METALS[c.W0]} λ${c.lambda}nm P${c.power.toFixed(1)}mW
+      <i class="x" data-x="${c.id}">×</i></span>`).join('')||
+    '<span style="color:var(--muted);font-size:.84rem">尚未添加曲线</span>';
+  chips.querySelectorAll('.chip').forEach(ch=>ch.addEventListener('click',e=>{
+    if(e.target.dataset.x){removeCurve(+e.target.dataset.x);return;}
+    selId=+ch.dataset.id;renderChips();renderResults();}));
+}
+function row(t,v){return `<div class="rbox"><div class="t">${t}</div><div class="v">${v}</div></div>`;}
+function renderResults(){
+  const s=selD();
+  if(!s){results.innerHTML=CURVES.length?'':
+    `<div class="rbox" style="grid-column:1/-1"><div class="t">提示</div>
+     <div class="v" style="font-size:.9rem;font-weight:600">添加一条曲线后查看实时数值</div></div>`;return;}
+  results.innerHTML=
+    row('光子能量',s.E.toFixed(2)+' eV')+row('频率 ν',vnu(s.lambda).toFixed(2)+'×10¹⁴Hz')+
+    row('光功率 P',s.power.toFixed(1)+' mW')+
+    row('逸出功',METALS[s.W0]+' '+s.W0.toFixed(2)+'eV')+
+    row('E<sub>k</sub>',s.on?s.ek.toFixed(2)+' eV':'不发射')+
+    row('遏止电压 U_c',s.on?('−'+s.ek.toFixed(2)+' V'):'—')+
+    row('截止频率 ν₀',s.f0.toFixed(2)+'×10¹⁴Hz')+
+    row('红限波长 λ₀',(1240/s.W0).toFixed(0)+' nm')+
+    row('饱和电流 i<sub>sat</sub>',s.on?s.Isat.toFixed(0)+' µA':'0');
+}
+dwl.oninput=()=>{dWl.textContent=dwl.value+' nm';};
+dint.oninput=()=>{dInt.textContent=(+dint.value).toFixed(1)+' mW';};
+document.getElementById('addBtn').onclick=addCurve;
+document.getElementById('clearBtn').onclick=()=>{CURVES=[];selId=null;renderChips();renderResults();};
+
+/* 演示两张图 */
+const dm={l:56,r:20,t:30,b:44};
+const dW2=W-dm.l-dm.r,dH2=CH-dm.t-dm.b;
+const uX=nu=>dm.l+nu/20*dW2, uY=U=>dm.t+(8-U)/14*dH2;
+const uInvX=x=>(x-dm.l)/dW2*20;
+let diScale={Xm:2,Imax:100};
+const iX=U=>dm.l+(U+diScale.Xm)/(2*diScale.Xm)*dW2,
+  iY=I=>dm.t+(1-I/diScale.Imax)*dH2;
+const iInvX=x=>((x-dm.l)/dW2)*2*diScale.Xm-diScale.Xm;
+function drawGUcD(){
+  gux.clearRect(0,0,W,CH);
+  gux.strokeStyle='#eef1f7';gux.lineWidth=1;
+  for(let v=0;v<=20;v+=2){gux.beginPath();gux.moveTo(uX(v),dm.t);gux.lineTo(uX(v),dm.t+dH2);gux.stroke();}
+  for(let yy=-6;yy<=8;yy+=2){gux.beginPath();gux.moveTo(dm.l,uY(yy));gux.lineTo(dm.l+dW2,uY(yy));gux.stroke();}
+  const z0=uY(0);
+  gux.strokeStyle='#7f8aa6';gux.lineWidth=1.4;
+  gux.beginPath();gux.moveTo(dm.l,z0);gux.lineTo(dm.l+dW2,z0);gux.stroke();
+  gux.fillStyle='#8892a8';gux.font='13px sans-serif';gux.textAlign='center';
+  for(let v=0;v<=20;v+=2)gux.fillText(v,uX(v),z0+15);
+  // 纵轴刻度（参考图风格：-6..8 均有刻度数字）
+  gux.fillStyle='#8892a8';gux.font='13px sans-serif';gux.textAlign='right';
+  for(let yy=-6;yy<=8;yy+=2){gux.beginPath();gux.moveTo(dm.l-3,uY(yy));gux.lineTo(dm.l+3,uY(yy));gux.stroke();
+    gux.fillText(yy,dm.l-7,uY(yy)+4);}
+  gux.textAlign='right';gux.fillStyle='#5b6478';gux.font='14px sans-serif';
+  gux.fillText('U_c / V',dm.l-8,26);
+  gux.fillStyle='#5b6478';gux.textAlign='center';gux.font='14px sans-serif';
+  gux.fillText('频率 ν / ×10¹⁴ Hz',dm.l+dW2/2,CH-5);
+  const mats=[];
+  CURVES.forEach(c=>{if(!mats.find(m=>m.W0===c.W0))mats.push({W0:c.W0,color:c.color});});
+  document.getElementById('gUcLegend').innerHTML=mats.map(m=>
+    `<span><i style="background:${m.color}"></i>${METALS[m.W0]} W₀=${m.W0.toFixed(2)}eV</span>`).join('')||
+    '<span style="color:var(--muted)">添加曲线后显示各材料直线</span>';
+  mats.forEach(m=>{
+    const f0=2.419*m.W0;
+    gux.strokeStyle=m.color;gux.lineWidth=2.4;
+    gux.beginPath();gux.moveTo(uX(f0),uY(0));gux.lineTo(uX(20),uY(SLOPE*20-m.W0));gux.stroke();
+    gux.fillStyle=m.color;gux.font='700 14px sans-serif';gux.textAlign='left';
+    gux.fillText(METALS[m.W0],uX(20)+4,uY(SLOPE*20-m.W0)+4);
+    gux.strokeStyle=m.color;gux.lineWidth=1.1;gux.setLineDash([4,4]);
+    gux.beginPath();gux.moveTo(uX(f0),dm.t);gux.lineTo(uX(f0),dm.t+dH2);gux.stroke();gux.setLineDash([]);
+    gux.fillStyle='#fff';gux.strokeStyle=m.color;gux.lineWidth=1.2;
+    gux.beginPath();gux.roundRect(uX(f0)-40,dm.t+4,80,16,4);gux.fill();gux.stroke();
+    gux.textAlign='center';gux.fillStyle=m.color;gux.font='600 12px sans-serif';
+    gux.fillText('ν₀='+f0.toFixed(1)+'×10¹⁴',uX(f0),dm.t+17);
+  });
+  CURVES.forEach(c=>{const p=[uX(vnu(c.lambda)),uY(c.on?c.ek:0)];
+    gux.fillStyle=c.id===selId?'#111827':c.color;gux.strokeStyle='#fff';gux.lineWidth=1.4;
+    gux.beginPath();gux.arc(p[0],p[1],c.id===selId?6:4,0,6.29);gux.fill();gux.stroke();});
+}
+function drawGIVD(){
+  gix.clearRect(0,0,W,CH);
+  const on=CURVES.filter(c=>c.on);
+  const XmV=on.length?Math.max(...on.map(c=>c.ek))+0.35:1.8;
+  const Imx=on.length?Math.max(...on.map(c=>c.Isat))*1.18:600;
+  diScale={Xm:Math.max(1.8,XmV),Imax:Math.max(600,Imx)};
+  gix.strokeStyle='#eef1f7';gix.lineWidth=1;
+  for(let i=-Math.ceil(diScale.Xm);i<=Math.ceil(diScale.Xm);i++){
+    gix.beginPath();gix.moveTo(iX(i),dm.t);gix.lineTo(iX(i),dm.t+dH2);gix.stroke();}
+  for(let k=0;k<=5;k++){gix.beginPath();gix.moveTo(dm.l,iY(diScale.Imax*k/5));
+    gix.lineTo(dm.l+dW2,iY(diScale.Imax*k/5));gix.stroke();}
+  const z0=iY(0);
+  gix.strokeStyle='#7f8aa6';gix.lineWidth=1.4;
+  gix.beginPath();gix.moveTo(dm.l,z0);gix.lineTo(dm.l+dW2,z0);gix.stroke();
+  gix.strokeStyle='#bfc8dd';gix.lineWidth=1.2;gix.setLineDash([5,4]);
+  const zx=iX(0);gix.beginPath();gix.moveTo(zx,dm.t);gix.lineTo(zx,dm.t+dH2);gix.stroke();gix.setLineDash([]);
+  gix.fillStyle='#8892a8';gix.font='13px sans-serif';gix.textAlign='center';
+  for(let i=-Math.ceil(diScale.Xm);i<=Math.ceil(diScale.Xm);i++){
+    if(Math.round(i*10)===0)continue;
+    gix.fillText((i>0?'+':'')+i,iX(i),z0+15);}
+  gix.fillStyle='#8892a8';gix.fillText('0',zx-8,z0+4);
+  gix.fillStyle='#5b6478';gix.font='14px sans-serif';
+  gix.fillText('电压 U / V（左负半轴反向）',dm.l+dW2/2,CH-5);
+  gix.textAlign='right';gix.fillText('i / µA',dm.l-8,26);
+  document.getElementById('gIVLegend').innerHTML=CURVES.map(c=>
+    `<span><i style="background:${c.color}"></i>${METALS[c.W0]} λ${c.lambda}nm P${c.power.toFixed(1)}mW`+
+    (c.id===selId?'(当前)':'')+'</span>').join('')||
+    '<span style="color:var(--muted)">添加曲线后显示 i–U 曲线</span>';
+  CURVES.forEach(c=>{
+    gix.beginPath();
+    for(let i=0;i<=220;i++){const U=-diScale.Xm+2*diScale.Xm*i/220;
+      const p=[iX(U),iY(curAt(U,c))];
+      if(i===0)gix.moveTo(p[0],p[1]);else gix.lineTo(p[0],p[1]);}
+    gix.strokeStyle=c.color;gix.lineWidth=c.id===selId?3.4:2.2;gix.stroke();
+    if(!c.on){gix.fillStyle=c.color;gix.font='13px sans-serif';gix.textAlign='center';
+      gix.fillText(METALS[c.W0]+' λ'+c.lambda+'nm 不发射',dm.l+90,dm.t+26);return;}
+    const e0=iX(-c.ek);
+    gix.strokeStyle=c.color;gix.lineWidth=1.1;gix.setLineDash([4,4]);
+    gix.beginPath();gix.moveTo(e0,dm.t);gix.lineTo(e0,dm.t+dH2);gix.stroke();gix.setLineDash([]);
+    gix.fillStyle='#fff';gix.strokeStyle=c.color;gix.lineWidth=1.2;
+    gix.beginPath();gix.roundRect(e0-58,dm.t+6,116,15,4);gix.fill();gix.stroke();
+    gix.textAlign='center';gix.fillStyle=c.color;gix.font='600 13px sans-serif';
+    gix.fillText('遏止 U_c=−'+c.ek.toFixed(2)+'V',e0,dm.t+17);
+    const sy=iY(c.Isat);
+    gix.strokeStyle=c.color;gix.lineWidth=1.1;gix.setLineDash([5,4]);
+    gix.beginPath();gix.moveTo(dm.l+4,sy);gix.lineTo(dm.l+dW2-2,sy);gix.stroke();gix.setLineDash([]);
+    gix.fillStyle='#fff';gix.strokeStyle=c.color;
+    gix.beginPath();gix.roundRect(dm.l+4,sy-16,152,15,4);gix.fill();gix.stroke();
+    gix.textAlign='left';gix.fillStyle=c.color;gix.font='600 13px sans-serif';
+    gix.fillText('饱和 i='+c.Isat.toFixed(0)+' µA',dm.l+10,sy-5);
+  });
+}
+/* 悬停读数 */
+gu.addEventListener('mousemove',e=>{
+  const r=gu.getBoundingClientRect(),xm=(e.clientX-r.left)*W/r.width;
+  const nu=uInvX(xm);
+  const mats=[];
+  CURVES.forEach(c=>{if(!mats.find(m=>m.W0===c.W0))mats.push({W0:c.W0,color:c.color});});
+  if(nu<0||nu>20||!mats.length){gUcRead.textContent='悬停查看任意频率处各材料 U_c。';return;}
+  let s='ν='+nu.toFixed(2)+'×10¹⁴Hz → U_c：';
+  mats.forEach(m=>{const U=Math.max(0,SLOPE*nu-m.W0);
+    gux.strokeStyle=m.color;gux.lineWidth=1;gux.setLineDash([3,3]);
+    gux.beginPath();gux.moveTo(xm,iY(0));gux.lineTo(xm,iY(U));gux.stroke();gux.setLineDash([]);
+    s+=METALS[m.W0]+' '+(U).toFixed(2)+'V；';});
+  gUcRead.textContent=s;drawGUcD();
+});
+gu.addEventListener('mouseleave',()=>gUcRead.textContent='悬停查看任意频率处各材料 U_c。');
+gi.addEventListener('mousemove',e=>{
+  const r=gi.getBoundingClientRect(),xm=(e.clientX-r.left)*W/r.width;
+  const U=iInvX(xm);
+  const on=CURVES.filter(c=>c.on);
+  if(!on.length){gIVRead.textContent='当前无发射曲线（均低于截止频率）。';return;}
+  let s='U='+(U>0?'+':'')+U.toFixed(2)+'V → 光电流：';
+  on.forEach(c=>{const yy=curAt(U,c);
+    gix.strokeStyle=c.color;gix.lineWidth=1;gix.setLineDash([3,3]);
+    gix.beginPath();gix.moveTo(xm,iY(yy));gix.lineTo(xm,dm.t+dH2);gix.stroke();gix.setLineDash([]);
+    s+=METALS[c.W0]+' λ'+c.lambda+'nm='+yy.toFixed(1)+'µA；';});
+  gIVRead.textContent=s;drawGIVD();
+});
+gi.addEventListener('mouseleave',()=>gIVRead.textContent='悬停查看该电压下各曲线光电流（µA）。');
+
+/* 模式切换 */
+function switchMode(m){
+  const e=document.getElementById('explore'),d=document.getElementById('demo');
+  const on=m==='explore';
+  e.classList.toggle('hide',!on);d.classList.toggle('hide',on);
+  document.getElementById('modeExplore').classList.toggle('on',on);
+  document.getElementById('modeDemo').classList.toggle('on',!on);
+}
+document.getElementById('modeExplore').onclick=()=>switchMode('explore');
+document.getElementById('modeDemo').onclick=()=>switchMode('demo');
+
+/* 主循环 */
+function always(){
+  frame++;
+  if(!document.getElementById('demo').classList.contains('hide')){demoTick();}
+  if(!document.getElementById('explore').classList.contains('hide')&&
+     !document.getElementById('expBench').classList.contains('hide')){drawExplore();}
+}
+function demoTick(){const s=selD();
+  drawTube(dx,480,{focus:s,light:true,bias:1.2,
+    current:s&&s.on?s.Isat.toFixed(0):'0'});
+  drawGUcD();drawGIVD();}
+recomputeExp();
+setPhase(1);updateGuide();drawExplore();
+requestAnimationFrame(function loop(){always();requestAnimationFrame(loop);});
+</script>
+</body>
+</html>

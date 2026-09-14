@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>一维无限深势阱 · 量子态</title>
+<style>
+:root{
+  --bg:#f5f7fc;--card:#fff;--ink:#1a2238;--ink2:#4a5568;
+  --muted:#8892a8;--accent:#4f46e5;--accent2:#7c6cf5;--line:#e6eaf3;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",
+  "Microsoft YaHei",sans-serif;background:var(--bg);
+  background-image:radial-gradient(900px 500px at 10% -10%,#e7ebff 0,transparent 60%),
+  radial-gradient(700px 500px at 95% 0,#f1e9ff 0,transparent 55%);
+  background-attachment:fixed;color:var(--ink);min-height:100vh;
+  padding:26px 16px 54px;line-height:1.65}
+.wrap{max-width:1080px;margin:0 auto}
+header{text-align:center;margin-bottom:22px}
+header h1{font-size:clamp(1.4rem,3.2vw,1.9rem);font-weight:750;
+  color:#2b2e70;letter-spacing:-.02em}
+header p{color:var(--muted);font-size:.92rem}
+header .tag{display:inline-block;font-size:.74rem;letter-spacing:.14em;
+  color:var(--accent);background:#eef1ff;border:1px solid #dde3ff;
+  padding:.24rem .85rem;border-radius:999px;font-weight:600;margin-bottom:11px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:17px 20px;box-shadow:0 1px 2px rgba(22,33,58,.03),
+  0 10px 28px -20px rgba(22,33,58,.28);margin-bottom:15px}
+.controls{display:flex;flex-wrap:wrap;gap:16px 26px;align-items:flex-end}
+.grp{display:flex;flex-direction:column;gap:5px;min-width:170px;flex:1;max-width:260px}
+.grp label{font-size:.8rem;color:var(--muted);font-weight:600;
+  display:flex;justify-content:space-between}
+.grp label span{color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;
+  border-radius:3px;background:#e4e8f3;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;
+  border-radius:50%;background:linear-gradient(140deg,var(--accent),var(--accent2));
+  box-shadow:0 2px 6px -1px rgba(79,70,229,.6);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border:none;border-radius:50%;
+  background:linear-gradient(140deg,var(--accent),var(--accent2));cursor:pointer}
+.dots{display:flex;gap:6px;flex-wrap:wrap}
+.dot{border:1px solid var(--line);background:#fff;color:var(--ink2);min-width:34px;
+  height:34px;border-radius:9px;cursor:pointer;font-weight:700;transition:.18s;
+  font-family:inherit}
+.dot.on{background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;border-color:transparent}
+.scene-panel{padding:0;overflow:hidden}
+canvas#cv{display:block;width:100%;height:560px}
+.results{display:flex;flex-wrap:wrap;gap:12px}
+.rbox{flex:1;min-width:120px;background:#f8faff;border:1px solid var(--line);
+  border-radius:12px;padding:11px 15px}
+.rbox .t{font-size:.72rem;color:var(--muted);letter-spacing:.06em}
+.rbox .v{font-size:1.2rem;font-weight:750;color:var(--accent);
+  font-variant-numeric:tabular-nums}
+.notes{font-size:.88rem;color:var(--ink2);line-height:1.7}
+.notes b{color:var(--ink)}.notes .f{color:var(--accent);font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="tag">量子物理 · QUANTUM</div>
+    <h1>一维无限深势阱 · 量子态</h1>
+    <p>束缚态波函数 ψₙ 与概率密度 |ψₙ|² 随量子数 n 的变化</p>
+  </header>
+
+  <div class="panel">
+    <div class="controls">
+      <div class="dots" id="dots"></div>
+      <div class="grp">
+        <label>量子数 n <span id="nEl">3</span></label>
+        <input type="range" id="n" min="1" max="8" step="1" value="3">
+      </div>
+    </div>
+  </div>
+
+  <div class="panel scene-panel"><canvas id="cv"></canvas></div>
+
+  <div class="panel">
+    <div class="results">
+      <div class="rbox"><div class="t">能级 Eₙ (E₁)</div><div class="v" id="rE">—</div></div>
+      <div class="rbox"><div class="t">波节数</div><div class="v" id="rN">—</div></div>
+      <div class="rbox"><div class="t">半波数</div><div class="v" id="rH">—</div></div>
+      <div class="rbox"><div class="t">能量比 Eₙ/E₁</div><div class="v" id="rR">—</div></div>
+    </div>
+  </div>
+
+  <div class="panel notes">
+    无限深方势阱中粒子能量被束缚为分立值 <span class="f">Eₙ = n²·h²/(8mL²)</span>，
+    波函数 <span class="f">ψₙ = √(2/L)·sin(nπx/L)</span>。
+    n 决定能级与节点数（节点 = n−1）。经典粒子允许一切能量，
+    而<b>量子化</b>正是波函数边界条件（阱壁处为 0）的自然结果。
+  </div>
+</div>
+
+<script>
+const cv=document.getElementById('cv'),cx=cv.getContext('2d');
+const W=900,H=560;cv.width=W;cv.height=H;
+const L=600,x0=110,x1=x0+L;         // well geometry
+const yBase=500, scale=4.2;          // level pitch
+let n=3;
+const dotsEl=document.getElementById('dots'),
+      nSlider=document.getElementById('n'),
+      nEl=document.getElementById('nEl'),
+      rE=document.getElementById('rE'),
+      rN=document.getElementById('rN'),
+      rH=document.getElementById('rH'),
+      rR=document.getElementById('rR');
+let t0=performance.now();
+
+function buildDots(){
+  dotsEl.innerHTML='';
+  for(let i=1;i<=8;i++){
+    const b=document.createElement('button');
+    b.className='dot'+(i===n?' on':'');b.textContent=i;
+    b.onclick=()=>setN(i);
+    dotsEl.appendChild(b);
+  }
+}
+function setN(v){
+  n=v;nSlider.value=v;nEl.textContent=v;
+  buildDots();readout();
+}
+function readout(){
+  rE.textContent=n*n+' E₁';
+  rN.textContent=(n-1);
+  rH.textContent=n;
+  rR.textContent=n*n+':1';
+}
+nSlider.oninput=()=>setN(+nSlider.value);
+
+function levelY(k){return yBase-k*k*scale;}
+function draw(){
+  const tt=(performance.now()-t0)/1000;
+  cx.clearRect(0,0,W,H);
+  // axis labels
+  cx.fillStyle='#5b6478';cx.font='13px sans-serif';
+  cx.fillText('0',x0-20,yBase+6);
+  cx.fillText('L',x1+6,yBase+6);
+  cx.fillText('E / E₁',x0-6,yBase+6);
+  // well
+  cx.strokeStyle='#2b2e70';cx.lineWidth=3;
+  cx.beginPath();
+  cx.moveTo(x0,90);cx.lineTo(x0,yBase);cx.lineTo(x1,yBase);cx.lineTo(x1,90);
+  cx.stroke();
+  // level lines + labels
+  for(let k=1;k<=8;k++){
+    const y=levelY(k);
+    cx.strokeStyle= k===n?'#f59e0b':'#d9e0f2';
+    cx.lineWidth=k===n?3:1.2;
+    cx.beginPath();cx.moveTo(x0,y);cx.lineTo(x1,y);cx.stroke();
+    cx.fillStyle= k===n?'#d97706':'#8892a8';
+    cx.font=(k===n?'700 ':'500 ')+'12px sans-serif';
+    cx.textAlign='right';cx.fillText('n='+k,x0-10,y-4);
+    cx.textAlign='right';cx.fillText(k*k+' E₁',x0-10,y+12);
+  }
+  // selected wavefunction (standing wave), amplitude ~28px
+  const A=30,cy=levelY(n);
+  const N=200,dx=L/N;
+  // probability |ψ|² as shaded area at the level
+  cx.fillStyle='rgba(79,70,229,.14)';
+  cx.beginPath();cx.moveTo(x0,cy);
+  for(let i=0;i<=N;i++){
+    const xr=i/N,phi=Math.sin(n*Math.PI*xr);
+    const px=x0+dx*i,py=cy-phi*phi*30;
+    cx.lineTo(px,py);
+  }
+  cx.lineTo(x1,cy);cx.closePath();cx.fill();
+  // ψ real part (animated)
+  const w=1.6;
+  cx.strokeStyle='#4f46e5';cx.lineWidth=2.2;cx.beginPath();
+  for(let i=0;i<=N;i++){
+    const xr=i/N,phi=Math.sin(n*Math.PI*xr)*Math.cos(w*tt);
+    const px=x0+dx*i,py=cy-phi*A;
+    if(i===0)cx.moveTo(px,py);else cx.lineTo(px,py);
+  }
+  cx.stroke();
+  // zero axis
+  cx.strokeStyle='#c5cde2';cx.lineWidth=1;
+  cx.beginPath();cx.moveTo(x0,cy);cx.lineTo(x1,cy);cx.stroke();
+  // legend
+  cx.textAlign='left';
+  cx.fillStyle='#4f46e5';cx.font='500 12px sans-serif';
+  cx.fillText('ψₙ（实部·随时间振荡）',x1+16,cy);
+  cx.fillStyle='rgba(79,70,229,.7)';
+  cx.fillText('|ψₙ|²（概率密度）',x1+16,cy+18);
+  // node markers
+  cx.fillStyle='#db3d14';
+  for(let k=1;k<n;k++){
+    const xr=k/n,px=x0+xr*L;
+    cx.beginPath();cx.arc(px,cy,3,0,6.29);cx.fill();
+  }
+  requestAnimationFrame(draw);
+}
+buildDots();readout();draw();
+</script>
+</body>
+</html>
